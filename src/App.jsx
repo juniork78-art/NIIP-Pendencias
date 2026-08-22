@@ -63,11 +63,33 @@ const calcularStatusPrazo = (dataStr) => {
 
 const INTEGRANTES = ["Francisco", "Gabriel", "Walgney"];
 
+const SETORES_DISPONIVEIS = [
+  { 
+    id: 'niip', 
+    nome: 'NIIP - Núcleo de Informática e Inspeção de POPs', 
+    descricao: 'Gestão de tarefas, prazos e manutenções da infraestrutura de POPs.',
+    ativo: true 
+  },
+  { 
+    id: 'suporte', 
+    nome: 'Suporte Técnico e Redes', 
+    descricao: 'Chamados, atendimento de campo e redes estruturadas (Em breve).',
+    ativo: false 
+  },
+  { 
+    id: 'projetos', 
+    nome: 'Projetos e Infraestrutura', 
+    descricao: 'Planejamento de expansão, novos enlaces e servidores (Em breve).',
+    ativo: false 
+  }
+];
+
 export default function App() {
   const [usuarioLogado, setUsuarioLogado] = useState(null);
   const [loadingAuth, setLoadingAuth] = useState(true);
-  const [tarefas, setTarefas] = useState([]);
+  const [setorSelecionado, setSetorSelecionado] = useState(null);
   
+  const [tarefas, setTarefas] = useState([]);
   const [titulo, setTitulo] = useState('');
   const [descricao, setDescription] = useState('');
   const [responsavel, setResponsavel] = useState('Francisco');
@@ -83,6 +105,7 @@ export default function App() {
         setUsuarioLogado(user.email);
       } else {
         setUsuarioLogado(null);
+        setSetorSelecionado(null);
       }
       setLoadingAuth(false);
     });
@@ -90,8 +113,8 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (usuarioLogado) {
-      const unsub = onSnapshot(collection(db, "niip_tarefas"), (snapshot) => {
+    if (usuarioLogado && setorSelecionado) {
+      const unsub = onSnapshot(collection(db, `${setorSelecionado}_tarefas`), (snapshot) => {
         const lista = [];
         snapshot.forEach((docSnap) => {
           lista.push({ id: docSnap.id, ...docSnap.data() });
@@ -101,7 +124,7 @@ export default function App() {
       });
       return () => unsub();
     }
-  }, [usuarioLogado]);
+  }, [usuarioLogado, setorSelecionado]);
 
   const adicionarTarefa = async (e) => {
     e.preventDefault();
@@ -125,11 +148,11 @@ export default function App() {
     };
 
     try {
-      await setDoc(doc(db, "niip_tarefas", novaTarefaId), tarefaObj);
+      await setDoc(doc(db, `${setorSelecionado}_tarefas`, novaTarefaId), tarefaObj);
       setTitulo('');
       setDescription('');
       setPrazo('');
-      alert("Tarefa de longo prazo cadastrada com sucesso!");
+      alert("Tarefa cadastrada com sucesso!");
     } catch (err) {
       alert("Erro ao salvar tarefa: " + err.message);
     }
@@ -138,7 +161,7 @@ export default function App() {
   const alternarStatus = async (tarefa) => {
     const novoStatus = tarefa.status === 'Pendente' ? 'Concluída' : 'Pendente';
     try {
-      await updateDoc(doc(db, "niip_tarefas", tarefa.id), { status: novoStatus });
+      await updateDoc(doc(db, `${setorSelecionado}_tarefas`, tarefa.id), { status: novoStatus });
     } catch (err) {
       alert("Erro ao atualizar status: " + err.message);
     }
@@ -147,7 +170,7 @@ export default function App() {
   const excluirTarefa = async (id) => {
     if (window.confirm("Deseja realmente excluir esta tarefa do painel?")) {
       try {
-        await deleteDoc(doc(db, "niip_tarefas", id));
+        await deleteDoc(doc(db, `${setorSelecionado}_tarefas`, id));
       } catch (err) {
         alert("Erro ao excluir: " + err.message);
       }
@@ -155,13 +178,57 @@ export default function App() {
   };
 
   if (loadingAuth) {
-    return <div style={{ color: '#fff', textAlign: 'center', marginTop: '20vh', fontFamily: 'sans-serif' }}>Carregando NIIP - Pendências...</div>;
+    return <div style={{ color: '#fff', textAlign: 'center', marginTop: '20vh', fontFamily: 'sans-serif' }}>Carregando sistema...</div>;
   }
 
+  // 1. TELA DE LOGIN
   if (!usuarioLogado) {
     return <TelaLogin onLoginSucesso={(email) => setUsuarioLogado(email)} />;
   }
 
+  // 2. TELA DE SELEÇÃO DE SETOR
+  if (!setorSelecionado) {
+    return (
+      <div style={{ backgroundColor: 'var(--bg, #121212)', color: 'var(--text-h, #fff)', minHeight: '100vh', width: '100vw', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', fontFamily: 'sans-serif', padding: '20px', boxSizing: 'border-box' }}>
+        <div style={{ maxWidth: '600px', width: '100%', textAlign: 'center' }}>
+          <h1 style={{ fontSize: '26px', color: '#4dabf7', marginBottom: '8px' }}>Selecione o Setor</h1>
+          <p style={{ color: '#aaa', fontSize: '14px', marginBottom: '30px' }}>Escolha o núcleo ou departamento que deseja gerenciar hoje:</p>
+          
+          <div style={{ display: 'grid', gap: '15px' }}>
+            {SETORES_DISPONIVEIS.map(setor => (
+              <div 
+                key={setor.id} 
+                onClick={() => setor.ativo && setSetorSelecionado(setor.id)}
+                style={{ 
+                  background: setor.ativo ? '#1e1e1e' : '#161616', 
+                  border: setor.ativo ? '1px solid #444' : '1px dashed #333', 
+                  padding: '20px', 
+                  borderRadius: '8px', 
+                  textAlign: 'left', 
+                  cursor: setor.ativo ? 'pointer' : 'not-allowed',
+                  opacity: setor.ativo ? 1 : 0.5,
+                  transition: 'border-color 0.2s'
+                }}
+              >
+                <h3 style={{ margin: '0 0 6px 0', color: setor.ativo ? '#4dabf7' : '#777', fontSize: '18px' }}>{setor.nome}</h3>
+                <p style={{ margin: 0, fontSize: '13px', color: '#aaa' }}>{setor.descricao}</p>
+              </div>
+            ))}
+          </div>
+
+          <button 
+            onClick={() => signOut(auth)} 
+            style={{ marginTop: '30px', background: 'transparent', border: '1px solid #dc3545', color: '#dc3545', padding: '8px 16px', borderRadius: '4px', cursor: 'pointer', fontSize: '13px' }}
+          >
+            Encerrar Sessão (Sair)
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // 3. TELA DE PENDÊNCIAS DO SETOR SELECIONADO
+  const setorAtualInfo = SETORES_DISPONIVEIS.find(s => s.id === setorSelecionado);
   const pendenciasUrgentesCount = tarefas.filter(t => {
     if (t.status === 'Concluída') return false;
     const st = calcularStatusPrazo(t.prazo);
@@ -179,12 +246,20 @@ export default function App() {
   const isGestor = nomeFormatado.includes('DUANDYS');
 
   return (
-    <div style={{ backgroundColor: '#121212', color: '#fff', minHeight: '100vh', width: '100%', padding: '25px', fontFamily: 'sans-serif', boxSizing: 'border-box', margin: 0 }}>
+    <div style={{ backgroundColor: '#121212', color: '#fff', minHeight: '100vh', width: '100vw', padding: '20px 30px', fontFamily: 'sans-serif', boxSizing: 'border-box', overflowX: 'hidden' }}>
       
       {/* HEADER */}
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #333', paddingBottom: '15px', marginBottom: '25px', flexWrap: 'wrap', gap: '15px', width: '100%', boxSizing: 'border-box' }}>
+      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #333', paddingBottom: '15px', marginBottom: '25px', flexWrap: 'wrap', gap: '15px', width: '100%' }}>
         <div>
-          <h1 style={{ margin: '0 0 5px 0', fontSize: '22px', color: '#4dabf7' }}>NIIP - Núcleo de Informática e Inspeção de POPs</h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
+            <button 
+              onClick={() => setSetorSelecionado(null)} 
+              style={{ background: '#333', border: 'none', color: '#fff', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px' }}
+            >
+              ← Trocar Setor
+            </button>
+            <span style={{ fontSize: '12px', color: '#4dabf7', fontWeight: 'bold' }}>[{setorAtualInfo.nome}]</span>
+          </div>
           <p style={{ margin: 0, fontSize: '13px', color: '#aaa' }}>
             Usuário: <strong>{nomeFormatado}</strong> ({isGestor ? 'Gestor' : 'Integrante'})
           </p>
@@ -200,11 +275,11 @@ export default function App() {
         </div>
       </header>
 
-      {/* GRID EXPANDIDO DE PONTA A PONTA COM RESPONSIVIDADE SEGURA */}
-      <div style={{ display: 'grid', gridTemplateColumns: '420px 1fr', gap: '25px', alignItems: 'start', width: '100%', boxSizing: 'border-box' }}>
+      {/* GRID EXPANDIDO DE PONTA A PONTA */}
+      <div style={{ display: 'grid', gridTemplateColumns: '400px 1fr', gap: '25px', alignItems: 'start', width: '100%' }}>
         
         {/* COLUNA ESQUERDA: CADASTRAR TAREFA */}
-        <div style={{ background: '#1e1e1e', padding: '24px', borderRadius: '8px', border: '1px solid #333', boxSizing: 'border-box', width: '100%' }}>
+        <div style={{ background: '#1e1e1e', padding: '24px', borderRadius: '8px', border: '1px solid #333', width: '100%', boxSizing: 'border-box' }}>
           <h3 style={{ margin: '0 0 20px 0', color: '#fff', fontSize: '16px', borderBottom: '1px solid #444', paddingBottom: '10px' }}>➕ Nova Tarefa de Longo Prazo</h3>
           
           <form onSubmit={adicionarTarefa}>
@@ -277,7 +352,7 @@ export default function App() {
         </div>
 
         {/* COLUNA DIREITA: LISTAGEM DE TAREFAS */}
-        <div style={{ background: '#1e1e1e', padding: '24px', borderRadius: '8px', border: '1px solid #333', boxSizing: 'border-box', width: '100%' }}>
+        <div style={{ background: '#1e1e1e', padding: '24px', borderRadius: '8px', border: '1px solid #333', width: '100%', boxSizing: 'border-box' }}>
           
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #444', paddingBottom: '10px', flexWrap: 'wrap', gap: '12px' }}>
             <h3 style={{ margin: 0, color: '#fff', fontSize: '16px' }}>📋 Tarefas e Pendências em Andamento</h3>
@@ -299,7 +374,7 @@ export default function App() {
           {tarefasFiltradas.length === 0 ? (
             <p style={{ color: '#777', fontSize: '14px', textAlign: 'center', padding: '60px 0' }}>Nenhuma tarefa encontrada com os filtros selecionados.</p>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '15px', width: '100%', boxSizing: 'border-box' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '15px', width: '100%' }}>
               {tarefasFiltradas.map((t) => {
                 const infoPrazo = calcularStatusPrazo(t.prazo);
                 const isConcluida = t.status === 'Concluída';
@@ -387,10 +462,10 @@ function TelaLogin({ onLoginSucesso }) {
   };
 
   return (
-    <div style={{ backgroundColor: '#121212', color: '#fff', minHeight: '100vh', width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', fontFamily: 'sans-serif', boxSizing: 'border-box' }}>
+    <div style={{ backgroundColor: '#121212', color: '#fff', minHeight: '100vh', width: '100vw', display: 'flex', justifyContent: 'center', alignItems: 'center', fontFamily: 'sans-serif', boxSizing: 'border-box' }}>
       <form onSubmit={handleLogin} style={{ background: '#1e1e1e', padding: '35px', borderRadius: '8px', width: '360px', boxShadow: '0 4px 15px rgba(0,0,0,0.6)', border: '1px solid #333', boxSizing: 'border-box' }}>
-        <h2 style={{ textAlign: 'center', marginBottom: '5px', color: '#4dabf7', fontSize: '18px' }}>NIIP - Pendências</h2>
-        <p style={{ textAlign: 'center', color: '#aaa', fontSize: '12px', marginBottom: '25px' }}>Núcleo de Informática e Inspeção de POPs</p>
+        <h2 style={{ textAlign: 'center', marginBottom: '5px', color: '#4dabf7', fontSize: '18px' }}>NIIP - Sistema Integrado</h2>
+        <p style={{ textAlign: 'center', color: '#aaa', fontSize: '12px', marginBottom: '25px' }}>Controle de Tarefas e Setores</p>
         
         {erro && <p style={{ color: '#ff6b6b', fontSize: '12px', marginBottom: '15px', background: '#2d1a1a', padding: '8px', borderRadius: '4px' }}>{erro}</p>}
         
@@ -402,7 +477,7 @@ function TelaLogin({ onLoginSucesso }) {
           <label style={{ display: 'block', fontSize: '12px', marginBottom: '5px', color: '#ccc' }}>Senha</label>
           <input type="password" value={senha} onChange={(e) => setSenha(e.target.value)} required style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #444', background: '#2d2d2d', color: '#fff', boxSizing: 'border-box' }} />
         </div>
-        <button type="submit" style={{ width: '100%', padding: '12px', background: '#007bff', border: 'none', color: '#fff', fontWeight: 'bold', borderRadius: '4px', cursor: 'pointer' }}>Entrar no NIIP</button>
+        <button type="submit" style={{ width: '100%', padding: '12px', background: '#007bff', border: 'none', color: '#fff', fontWeight: 'bold', borderRadius: '4px', cursor: 'pointer' }}>Entrar no Sistema</button>
       </form>
     </div>
   );
