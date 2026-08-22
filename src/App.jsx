@@ -179,10 +179,10 @@ export default function App() {
   const isGestor = nomeFormatado.includes('DUANDYS');
 
   return (
-    <div style={{ backgroundColor: '#121212', color: '#fff', minHeight: '100vh', width: '100vw', padding: '30px', fontFamily: 'sans-serif', boxSizing: 'border-box', margin: 0 }}>
+    <div style={{ backgroundColor: '#121212', color: '#fff', minHeight: '100vh', width: '100%', padding: '25px', fontFamily: 'sans-serif', boxSizing: 'border-box', margin: 0 }}>
       
       {/* HEADER */}
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #333', paddingBottom: '15px', marginBottom: '25px', flexWrap: 'wrap', gap: '15px' }}>
+      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #333', paddingBottom: '15px', marginBottom: '25px', flexWrap: 'wrap', gap: '15px', width: '100%', boxSizing: 'border-box' }}>
         <div>
           <h1 style={{ margin: '0 0 5px 0', fontSize: '22px', color: '#4dabf7' }}>NIIP - Núcleo de Informática e Inspeção de POPs</h1>
           <p style={{ margin: 0, fontSize: '13px', color: '#aaa' }}>
@@ -200,11 +200,11 @@ export default function App() {
         </div>
       </header>
 
-      {/* GRID EXPANDIDO DE PONTA A PONTA */}
-      <div style={{ display: 'grid', gridTemplateColumns: '400px 1fr', gap: '25px', alignItems: 'start' }}>
+      {/* GRID EXPANDIDO DE PONTA A PONTA COM RESPONSIVIDADE SEGURA */}
+      <div style={{ display: 'grid', gridTemplateColumns: '420px 1fr', gap: '25px', alignItems: 'start', width: '100%', boxSizing: 'border-box' }}>
         
         {/* COLUNA ESQUERDA: CADASTRAR TAREFA */}
-        <div style={{ background: '#1e1e1e', padding: '24px', borderRadius: '8px', border: '1px solid #333' }}>
+        <div style={{ background: '#1e1e1e', padding: '24px', borderRadius: '8px', border: '1px solid #333', boxSizing: 'border-box', width: '100%' }}>
           <h3 style={{ margin: '0 0 20px 0', color: '#fff', fontSize: '16px', borderBottom: '1px solid #444', paddingBottom: '10px' }}>➕ Nova Tarefa de Longo Prazo</h3>
           
           <form onSubmit={adicionarTarefa}>
@@ -277,7 +277,7 @@ export default function App() {
         </div>
 
         {/* COLUNA DIREITA: LISTAGEM DE TAREFAS */}
-        <div style={{ background: '#1e1e1e', padding: '24px', borderRadius: '8px', border: '1px solid #333' }}>
+        <div style={{ background: '#1e1e1e', padding: '24px', borderRadius: '8px', border: '1px solid #333', boxSizing: 'border-box', width: '100%' }}>
           
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #444', paddingBottom: '10px', flexWrap: 'wrap', gap: '12px' }}>
             <h3 style={{ margin: 0, color: '#fff', fontSize: '16px' }}>📋 Tarefas e Pendências em Andamento</h3>
@@ -299,7 +299,7 @@ export default function App() {
           {tarefasFiltradas.length === 0 ? (
             <p style={{ color: '#777', fontSize: '14px', textAlign: 'center', padding: '60px 0' }}>Nenhuma tarefa encontrada com os filtros selecionados.</p>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '15px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '15px', width: '100%', boxSizing: 'border-box' }}>
               {tarefasFiltradas.map((t) => {
                 const infoPrazo = calcularStatusPrazo(t.prazo);
                 const isConcluida = t.status === 'Concluída';
@@ -310,19 +310,19 @@ export default function App() {
                 else if (infoPrazo.status === 'hoje') borderLeftColor = '#ff9800';
 
                 return (
-                  <div key={t.id} style={{ background: '#252525', padding: '16px', borderRadius: '6px', borderLeft: `4px solid ${borderLeftColor}`, opacity: isConcluida ? 0.7 : 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                  <div key={t.id} style={{ background: '#252525', padding: '16px', borderRadius: '6px', borderLeft: `4px solid ${borderLeftColor}`, opacity: isConcluida ? 0.7 : 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box' }}>
                     <div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-                        <h4 style={{ margin: 0, fontSize: '15px', color: isConcluida ? '#aaa' : '#fff', textDecoration: isConcluida ? 'line-through' : 'none' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px', gap: '8px' }}>
+                        <h4 style={{ margin: 0, fontSize: '15px', color: isConcluida ? '#aaa' : '#fff', textDecoration: isConcluida ? 'line-through' : 'none', wordBreak: 'break-word' }}>
                           {t.titulo}
                         </h4>
-                        <span style={{ fontSize: '10px', padding: '3px 8px', borderRadius: '4px', background: t.prioridade === 'Crítica' ? '#b02a37' : t.prioridade === 'Alta' ? '#dc3545' : '#333', color: '#fff', fontWeight: 'bold' }}>
+                        <span style={{ fontSize: '10px', padding: '3px 8px', borderRadius: '4px', background: t.prioridade === 'Crítica' ? '#b02a37' : t.prioridade === 'Alta' ? '#dc3545' : '#333', color: '#fff', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
                           {t.prioridade}
                         </span>
                       </div>
 
                       {t.descricao && (
-                        <p style={{ margin: '0 0 12px 0', fontSize: '13px', color: '#ccc', lineHeight: '1.4' }}>
+                        <p style={{ margin: '0 0 12px 0', fontSize: '13px', color: '#ccc', lineHeight: '1.4', wordBreak: 'break-word' }}>
                           {t.descricao}
                         </p>
                       )}
@@ -387,8 +387,8 @@ function TelaLogin({ onLoginSucesso }) {
   };
 
   return (
-    <div style={{ backgroundColor: '#121212', color: '#fff', minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', fontFamily: 'sans-serif' }}>
-      <form onSubmit={handleLogin} style={{ background: '#1e1e1e', padding: '35px', borderRadius: '8px', width: '360px', boxShadow: '0 4px 15px rgba(0,0,0,0.6)', border: '1px solid #333' }}>
+    <div style={{ backgroundColor: '#121212', color: '#fff', minHeight: '100vh', width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', fontFamily: 'sans-serif', boxSizing: 'border-box' }}>
+      <form onSubmit={handleLogin} style={{ background: '#1e1e1e', padding: '35px', borderRadius: '8px', width: '360px', boxShadow: '0 4px 15px rgba(0,0,0,0.6)', border: '1px solid #333', boxSizing: 'border-box' }}>
         <h2 style={{ textAlign: 'center', marginBottom: '5px', color: '#4dabf7', fontSize: '18px' }}>NIIP - Pendências</h2>
         <p style={{ textAlign: 'center', color: '#aaa', fontSize: '12px', marginBottom: '25px' }}>Núcleo de Informática e Inspeção de POPs</p>
         
