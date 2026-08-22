@@ -71,16 +71,16 @@ const SETORES_DISPONIVEIS = [
     ativo: true 
   },
   { 
-    id: 'suporte', 
-    nome: 'Suporte Técnico e Redes', 
-    descricao: 'Chamados, atendimento de campo e redes estruturadas (Em breve).',
-    ativo: false 
+    id: 'noc', 
+    nome: 'NOC - Network Operations Center', 
+    descricao: 'Monitoramento de rede, incidentes e controle de enlaces.',
+    ativo: true 
   },
   { 
-    id: 'projetos', 
-    nome: 'Projetos e Infraestrutura', 
-    descricao: 'Planejamento de expansão, novos enlaces e servidores (Em breve).',
-    ativo: false 
+    id: 'nmr', 
+    nome: 'NMR - Núcleo de Manutenção de Redes', 
+    descricao: 'Equipes de campo, manutenções preventivas e corretivas.',
+    ativo: true 
   }
 ];
 
@@ -189,28 +189,29 @@ export default function App() {
   // 2. TELA DE SELEÇÃO DE SETOR
   if (!setorSelecionado) {
     return (
-      <div style={{ backgroundColor: 'var(--bg, #121212)', color: 'var(--text-h, #fff)', minHeight: '100vh', width: '100vw', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', fontFamily: 'sans-serif', padding: '20px', boxSizing: 'border-box' }}>
-        <div style={{ maxWidth: '600px', width: '100%', textAlign: 'center' }}>
+      <div style={{ backgroundColor: '#121212', color: '#fff', minHeight: '100vh', width: '100vw', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', fontFamily: 'sans-serif', padding: '20px', boxSizing: 'border-box' }}>
+        <div style={{ maxWidth: '650px', width: '100%', textAlign: 'center' }}>
           <h1 style={{ fontSize: '26px', color: '#4dabf7', marginBottom: '8px' }}>Selecione o Setor</h1>
-          <p style={{ color: '#aaa', fontSize: '14px', marginBottom: '30px' }}>Escolha o núcleo ou departamento que deseja gerenciar hoje:</p>
+          <p style={{ color: '#aaa', fontSize: '14px', marginBottom: '30px' }}>Escolha qual núcleo deseja gerenciar:</p>
           
           <div style={{ display: 'grid', gap: '15px' }}>
             {SETORES_DISPONIVEIS.map(setor => (
               <div 
                 key={setor.id} 
-                onClick={() => setor.ativo && setSetorSelecionado(setor.id)}
+                onClick={() => setSetorSelecionado(setor.id)}
                 style={{ 
-                  background: setor.ativo ? '#1e1e1e' : '#161616', 
-                  border: setor.ativo ? '1px solid #444' : '1px dashed #333', 
+                  background: '#1e1e1e', 
+                  border: '1px solid #444', 
                   padding: '20px', 
                   borderRadius: '8px', 
                   textAlign: 'left', 
-                  cursor: setor.ativo ? 'pointer' : 'not-allowed',
-                  opacity: setor.ativo ? 1 : 0.5,
-                  transition: 'border-color 0.2s'
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
                 }}
+                onMouseEnter={(e) => e.currentTarget.style.borderColor = '#4dabf7'}
+                onMouseLeave={(e) => e.currentTarget.style.borderColor = '#444'}
               >
-                <h3 style={{ margin: '0 0 6px 0', color: setor.ativo ? '#4dabf7' : '#777', fontSize: '18px' }}>{setor.nome}</h3>
+                <h3 style={{ margin: '0 0 6px 0', color: '#4dabf7', fontSize: '18px' }}>{setor.nome}</h3>
                 <p style={{ margin: 0, fontSize: '13px', color: '#aaa' }}>{setor.descricao}</p>
               </div>
             ))}
@@ -464,8 +465,8 @@ function TelaLogin({ onLoginSucesso }) {
   return (
     <div style={{ backgroundColor: '#121212', color: '#fff', minHeight: '100vh', width: '100vw', display: 'flex', justifyContent: 'center', alignItems: 'center', fontFamily: 'sans-serif', boxSizing: 'border-box' }}>
       <form onSubmit={handleLogin} style={{ background: '#1e1e1e', padding: '35px', borderRadius: '8px', width: '360px', boxShadow: '0 4px 15px rgba(0,0,0,0.6)', border: '1px solid #333', boxSizing: 'border-box' }}>
-        <h2 style={{ textAlign: 'center', marginBottom: '5px', color: '#4dabf7', fontSize: '18px' }}>NIIP - Sistema Integrado</h2>
-        <p style={{ textAlign: 'center', color: '#aaa', fontSize: '12px', marginBottom: '25px' }}>Controle de Tarefas e Setores</p>
+        <h2 style={{ textAlign: 'center', marginBottom: '5px', color: '#4dabf7', fontSize: '18px' }}>Sistema Integrado</h2>
+        <p style={{ textAlign: 'center', color: '#aaa', fontSize: '12px', marginBottom: '25px' }}>NIIP • NOC • NMR</p>
         
         {erro && <p style={{ color: '#ff6b6b', fontSize: '12px', marginBottom: '15px', background: '#2d1a1a', padding: '8px', borderRadius: '4px' }}>{erro}</p>}
         
