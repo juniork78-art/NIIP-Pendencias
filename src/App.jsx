@@ -179,50 +179,89 @@ export default function App() {
   const isGestor = nomeFormatado.includes('DUANDYS');
 
   return (
-    <div style={{ backgroundColor: '#121212', color: '#fff', minHeight: '100vh', padding: '20px', fontFamily: 'sans-serif', boxSizing: 'border-box' }}>
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #333', paddingBottom: '15px', marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
+    <div style={{ backgroundColor: '#121212', color: '#fff', minHeight: '100vh', width: '100vw', padding: '30px', fontFamily: 'sans-serif', boxSizing: 'border-box', margin: 0 }}>
+      
+      {/* HEADER */}
+      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #333', paddingBottom: '15px', marginBottom: '25px', flexWrap: 'wrap', gap: '15px' }}>
         <div>
-          <h1 style={{ margin: '0 0 5px 0', fontSize: '20px', color: '#4dabf7' }}>NIIP - Núcleo de Informática e Inspeção de POPs</h1>
+          <h1 style={{ margin: '0 0 5px 0', fontSize: '22px', color: '#4dabf7' }}>NIIP - Núcleo de Informática e Inspeção de POPs</h1>
           <p style={{ margin: 0, fontSize: '13px', color: '#aaa' }}>
             Usuário: <strong>{nomeFormatado}</strong> ({isGestor ? 'Gestor' : 'Integrante'})
           </p>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        
+        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
           {pendenciasUrgentesCount > 0 && (
-            <div style={{ background: '#ff4d4d', color: '#fff', padding: '6px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: 'bold' }}>
+            <div style={{ background: '#ff4d4d', color: '#fff', padding: '8px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: 'bold' }}>
               ⚠️ {pendenciasUrgentesCount} Tarefa(s) Vencida(s) ou para Hoje!
             </div>
           )}
-          <button onClick={() => signOut(auth)} style={{ background: '#dc3545', border: 'none', color: '#fff', padding: '8px 14px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>Sair</button>
+          <button onClick={() => signOut(auth)} style={{ background: '#dc3545', border: 'none', color: '#fff', padding: '9px 16px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>Sair</button>
         </div>
       </header>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
-        <div style={{ background: '#1e1e1e', padding: '20px', borderRadius: '8px', border: '1px solid #333', height: 'fit-content' }}>
-          <h3 style={{ margin: '0 0 15px 0', color: '#fff', fontSize: '16px', borderBottom: '1px solid #444', paddingBottom: '8px' }}>➕ Nova Tarefa de Longo Prazo</h3>
+      {/* GRID EXPANDIDO DE PONTA A PONTA */}
+      <div style={{ display: 'grid', gridTemplateColumns: '400px 1fr', gap: '25px', alignItems: 'start' }}>
+        
+        {/* COLUNA ESQUERDA: CADASTRAR TAREFA */}
+        <div style={{ background: '#1e1e1e', padding: '24px', borderRadius: '8px', border: '1px solid #333' }}>
+          <h3 style={{ margin: '0 0 20px 0', color: '#fff', fontSize: '16px', borderBottom: '1px solid #444', paddingBottom: '10px' }}>➕ Nova Tarefa de Longo Prazo</h3>
+          
           <form onSubmit={adicionarTarefa}>
-            <div style={{ marginBottom: '12px' }}>
-              <label style={{ display: 'block', fontSize: '12px', color: '#aaa', marginBottom: '4px' }}>Título da Tarefa *</label>
-              <input type="text" placeholder="Ex: Atualização geral dos switches do POP" value={titulo} onChange={(e) => setTitulo(e.target.value)} required style={{ width: '100%', padding: '9px', background: '#2d2d2d', border: '1px solid #444', color: '#fff', borderRadius: '4px', boxSizing: 'border-box' }} />
+            <div style={{ marginBottom: '15px' }}>
+              <label style={{ display: 'block', fontSize: '12px', color: '#aaa', marginBottom: '5px' }}>Título da Tarefa *</label>
+              <input 
+                type="text" 
+                placeholder="Ex: Atualização geral dos switches do POP" 
+                value={titulo} 
+                onChange={(e) => setTitulo(e.target.value)} 
+                required 
+                style={{ width: '100%', padding: '10px', background: '#2d2d2d', border: '1px solid #444', color: '#fff', borderRadius: '4px', boxSizing: 'border-box' }} 
+              />
             </div>
-            <div style={{ marginBottom: '12px' }}>
-              <label style={{ display: 'block', fontSize: '12px', color: '#aaa', marginBottom: '4px' }}>Descrição / Detalhes</label>
-              <textarea placeholder="Contexto, dependências ou motivo..." rows="3" value={descricao} onChange={(e) => setDescription(e.target.value)} style={{ width: '100%', padding: '9px', background: '#2d2d2d', border: '1px solid #444', color: '#fff', borderRadius: '4px', boxSizing: 'border-box' }} />
+
+            <div style={{ marginBottom: '15px' }}>
+              <label style={{ display: 'block', fontSize: '12px', color: '#aaa', marginBottom: '5px' }}>Descrição / Detalhes</label>
+              <textarea 
+                placeholder="Contexto, dependências ou motivo..." 
+                rows="4"
+                value={descricao} 
+                onChange={(e) => setDescription(e.target.value)} 
+                style={{ width: '100%', padding: '10px', background: '#2d2d2d', border: '1px solid #444', color: '#fff', borderRadius: '4px', boxSizing: 'border-box', resize: 'vertical' }} 
+              />
             </div>
-            <div style={{ marginBottom: '12px' }}>
-              <label style={{ display: 'block', fontSize: '12px', color: '#aaa', marginBottom: '4px' }}>Responsável (Integrante)</label>
-              <select value={responsavel} onChange={(e) => setResponsavel(e.target.value)} style={{ width: '100%', padding: '9px', background: '#2d2d2d', border: '1px solid #444', color: '#fff', borderRadius: '4px', boxSizing: 'border-box' }}>
-                {INTEGRANTES.map(nome => (<option key={nome} value={nome}>{nome}</option>))}
+
+            <div style={{ marginBottom: '15px' }}>
+              <label style={{ display: 'block', fontSize: '12px', color: '#aaa', marginBottom: '5px' }}>Responsável (Integrante)</label>
+              <select 
+                value={responsavel} 
+                onChange={(e) => setResponsavel(e.target.value)} 
+                style={{ width: '100%', padding: '10px', background: '#2d2d2d', border: '1px solid #444', color: '#fff', borderRadius: '4px', boxSizing: 'border-box' }}
+              >
+                {INTEGRANTES.map(nome => (
+                  <option key={nome} value={nome}>{nome}</option>
+                ))}
               </select>
             </div>
-            <div style={{ display: 'flex', gap: '10px', marginBottom: '12px' }}>
+
+            <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
               <div style={{ flex: 1 }}>
-                <label style={{ display: 'block', fontSize: '12px', color: '#aaa', marginBottom: '4px' }}>Data Limite (Prazo) *</label>
-                <input type="date" value={prazo} onChange={(e) => setPrazo(e.target.value)} required style={{ width: '100%', padding: '9px', background: '#2d2d2d', border: '1px solid #444', color: '#fff', borderRadius: '4px', boxSizing: 'border-box' }} />
+                <label style={{ display: 'block', fontSize: '12px', color: '#aaa', marginBottom: '5px' }}>Data Limite (Prazo) *</label>
+                <input 
+                  type="date" 
+                  value={prazo} 
+                  onChange={(e) => setPrazo(e.target.value)} 
+                  required 
+                  style={{ width: '100%', padding: '10px', background: '#2d2d2d', border: '1px solid #444', color: '#fff', borderRadius: '4px', boxSizing: 'border-box' }} 
+                />
               </div>
               <div style={{ flex: 1 }}>
-                <label style={{ display: 'block', fontSize: '12px', color: '#aaa', marginBottom: '4px' }}>Prioridade</label>
-                <select value={prioridade} onChange={(e) => setPrioridade(e.target.value)} style={{ width: '100%', padding: '9px', background: '#2d2d2d', border: '1px solid #444', color: '#fff', borderRadius: '4px', boxSizing: 'border-box' }}>
+                <label style={{ display: 'block', fontSize: '12px', color: '#aaa', marginBottom: '5px' }}>Prioridade</label>
+                <select 
+                  value={prioridade} 
+                  onChange={(e) => setPrioridade(e.target.value)} 
+                  style={{ width: '100%', padding: '10px', background: '#2d2d2d', border: '1px solid #444', color: '#fff', borderRadius: '4px', boxSizing: 'border-box' }}
+                >
                   <option value="Baixa">Baixa</option>
                   <option value="Média">Média</option>
                   <option value="Alta">Alta</option>
@@ -230,20 +269,27 @@ export default function App() {
                 </select>
               </div>
             </div>
-            <button type="submit" style={{ width: '100%', padding: '12px', background: '#28a745', border: 'none', color: '#fff', fontWeight: 'bold', borderRadius: '4px', cursor: 'pointer', marginTop: '5px' }}>Salvar Tarefa no Painel</button>
+
+            <button type="submit" style={{ width: '100%', padding: '12px', background: '#28a745', border: 'none', color: '#fff', fontWeight: 'bold', borderRadius: '4px', cursor: 'pointer' }}>
+              Salvar Tarefa no Painel
+            </button>
           </form>
         </div>
 
-        <div style={{ background: '#1e1e1e', padding: '20px', borderRadius: '8px', border: '1px solid #333', flex: 1 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', borderBottom: '1px solid #444', paddingBottom: '8px', flexWrap: 'wrap', gap: '10px' }}>
+        {/* COLUNA DIREITA: LISTAGEM DE TAREFAS */}
+        <div style={{ background: '#1e1e1e', padding: '24px', borderRadius: '8px', border: '1px solid #333' }}>
+          
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #444', paddingBottom: '10px', flexWrap: 'wrap', gap: '12px' }}>
             <h3 style={{ margin: 0, color: '#fff', fontSize: '16px' }}>📋 Tarefas e Pendências em Andamento</h3>
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-              <select value={filtroStatus} onChange={(e) => setFiltroStatus(e.target.value)} style={{ padding: '6px', background: '#2d2d2d', border: '1px solid #444', color: '#fff', borderRadius: '4px', fontSize: '12px' }}>
+            
+            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+              <select value={filtroStatus} onChange={(e) => setFiltroStatus(e.target.value)} style={{ padding: '8px', background: '#2d2d2d', border: '1px solid #444', color: '#fff', borderRadius: '4px', fontSize: '12px' }}>
                 <option value="todas">Status: Todas</option>
                 <option value="pendentes">Pendentes</option>
                 <option value="concluidas">Concluídas</option>
               </select>
-              <select value={filtroResponsavel} onChange={(e) => setFiltroResponsavel(e.target.value)} style={{ padding: '6px', background: '#2d2d2d', border: '1px solid #444', color: '#fff', borderRadius: '4px', fontSize: '12px' }}>
+
+              <select value={filtroResponsavel} onChange={(e) => setFiltroResponsavel(e.target.value)} style={{ padding: '8px', background: '#2d2d2d', border: '1px solid #444', color: '#fff', borderRadius: '4px', fontSize: '12px' }}>
                 <option value="todos">Responsável: Todos</option>
                 {INTEGRANTES.map(n => <option key={n} value={n}>{n}</option>)}
               </select>
@@ -251,38 +297,74 @@ export default function App() {
           </div>
 
           {tarefasFiltradas.length === 0 ? (
-            <p style={{ color: '#777', fontSize: '13px', textAlign: 'center', padding: '40px 0' }}>Nenhuma tarefa encontrada com os filtros selecionados.</p>
+            <p style={{ color: '#777', fontSize: '14px', textAlign: 'center', padding: '60px 0' }}>Nenhuma tarefa encontrada com os filtros selecionados.</p>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '600px', overflowY: 'auto' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '15px' }}>
               {tarefasFiltradas.map((t) => {
                 const infoPrazo = calcularStatusPrazo(t.prazo);
                 const isConcluida = t.status === 'Concluída';
+
                 let borderLeftColor = '#007bff';
                 if (isConcluida) borderLeftColor = '#28a745';
                 else if (infoPrazo.status === 'vencido') borderLeftColor = '#ff4d4d';
                 else if (infoPrazo.status === 'hoje') borderLeftColor = '#ff9800';
 
                 return (
-                  <div key={t.id} style={{ background: '#252525', padding: '14px', borderRadius: '6px', borderLeft: `4px solid ${borderLeftColor}`, opacity: isConcluida ? 0.7 : 1 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px' }}>
-                      <h4 style={{ margin: 0, fontSize: '15px', color: isConcluida ? '#aaa' : '#fff', textDecoration: isConcluida ? 'line-through' : 'none' }}>{t.titulo}</h4>
-                      <span style={{ fontSize: '10px', padding: '3px 8px', borderRadius: '4px', background: t.prioridade === 'Crítica' ? '#b02a37' : t.prioridade === 'Alta' ? '#dc3545' : '#333', color: '#fff', fontWeight: 'bold' }}>{t.prioridade}</span>
+                  <div key={t.id} style={{ background: '#252525', padding: '16px', borderRadius: '6px', borderLeft: `4px solid ${borderLeftColor}`, opacity: isConcluida ? 0.7 : 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                        <h4 style={{ margin: 0, fontSize: '15px', color: isConcluida ? '#aaa' : '#fff', textDecoration: isConcluida ? 'line-through' : 'none' }}>
+                          {t.titulo}
+                        </h4>
+                        <span style={{ fontSize: '10px', padding: '3px 8px', borderRadius: '4px', background: t.prioridade === 'Crítica' ? '#b02a37' : t.prioridade === 'Alta' ? '#dc3545' : '#333', color: '#fff', fontWeight: 'bold' }}>
+                          {t.prioridade}
+                        </span>
+                      </div>
+
+                      {t.descricao && (
+                        <p style={{ margin: '0 0 12px 0', fontSize: '13px', color: '#ccc', lineHeight: '1.4' }}>
+                          {t.descricao}
+                        </p>
+                      )}
                     </div>
-                    {t.descricao && (<p style={{ margin: '0 0 10px 0', fontSize: '13px', color: '#ccc', lineHeight: '1.4' }}>{t.descricao}</p>)}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', color: '#aaa', borderTop: '1px solid #333', paddingTop: '8px', flexWrap: 'wrap', gap: '6px' }}>
-                      <div>👤 Resp: <strong style={{ color: '#4dabf7' }}>{t.responsavel}</strong> | Criado por: {t.criadoPor}</div>
-                      <div><span className={infoPrazo.status === 'vencido' ? 'alerta-vencido' : infoPrazo.status === 'hoje' ? 'alerta-hoje' : ''} style={{ color: infoPrazo.status === 'normal' ? '#aaa' : undefined }}>📅 {infoPrazo.texto}</span></div>
+
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', color: '#aaa', borderTop: '1px solid #333', paddingTop: '10px', marginBottom: '12px', flexWrap: 'wrap', gap: '6px' }}>
+                        <div>
+                          👤 <strong style={{ color: '#4dabf7' }}>{t.responsavel}</strong>
+                        </div>
+                        <div>
+                          <span className={infoPrazo.status === 'vencido' ? 'alerta-vencido' : infoPrazo.status === 'hoje' ? 'alerta-hoje' : ''} style={{ color: infoPrazo.status === 'normal' ? '#aaa' : undefined }}>
+                            📅 {infoPrazo.texto}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                        <button 
+                          onClick={() => alternarStatus(t)}
+                          style={{ background: isConcluida ? '#6c757d' : '#28a745', border: 'none', color: '#fff', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}
+                        >
+                          {isConcluida ? 'Marcar Pendente' : '✔ Concluir'}
+                        </button>
+                        
+                        <button 
+                          onClick={() => excluirTarefa(t.id)}
+                          style={{ background: '#333', border: '1px solid #555', color: '#ff6b6b', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px' }}
+                        >
+                          Excluir
+                        </button>
+                      </div>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '10px' }}>
-                      <button onClick={() => alternarStatus(t)} style={{ background: isConcluida ? '#6c757d' : '#28a745', border: 'none', color: '#fff', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}>{isConcluida ? 'Marcar como Pendente' : '✔ Concluir Tarefa'}</button>
-                      <button onClick={() => excluirTarefa(t.id)} style={{ background: '#333', border: '1px solid #555', color: '#ff6b6b', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px' }}>Excluir</button>
-                    </div>
+
                   </div>
                 );
               })}
             </div>
           )}
+
         </div>
+
       </div>
     </div>
   );
@@ -309,7 +391,9 @@ function TelaLogin({ onLoginSucesso }) {
       <form onSubmit={handleLogin} style={{ background: '#1e1e1e', padding: '35px', borderRadius: '8px', width: '360px', boxShadow: '0 4px 15px rgba(0,0,0,0.6)', border: '1px solid #333' }}>
         <h2 style={{ textAlign: 'center', marginBottom: '5px', color: '#4dabf7', fontSize: '18px' }}>NIIP - Pendências</h2>
         <p style={{ textAlign: 'center', color: '#aaa', fontSize: '12px', marginBottom: '25px' }}>Núcleo de Informática e Inspeção de POPs</p>
+        
         {erro && <p style={{ color: '#ff6b6b', fontSize: '12px', marginBottom: '15px', background: '#2d1a1a', padding: '8px', borderRadius: '4px' }}>{erro}</p>}
+        
         <div style={{ marginBottom: '15px' }}>
           <label style={{ display: 'block', fontSize: '12px', marginBottom: '5px', color: '#ccc' }}>E-mail da Equipe</label>
           <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="seu.email@exemplo.com" style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #444', background: '#2d2d2d', color: '#fff', boxSizing: 'border-box' }} />
