@@ -579,10 +579,10 @@ export default function App() {
           {tarefasResolvidas.length === 0 ? (
             <p style={{ color: theme.textMuted, fontSize: '14px', textAlign: 'center', padding: '60px 0' }}>Nenhuma tarefa resolvida neste setor ainda.</p>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '15px', width: '100%', boxSizing: 'border-box' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '15px', width: '100%', boxSizing: 'border-box' }}>
               {tarefasResolvidas.map((t) => {
                 return (
-                  <div key={t.id} style={{ background: theme.cardInner, padding: '16px', borderRadius: '6px', borderLeft: '4px solid #28a745', border: `1px solid ${theme.border}`, borderLeftWidth: '4px', opacity: 0.9, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box' }}>
+                  <div key={t.id} style={{ background: theme.cardInner, padding: '16px', borderRadius: '6px', borderLeft: '4px solid #28a745', border: `1px solid ${theme.border}`, borderLeftWidth: '4px', opacity: 0.9, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box', width: '300px', flex: '1 1 280px' }}>
                     <div>
                       <h4 style={{ margin: '0 0 8px 0', fontSize: '15px', color: theme.textMuted, wordBreak: 'break-word', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                         <span>{t.titulo}</span>
@@ -801,7 +801,7 @@ export default function App() {
           </form>
         </div>
 
-        {/* COLUNA DIREITA: LISTAGEM DE TAREFAS DIVIDIDA POR SEÇÕES HIERÁRQUICAS */}
+        {/* COLUNA DIREITA: LISTAGEM DE TAREFAS COM QUEBRA AUTOMÁTICA PARA BAIXO */}
         <div style={{ background: theme.cardBg, padding: '24px', borderRadius: '8px', border: `1px solid ${theme.border}`, width: '100%', boxSizing: 'border-box' }}>
           
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: `1px solid ${theme.border}`, paddingBottom: '10px', flexWrap: 'wrap', gap: '12px' }}>
@@ -826,7 +826,7 @@ export default function App() {
                   <h4 style={{ margin: '0 0 12px 0', fontSize: '13px', color: '#ffc107', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '1px solid #ffc107', paddingBottom: '6px' }}>
                     ⭐ Especialistas ({tarefasEspecialistas.length})
                   </h4>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '12px' }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
                     {tarefasEspecialistas.map(t => renderizarCardTarefa(t))}
                   </div>
                 </div>
@@ -838,7 +838,7 @@ export default function App() {
                   <h4 style={{ margin: '0 0 12px 0', fontSize: '13px', color: '#4dabf7', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '1px solid #4dabf7', paddingBottom: '6px' }}>
                     🔷 NOC N3 ({tarefasN3.length})
                   </h4>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '12px' }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
                     {tarefasN3.map(t => renderizarCardTarefa(t))}
                   </div>
                 </div>
@@ -850,7 +850,7 @@ export default function App() {
                   <h4 style={{ margin: '0 0 12px 0', fontSize: '13px', color: '#20c997', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '1px solid #20c997', paddingBottom: '6px' }}>
                     🟢 N1 ({tarefasN1.length})
                   </h4>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '12px' }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
                     {tarefasN1.map(t => renderizarCardTarefa(t))}
                   </div>
                 </div>
@@ -940,7 +940,7 @@ export default function App() {
     </div>
   );
 
-  // FUNÇÃO AUXILIAR PARA RENDERIZAR CADA CARD DE TAREFA
+  // FUNÇÃO AUXILIAR PARA RENDERIZAR CADA CARD DE TAREFA (COM LARGURA FLEXÍVEL PARA QUEBRAR LINHA)
   function renderizarCardTarefa(t) {
     const infoPrazo = calcularStatusPrazo(t.prazo);
     const isResponsavelPelaTarefa = nomeFormatadoGlobal.includes(t.responsavel.toUpperCase());
@@ -948,7 +948,7 @@ export default function App() {
     const isUrgente = infoPrazo.status === 'vencido' || infoPrazo.status === 'hoje' || infoPrazo.status === 'um_dia';
 
     return (
-      <div key={t.id} className={isUrgente ? 'card-piscando' : ''} style={{ background: theme.cardBg, padding: '16px', borderRadius: '6px', border: `1px solid ${theme.border}`, borderLeft: isUrgente ? undefined : `4px solid #007bff`, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box' }}>
+      <div key={t.id} className={isUrgente ? 'card-piscando' : ''} style={{ background: theme.cardBg, padding: '16px', borderRadius: '6px', border: `1px solid ${theme.border}`, borderLeft: isUrgente ? undefined : `4px solid #007bff`, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box', width: '280px', flex: '1 1 260px' }}>
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px', gap: '8px' }}>
             <h4 style={{ margin: 0, fontSize: '15px', color: theme.textMain, wordBreak: 'break-word' }}>
