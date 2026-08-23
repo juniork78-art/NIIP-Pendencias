@@ -27,9 +27,9 @@ style.innerHTML = `
     animation: piscar 2s infinite;
     font-weight: bold;
   }
-  .alerta-hoje {
-    color: #ff9800 !important;
-    font-weight: bold;
+  .card-piscando {
+    border-left: 4px solid #ff4d4d !important;
+    animation: piscar 2s infinite;
   }
 `;
 document.head.appendChild(style);
@@ -53,6 +53,7 @@ const calcularStatusPrazo = (dataStr) => {
 
       if (diffDays < 0) return { status: 'vencido', texto: `Vencido há ${Math.abs(diffDays)} dia(s) (${dataFormatada})` };
       if (diffDays === 0) return { status: 'hoje', texto: `Vence HOJE (${dataFormatada})` };
+      if (diffDays === 1) return { status: 'um_dia', texto: `Vence AMANHÃ (${dataFormatada})` };
       if (diffDays <= 3) return { status: 'proximo', texto: `Vence em ${diffDays} dia(s) (${dataFormatada})` };
       return { status: 'normal', texto: `Prazo: ${dataFormatada}` };
     }
@@ -342,7 +343,7 @@ export default function App() {
   const pendenciasUrgentesCount = tarefas.filter(t => {
     if (t.status === 'Resolvida') return false;
     const st = calcularStatusPrazo(t.prazo);
-    return st.status === 'vencido' || st.status === 'hoje';
+    return st.status === 'vencido' || st.status === 'hoje' || st.status === 'um_dia';
   }).length;
 
   const tarefasAndamento = tarefas.filter(t => t.status !== 'Resolvida');
@@ -463,7 +464,7 @@ export default function App() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '15px', flexWrap: 'wrap' }}>
           {pendenciasUrgentesCount > 0 && (
             <div style={{ background: '#ff4d4d', color: '#fff', padding: '8px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: 'bold' }}>
-              ⚠️ {pendenciasUrgentesCount} Tarefa(s) Vencida(s) ou para Hoje!
+              ⚠️ {pendenciasUrgentesCount} Tarefa(s) Vencida(s) ou Próximas do Vencimento!
             </div>
           )}
           
@@ -581,12 +582,10 @@ export default function App() {
                 const isResponsavelPelaTarefa = nomeFormatadoGlobal.includes(t.responsavel.toUpperCase());
                 const podeAgerir = isGestor || isResponsavelPelaTarefa;
 
-                let borderLeftColor = '#007bff';
-                if (infoPrazo.status === 'vencido') borderLeftColor = '#ff4d4d';
-                else if (infoPrazo.status === 'hoje') borderLeftColor = '#ff9800';
+                const isUrgente = infoPrazo.status === 'vencido' || infoPrazo.status === 'hoje' || infoPrazo.status === 'um_dia';
 
                 return (
-                  <div key={t.id} style={{ background: theme.cardInner, padding: '16px', borderRadius: '6px', border: `1px solid ${theme.border}`, borderLeft: `4px solid ${borderLeftColor}`, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box' }}>
+                  <div key={t.id} className={isUrgente ? 'card-piscando' : ''} style={{ background: theme.cardInner, padding: '16px', borderRadius: '6px', border: `1px solid ${theme.border}`, borderLeft: isUrgente ? undefined : `4px solid #007bff`, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box' }}>
                     <div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px', gap: '8px' }}>
                         <h4 style={{ margin: 0, fontSize: '15px', color: theme.textMain, wordBreak: 'break-word' }}>
@@ -610,7 +609,7 @@ export default function App() {
                           👤 <strong style={{ color: '#4dabf7' }}>{t.responsavel}</strong>
                         </div>
                         <div>
-                          <span className={infoPrazo.status === 'vencido' ? 'alerta-vencido' : infoPrazo.status === 'hoje' ? 'alerta-hoje' : ''} style={{ color: infoPrazo.status === 'normal' ? theme.textMuted : undefined }}>
+                          <span className={isUrgente ? 'alerta-vencido' : ''} style={{ color: infoPrazo.status === 'normal' ? theme.textMuted : undefined }}>
                             📅 {infoPrazo.texto}
                           </span>
                         </div>
