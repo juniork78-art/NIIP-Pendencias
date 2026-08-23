@@ -212,7 +212,9 @@ export default function App() {
   const nomeFormatado = usuarioLogado.split('@')[0].replace('.', ' ').toUpperCase();
   const isGestor = nomeFormatado.includes('DUANDYS');
   const isEspecialista = nomeFormatado.includes('GILVAN') || nomeFormatado.includes('STEVAN');
-  const tipoCargo = isGestor ? 'Gestor' : isEspecialista ? 'Especialista' : 'Integrante';
+  const isTecnicoN1 = nomeFormatado.includes('FRANCISCO') || nomeFormatado.includes('GABRIEL') || nomeFormatado.includes('WALGNEY');
+  
+  const tipoCargo = isGestor ? 'Gestor' : isEspecialista ? 'Especialista' : isTecnicoN1 ? 'Técnico N1' : 'Integrante';
 
   if (!setorSelecionado && isGestor) {
     return (
