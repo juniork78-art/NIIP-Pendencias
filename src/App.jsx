@@ -436,8 +436,9 @@ export default function App() {
                 return (
                   <div key={t.id} style={{ background: theme.cardInner, padding: '16px', borderRadius: '6px', borderLeft: '4px solid #28a745', border: `1px solid ${theme.border}`, borderLeftWidth: '4px', opacity: 0.9, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box' }}>
                     <div>
-                      <h4 style={{ margin: '0 0 8px 0', fontSize: '15px', color: theme.textMuted, textDecoration: 'line-through', wordBreak: 'break-word' }}>
-                        {t.titulo}
+                      <h4 style={{ margin: '0 0 8px 0', fontSize: '15px', color: theme.textMuted, wordBreak: 'break-word', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                        <span>{t.titulo}</span>
+                        <span style={{ fontSize: '11px', color: '#28a745', fontWeight: 'bold' }}>(Resolvido)</span>
                       </h4>
                       {t.descricao && (
                         <p style={{ margin: '0 0 12px 0', fontSize: '13px', color: theme.textMuted, lineHeight: '1.4', wordBreak: 'break-word' }}>
