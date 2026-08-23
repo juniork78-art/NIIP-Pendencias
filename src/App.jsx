@@ -582,7 +582,7 @@ export default function App() {
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '15px', width: '100%', boxSizing: 'border-box' }}>
               {tarefasResolvidas.map((t) => {
                 return (
-                  <div key={t.id} style={{ background: theme.cardInner, padding: '16px', borderRadius: '6px', borderLeft: '4px solid #28a745', border: `1px solid ${theme.border}`, borderLeftWidth: '4px', opacity: 0.9, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box', width: '300px', flex: '1 1 280px' }}>
+                  <div key={t.id} style={{ background: theme.cardInner, padding: '16px', borderRadius: '6px', borderLeft: '4px solid #28a745', border: `1px solid ${theme.border}`, borderLeftWidth: '4px', opacity: 0.9, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box', width: '320px' }}>
                     <div>
                       <h4 style={{ margin: '0 0 8px 0', fontSize: '15px', color: theme.textMuted, wordBreak: 'break-word', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                         <span>{t.titulo}</span>
@@ -801,7 +801,7 @@ export default function App() {
           </form>
         </div>
 
-        {/* COLUNA DIREITA: LISTAGEM DE TAREFAS COM QUEBRA AUTOMÁTICA PARA BAIXO */}
+        {/* COLUNA DIREITA: LISTAGEM DE TAREFAS COM CARDS DE TAMANHO FIXO E QUEBRA AUTOMÁTICA */}
         <div style={{ background: theme.cardBg, padding: '24px', borderRadius: '8px', border: `1px solid ${theme.border}`, width: '100%', boxSizing: 'border-box' }}>
           
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: `1px solid ${theme.border}`, paddingBottom: '10px', flexWrap: 'wrap', gap: '12px' }}>
@@ -940,7 +940,7 @@ export default function App() {
     </div>
   );
 
-  // FUNÇÃO AUXILIAR PARA RENDERIZAR CADA CARD DE TAREFA (COM LARGURA FLEXÍVEL PARA QUEBRAR LINHA)
+  // FUNÇÃO AUXILIAR PARA RENDERIZAR CADA CARD DE TAREFA (COM TAMANHO FIXO PADRÃO)
   function renderizarCardTarefa(t) {
     const infoPrazo = calcularStatusPrazo(t.prazo);
     const isResponsavelPelaTarefa = nomeFormatadoGlobal.includes(t.responsavel.toUpperCase());
@@ -948,7 +948,7 @@ export default function App() {
     const isUrgente = infoPrazo.status === 'vencido' || infoPrazo.status === 'hoje' || infoPrazo.status === 'um_dia';
 
     return (
-      <div key={t.id} className={isUrgente ? 'card-piscando' : ''} style={{ background: theme.cardBg, padding: '16px', borderRadius: '6px', border: `1px solid ${theme.border}`, borderLeft: isUrgente ? undefined : `4px solid #007bff`, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box', width: '280px', flex: '1 1 260px' }}>
+      <div key={t.id} className={isUrgente ? 'card-piscando' : ''} style={{ background: theme.cardBg, padding: '16px', borderRadius: '6px', border: `1px solid ${theme.border}`, borderLeft: isUrgente ? undefined : `4px solid #007bff`, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box', width: '310px' }}>
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px', gap: '8px' }}>
             <h4 style={{ margin: 0, fontSize: '15px', color: theme.textMain, wordBreak: 'break-word' }}>
