@@ -67,20 +67,17 @@ const SETORES_DISPONIVEIS = [
   { 
     id: 'niip', 
     nome: 'NIIP - Núcleo de Informática e Inspeção de POPs', 
-    descricao: 'Gestão de tarefas, prazos e manutenções da infraestrutura de POPs.',
-    ativo: true 
+    descricao: 'Gestão de tarefas, prazos e manutenções da infraestrutura de POPs.'
   },
   { 
     id: 'noc', 
     nome: 'NOC - Network Operations Center', 
-    descricao: 'Monitoramento de rede, incidentes e controle de enlaces.',
-    ativo: true 
+    descricao: 'Monitoramento de rede, incidentes e controle de enlaces.'
   },
   { 
     id: 'nmr', 
-    nome: 'NMR - Núcleo de Monitoramento', 
-    descricao: 'Acompanhamento de alertas, métricas e supervisão contínua.',
-    ativo: true 
+    nome: 'Núcleo de Monitoramento', 
+    descricao: 'Acompanhamento de alertas, métricas e supervisão contínua.'
   }
 ];
 
@@ -103,6 +100,11 @@ export default function App() {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         setUsuarioLogado(user.email);
+        const emailLower = user.email.toLowerCase();
+        // Se NÃO for o gestor (duandys), trava direto no setor 'niip'
+        if (!emailLower.includes('duandys')) {
+          setSetorSelecionado('niip');
+        }
       } else {
         setUsuarioLogado(null);
         setSetorSelecionado(null);
@@ -186,13 +188,16 @@ export default function App() {
     return <TelaLogin onLoginSucesso={(email) => setUsuarioLogado(email)} />;
   }
 
-  // 2. TELA DE SELEÇÃO DE SETOR
-  if (!setorSelecionado) {
+  const nomeFormatado = usuarioLogado.split('@')[0].replace('.', ' ').toUpperCase();
+  const isGestor = nomeFormatado.includes('DUANDYS');
+
+  // 2. TELA DE SELEÇÃO DE SETOR (Exclusiva para o Gestor)
+  if (!setorSelecionado && isGestor) {
     return (
       <div style={{ backgroundColor: '#121212', color: '#fff', minHeight: '100vh', width: '100vw', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', fontFamily: 'sans-serif', padding: '20px', boxSizing: 'border-box' }}>
         <div style={{ maxWidth: '650px', width: '100%', textAlign: 'center' }}>
           <h1 style={{ fontSize: '26px', color: '#4dabf7', marginBottom: '8px' }}>Selecione o Setor</h1>
-          <p style={{ color: '#aaa', fontSize: '14px', marginBottom: '30px' }}>Escolha qual núcleo deseja gerenciar:</p>
+          <p style={{ color: '#aaa', fontSize: '14px', marginBottom: '30px' }}>Painel do Gestor - Escolha qual núcleo deseja administrar:</p>
           
           <div style={{ display: 'grid', gap: '15px' }}>
             {SETORES_DISPONIVEIS.map(setor => (
@@ -229,7 +234,7 @@ export default function App() {
   }
 
   // 3. TELA DE PENDÊNCIAS DO SETOR SELECIONADO
-  const setorAtualInfo = SETORES_DISPONIVEIS.find(s => s.id === setorSelecionado);
+  const setorAtualInfo = SETORES_DISPONIVEIS.find(s => s.id === setorSelecionado) || SETORES_DISPONIVEIS[0];
   const pendenciasUrgentesCount = tarefas.filter(t => {
     if (t.status === 'Concluída') return false;
     const st = calcularStatusPrazo(t.prazo);
@@ -243,9 +248,6 @@ export default function App() {
     return true;
   });
 
-  const nomeFormatado = usuarioLogado.split('@')[0].replace('.', ' ').toUpperCase();
-  const isGestor = nomeFormatado.includes('DUANDYS');
-
   return (
     <div style={{ backgroundColor: '#121212', color: '#fff', minHeight: '100vh', width: '100vw', padding: '20px 30px', fontFamily: 'sans-serif', boxSizing: 'border-box', overflowX: 'hidden' }}>
       
@@ -253,12 +255,14 @@ export default function App() {
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #333', paddingBottom: '15px', marginBottom: '25px', flexWrap: 'wrap', gap: '15px', width: '100%' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
-            <button 
-              onClick={() => setSetorSelecionado(null)} 
-              style={{ background: '#333', border: 'none', color: '#fff', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px' }}
-            >
-              ← Trocar Setor
-            </button>
+            {isGestor && (
+              <button 
+                onClick={() => setSetorSelecionado(null)} 
+                style={{ background: '#333', border: 'none', color: '#fff', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px' }}
+              >
+                ← Trocar Setor
+              </button>
+            )}
             <span style={{ fontSize: '12px', color: '#4dabf7', fontWeight: 'bold' }}>[{setorAtualInfo.nome}]</span>
           </div>
           <p style={{ margin: 0, fontSize: '13px', color: '#aaa' }}>
