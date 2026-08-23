@@ -89,6 +89,7 @@ export default function App() {
   const [loadingAuth, setLoadingAuth] = useState(true);
   const [setorSelecionado, setSetorSelecionado] = useState(null);
   const [paginaAtual, setPaginaAtual] = useState('andamento'); // 'andamento' ou 'resolvidas'
+  const [darkMode, setDarkMode] = useState(true);
   
   const [tarefas, setTarefas] = useState([]);
   const [titulo, setTitulo] = useState('');
@@ -248,12 +249,25 @@ export default function App() {
     }
   };
 
+  // Cores dinâmicas para Tema Escuro / Claro
+  const theme = {
+    bg: darkMode ? '#121212' : '#f4f6f9',
+    cardBg: darkMode ? '#1e1e1e' : '#ffffff',
+    cardInner: darkMode ? '#252525' : '#fdfdfd',
+    textMain: darkMode ? '#fff' : '#212529',
+    textMuted: darkMode ? '#aaa' : '#6c757d',
+    border: darkMode ? '#333' : '#ced4da',
+    inputBg: darkMode ? '#2d2d2d' : '#ffffff',
+    inputText: darkMode ? '#fff' : '#212529',
+    primary: '#007bff'
+  };
+
   if (loadingAuth) {
-    return <div style={{ color: '#fff', textAlign: 'center', marginTop: '20vh', fontFamily: 'sans-serif' }}>Carregando sistema...</div>;
+    return <div style={{ color: theme.textMain, backgroundColor: theme.bg, textAlign: 'center', marginTop: '20vh', fontFamily: 'sans-serif', minHeight: '100vh' }}>Carregando sistema...</div>;
   }
 
   if (!usuarioLogado) {
-    return <TelaLogin onLoginSucesso={(email) => setUsuarioLogado(email)} />;
+    return <TelaLogin onLoginSucesso={(email) => setUsuarioLogado(email)} darkMode={darkMode} setDarkMode={setDarkMode} theme={theme} />;
   }
 
   const isGestor = nomeFormatadoGlobal.includes('DUANDYS');
@@ -264,10 +278,17 @@ export default function App() {
 
   if (!setorSelecionado && isGestor) {
     return (
-      <div style={{ backgroundColor: '#121212', color: '#fff', minHeight: '100vh', width: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', fontFamily: 'sans-serif', padding: '20px', boxSizing: 'border-box' }}>
+      <div style={{ backgroundColor: theme.bg, color: theme.textMain, minHeight: '100vh', width: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', fontFamily: 'sans-serif', padding: '20px', boxSizing: 'border-box', position: 'relative' }}>
+        <button 
+          onClick={() => setDarkMode(!darkMode)}
+          style={{ position: 'absolute', top: '20px', right: '20px', background: theme.cardBg, border: `1px solid ${theme.border}`, color: theme.textMain, padding: '8px 14px', borderRadius: '20px', cursor: 'pointer', fontSize: '13px', fontWeight: 'bold' }}
+        >
+          {darkMode ? '☀️ Modo Claro' : '🌙 Modo Escuro'}
+        </button>
+
         <div style={{ maxWidth: '650px', width: '100%', textAlign: 'center' }}>
           <h1 style={{ fontSize: '26px', color: '#4dabf7', marginBottom: '8px' }}>Selecione o Setor</h1>
-          <p style={{ color: '#aaa', fontSize: '14px', marginBottom: '30px' }}>Painel do Gestor - Escolha qual núcleo deseja administrar:</p>
+          <p style={{ color: theme.textMuted, fontSize: '14px', marginBottom: '30px' }}>Painel do Gestor - Escolha qual núcleo deseja administrar:</p>
           
           <div style={{ display: 'grid', gap: '15px' }}>
             {SETORES_DISPONIVEIS.map(setor => (
@@ -275,8 +296,8 @@ export default function App() {
                 key={setor.id} 
                 onClick={() => { setSetorSelecionado(setor.id); setPaginaAtual('andamento'); }}
                 style={{ 
-                  background: '#1e1e1e', 
-                  border: '1px solid #444', 
+                  background: theme.cardBg, 
+                  border: `1px solid ${theme.border}`, 
                   padding: '20px', 
                   borderRadius: '8px', 
                   textAlign: 'left', 
@@ -284,10 +305,10 @@ export default function App() {
                   transition: 'all 0.2s'
                 }}
                 onMouseEnter={(e) => e.currentTarget.style.borderColor = '#4dabf7'}
-                onMouseLeave={(e) => e.currentTarget.style.borderColor = '#444'}
+                onMouseLeave={(e) => e.currentTarget.style.borderColor = theme.border}
               >
                 <h3 style={{ margin: '0 0 6px 0', color: '#4dabf7', fontSize: '18px' }}>{setor.nome}</h3>
-                <p style={{ margin: 0, fontSize: '13px', color: '#aaa' }}>{setor.descricao}</p>
+                <p style={{ margin: 0, fontSize: '13px', color: theme.textMuted }}>{setor.descricao}</p>
               </div>
             ))}
           </div>
@@ -321,30 +342,38 @@ export default function App() {
   // TELA INTERNA DE TAREFAS RESOLVIDAS
   if (paginaAtual === 'resolvidas') {
     return (
-      <div style={{ backgroundColor: '#121212', color: '#fff', minHeight: '100vh', width: '100%', padding: '24px', fontFamily: 'sans-serif', boxSizing: 'border-box' }}>
-        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #333', paddingBottom: '15px', marginBottom: '25px', flexWrap: 'wrap', gap: '15px', width: '100%', boxSizing: 'border-box' }}>
+      <div style={{ backgroundColor: theme.bg, color: theme.textMain, minHeight: '100vh', width: '100%', padding: '24px', fontFamily: 'sans-serif', boxSizing: 'border-box' }}>
+        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `1px solid ${theme.border}`, paddingBottom: '15px', marginBottom: '25px', flexWrap: 'wrap', gap: '15px', width: '100%', boxSizing: 'border-box' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
               <button 
                 onClick={() => setPaginaAtual('andamento')} 
-                style={{ background: '#333', border: 'none', color: '#fff', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}
+                style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, color: theme.textMain, padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}
               >
                 ← Voltar para Pendências
               </button>
               <span style={{ fontSize: '13px', color: '#28a745', fontWeight: 'bold' }}>[{setorAtualInfo.nome} - Resolvidas]</span>
             </div>
-            <p style={{ margin: 0, fontSize: '13px', color: '#aaa' }}>
+            <p style={{ margin: 0, fontSize: '13px', color: theme.textMuted }}>
               Usuário: <strong>{nomeFormatadoGlobal}</strong> ({tipoCargo})
             </p>
           </div>
-          <button onClick={() => signOut(auth)} style={{ background: '#dc3545', border: 'none', color: '#fff', padding: '9px 16px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}>Sair</button>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+            <button 
+              onClick={() => setDarkMode(!darkMode)}
+              style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, color: theme.textMain, padding: '8px 14px', borderRadius: '20px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}
+            >
+              {darkMode ? '☀️ Modo Claro' : '🌙 Modo Escuro'}
+            </button>
+            <button onClick={() => signOut(auth)} style={{ background: '#dc3545', border: 'none', color: '#fff', padding: '9px 16px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}>Sair</button>
+          </div>
         </header>
 
-        <div style={{ background: '#1e1e1e', padding: '24px', borderRadius: '8px', border: '1px solid #333', width: '100%', boxSizing: 'border-box' }}>
-          <h3 style={{ margin: '0 0 20px 0', color: '#28a745', fontSize: '18px', borderBottom: '1px solid #444', paddingBottom: '10px' }}>✅ Tarefas Resolvidas ({tarefasResolvidas.length})</h3>
+        <div style={{ background: theme.cardBg, padding: '24px', borderRadius: '8px', border: `1px solid ${theme.border}`, width: '100%', boxSizing: 'border-box' }}>
+          <h3 style={{ margin: '0 0 20px 0', color: '#28a745', fontSize: '18px', borderBottom: `1px solid ${theme.border}`, paddingBottom: '10px' }}>✅ Tarefas Resolvidas ({tarefasResolvidas.length})</h3>
 
           {tarefasResolvidas.length === 0 ? (
-            <p style={{ color: '#777', fontSize: '14px', textAlign: 'center', padding: '60px 0' }}>Nenhuma tarefa resolvida neste setor ainda.</p>
+            <p style={{ color: theme.textMuted, fontSize: '14px', textAlign: 'center', padding: '60px 0' }}>Nenhuma tarefa resolvida neste setor ainda.</p>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '15px', width: '100%', boxSizing: 'border-box' }}>
               {tarefasResolvidas.map((t) => {
@@ -352,24 +381,24 @@ export default function App() {
                 const podeAgerir = isGestor || isResponsavelPelaTarefa;
 
                 return (
-                  <div key={t.id} style={{ background: '#252525', padding: '16px', borderRadius: '6px', borderLeft: '4px solid #28a745', opacity: 0.9, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box' }}>
+                  <div key={t.id} style={{ background: theme.cardInner, padding: '16px', borderRadius: '6px', borderLeft: '4px solid #28a745', border: `1px solid ${theme.border}`, borderLeftWidth: '4px', opacity: 0.9, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box' }}>
                     <div>
-                      <h4 style={{ margin: '0 0 8px 0', fontSize: '15px', color: '#aaa', textDecoration: 'line-through', wordBreak: 'break-word' }}>
+                      <h4 style={{ margin: '0 0 8px 0', fontSize: '15px', color: theme.textMuted, textDecoration: 'line-through', wordBreak: 'break-word' }}>
                         {t.titulo}
                       </h4>
                       {t.descricao && (
-                        <p style={{ margin: '0 0 12px 0', fontSize: '13px', color: '#888', lineHeight: '1.4', wordBreak: 'break-word' }}>
+                        <p style={{ margin: '0 0 12px 0', fontSize: '13px', color: theme.textMuted, lineHeight: '1.4', wordBreak: 'break-word' }}>
                           {t.descricao}
                         </p>
                       )}
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', color: '#aaa', borderTop: '1px solid #333', paddingTop: '10px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', color: theme.textMuted, borderTop: `1px solid ${theme.border}`, paddingTop: '10px' }}>
                       <span>👤 <strong style={{ color: '#4dabf7' }}>{t.responsavel}</strong></span>
                       <div style={{ display: 'flex', gap: '6px' }}>
                         {podeAgerir && (
                           <button 
                             onClick={() => reabrirTarefa(t)}
-                            style={{ background: '#333', border: '1px solid #555', color: '#ffc107', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}
+                            style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, color: '#ffc107', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}
                           >
                             🔄 Reabrir
                           </button>
@@ -377,7 +406,7 @@ export default function App() {
                         {isGestor && (
                           <button 
                             onClick={() => excluirTarefa(t.id)}
-                            style={{ background: '#333', border: '1px solid #555', color: '#ff6b6b', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px' }}
+                            style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, color: '#ff6b6b', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px' }}
                           >
                             Excluir
                           </button>
@@ -396,23 +425,23 @@ export default function App() {
 
   // TELA PRINCIPAL DE ANDAMENTO
   return (
-    <div style={{ backgroundColor: '#121212', color: '#fff', minHeight: '100vh', width: '100%', padding: '24px', fontFamily: 'sans-serif', boxSizing: 'border-box' }}>
+    <div style={{ backgroundColor: theme.bg, color: theme.textMain, minHeight: '100vh', width: '100%', padding: '24px', fontFamily: 'sans-serif', boxSizing: 'border-box' }}>
       
       {/* HEADER */}
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #333', paddingBottom: '15px', marginBottom: '25px', flexWrap: 'wrap', gap: '15px', width: '100%', boxSizing: 'border-box' }}>
+      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `1px solid ${theme.border}`, paddingBottom: '15px', marginBottom: '25px', flexWrap: 'wrap', gap: '15px', width: '100%', boxSizing: 'border-box' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
             {isGestor && (
               <button 
                 onClick={() => setSetorSelecionado(null)} 
-                style={{ background: '#333', border: 'none', color: '#fff', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px' }}
+                style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, color: theme.textMain, padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px' }}
               >
                 ← Trocar Setor
               </button>
             )}
             <span style={{ fontSize: '13px', color: '#4dabf7', fontWeight: 'bold' }}>[{setorAtualInfo.nome}]</span>
           </div>
-          <p style={{ margin: 0, fontSize: '13px', color: '#aaa' }}>
+          <p style={{ margin: 0, fontSize: '13px', color: theme.textMuted }}>
             Usuário: <strong>{nomeFormatadoGlobal}</strong> ({tipoCargo})
           </p>
         </div>
@@ -426,9 +455,16 @@ export default function App() {
           
           <button 
             onClick={() => setPaginaAtual('resolvidas')}
-            style={{ background: '#2b2b2b', border: '1px solid #444', color: '#28a745', padding: '9px 16px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}
+            style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, color: '#28a745', padding: '9px 16px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}
           >
             ✅ Tarefas Resolvidas ({tarefasResolvidas.length})
+          </button>
+
+          <button 
+            onClick={() => setDarkMode(!darkMode)}
+            style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, color: theme.textMain, padding: '8px 14px', borderRadius: '20px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}
+          >
+            {darkMode ? '☀️ Modo Claro' : '🌙 Modo Escuro'}
           </button>
 
           <button onClick={() => signOut(auth)} style={{ background: '#dc3545', border: 'none', color: '#fff', padding: '9px 16px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}>Sair</button>
@@ -439,60 +475,60 @@ export default function App() {
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(350px, 400px) 1fr', gap: '25px', alignItems: 'start', width: '100%', boxSizing: 'border-box' }}>
         
         {/* COLUNA ESQUERDA: CADASTRAR TAREFA */}
-        <div style={{ background: '#1e1e1e', padding: '24px', borderRadius: '8px', border: '1px solid #333', width: '100%', boxSizing: 'border-box' }}>
-          <h3 style={{ margin: '0 0 20px 0', color: '#fff', fontSize: '16px', borderBottom: '1px solid #444', paddingBottom: '10px' }}>➕ Nova Tarefa de Longo Prazo</h3>
+        <div style={{ background: theme.cardBg, padding: '24px', borderRadius: '8px', border: `1px solid ${theme.border}`, width: '100%', boxSizing: 'border-box' }}>
+          <h3 style={{ margin: '0 0 20px 0', color: theme.textMain, fontSize: '16px', borderBottom: `1px solid ${theme.border}`, paddingBottom: '10px' }}>➕ Nova Tarefa de Longo Prazo</h3>
           
           <form onSubmit={adicionarTarefa}>
             <div style={{ marginBottom: '15px' }}>
-              <label style={{ display: 'block', fontSize: '12px', color: '#aaa', marginBottom: '5px' }}>Título da Tarefa *</label>
+              <label style={{ display: 'block', fontSize: '12px', color: theme.textMuted, marginBottom: '5px' }}>Título da Tarefa *</label>
               <input 
                 type="text" 
                 placeholder="Ex: Atualização geral dos switches do POP" 
                 value={titulo} 
                 onChange={(e) => setTitulo(e.target.value)} 
                 required 
-                style={{ width: '100%', padding: '10px', background: '#2d2d2d', border: '1px solid #444', color: '#fff', borderRadius: '4px', boxSizing: 'border-box' }} 
+                style={{ width: '100%', padding: '10px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '4px', boxSizing: 'border-box' }} 
               />
             </div>
 
             <div style={{ marginBottom: '15px' }}>
-              <label style={{ display: 'block', fontSize: '12px', color: '#aaa', marginBottom: '5px' }}>Descrição / Detalhes</label>
+              <label style={{ display: 'block', fontSize: '12px', color: theme.textMuted, marginBottom: '5px' }}>Descrição / Detalhes</label>
               <textarea 
                 placeholder="Contexto, dependências ou motivo..." 
                 rows="4"
                 value={descricao} 
                 onChange={(e) => setDescription(e.target.value)} 
-                style={{ width: '100%', padding: '10px', background: '#2d2d2d', border: '1px solid #444', color: '#fff', borderRadius: '4px', boxSizing: 'border-box', resize: 'vertical' }} 
+                style={{ width: '100%', padding: '10px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '4px', boxSizing: 'border-box', resize: 'vertical' }} 
               />
             </div>
 
             <div style={{ marginBottom: '15px' }}>
-              <label style={{ display: 'block', fontSize: '12px', color: '#aaa', marginBottom: '5px' }}>Responsável (Automático)</label>
+              <label style={{ display: 'block', fontSize: '12px', color: theme.textMuted, marginBottom: '5px' }}>Responsável (Automático)</label>
               <input 
                 type="text" 
                 value={responsavelAutomatico} 
                 disabled 
-                style={{ width: '100%', padding: '10px', background: '#252525', border: '1px solid #444', color: '#4dabf7', borderRadius: '4px', boxSizing: 'border-box', fontWeight: 'bold', cursor: 'not-allowed' }} 
+                style={{ width: '100%', padding: '10px', background: darkMode ? '#252525' : '#e9ecef', border: `1px solid ${theme.border}`, color: '#4dabf7', borderRadius: '4px', boxSizing: 'border-box', fontWeight: 'bold', cursor: 'not-allowed' }} 
               />
             </div>
 
             <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
               <div style={{ flex: '1 1 140px' }}>
-                <label style={{ display: 'block', fontSize: '12px', color: '#aaa', marginBottom: '5px' }}>Data Limite (Prazo) *</label>
+                <label style={{ display: 'block', fontSize: '12px', color: theme.textMuted, marginBottom: '5px' }}>Data Limite (Prazo) *</label>
                 <input 
                   type="date" 
                   value={prazo} 
                   onChange={(e) => setPrazo(e.target.value)} 
                   required 
-                  style={{ width: '100%', padding: '10px', background: '#2d2d2d', border: '1px solid #444', color: '#fff', borderRadius: '4px', boxSizing: 'border-box' }} 
+                  style={{ width: '100%', padding: '10px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '4px', boxSizing: 'border-box' }} 
                 />
               </div>
               <div style={{ flex: '1 1 120px' }}>
-                <label style={{ display: 'block', fontSize: '12px', color: '#aaa', marginBottom: '5px' }}>Prioridade</label>
+                <label style={{ display: 'block', fontSize: '12px', color: theme.textMuted, marginBottom: '5px' }}>Prioridade</label>
                 <select 
                   value={prioridade} 
                   onChange={(e) => setPrioridade(e.target.value)} 
-                  style={{ width: '100%', padding: '10px', background: '#2d2d2d', border: '1px solid #444', color: '#fff', borderRadius: '4px', boxSizing: 'border-box' }}
+                  style={{ width: '100%', padding: '10px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '4px', boxSizing: 'border-box' }}
                 >
                   <option value="Baixa">Baixa</option>
                   <option value="Média">Média</option>
@@ -509,13 +545,13 @@ export default function App() {
         </div>
 
         {/* COLUNA DIREITA: LISTAGEM DE TAREFAS */}
-        <div style={{ background: '#1e1e1e', padding: '24px', borderRadius: '8px', border: '1px solid #333', width: '100%', boxSizing: 'border-box' }}>
+        <div style={{ background: theme.cardBg, padding: '24px', borderRadius: '8px', border: `1px solid ${theme.border}`, width: '100%', boxSizing: 'border-box' }}>
           
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #444', paddingBottom: '10px', flexWrap: 'wrap', gap: '12px' }}>
-            <h3 style={{ margin: 0, color: '#fff', fontSize: '16px' }}>📋 Tarefas e Pendências em Andamento</h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: `1px solid ${theme.border}`, paddingBottom: '10px', flexWrap: 'wrap', gap: '12px' }}>
+            <h3 style={{ margin: 0, color: theme.textMain, fontSize: '16px' }}>📋 Tarefas e Pendências em Andamento</h3>
             
             <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-              <select value={filtroResponsavel} onChange={(e) => setFiltroResponsavel(e.target.value)} style={{ padding: '8px', background: '#2d2d2d', border: '1px solid #444', color: '#fff', borderRadius: '4px', fontSize: '12px' }}>
+              <select value={filtroResponsavel} onChange={(e) => setFiltroResponsavel(e.target.value)} style={{ padding: '8px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '4px', fontSize: '12px' }}>
                 <option value="todos">Responsável: Todos</option>
                 {integrantesAtuais.map(n => <option key={n} value={n}>{n}</option>)}
               </select>
@@ -523,7 +559,7 @@ export default function App() {
           </div>
 
           {tarefasFiltradas.length === 0 ? (
-            <p style={{ color: '#777', fontSize: '14px', textAlign: 'center', padding: '60px 0' }}>Nenhuma tarefa em andamento encontrada.</p>
+            <p style={{ color: theme.textMuted, fontSize: '14px', textAlign: 'center', padding: '60px 0' }}>Nenhuma tarefa em andamento encontrada.</p>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '15px', width: '100%', boxSizing: 'border-box' }}>
               {tarefasFiltradas.map((t) => {
@@ -536,10 +572,10 @@ export default function App() {
                 else if (infoPrazo.status === 'hoje') borderLeftColor = '#ff9800';
 
                 return (
-                  <div key={t.id} style={{ background: '#252525', padding: '16px', borderRadius: '6px', borderLeft: `4px solid ${borderLeftColor}`, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box' }}>
+                  <div key={t.id} style={{ background: theme.cardInner, padding: '16px', borderRadius: '6px', border: `1px solid ${theme.border}`, borderLeft: `4px solid ${borderLeftColor}`, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box' }}>
                     <div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px', gap: '8px' }}>
-                        <h4 style={{ margin: 0, fontSize: '15px', color: '#fff', wordBreak: 'break-word' }}>
+                        <h4 style={{ margin: 0, fontSize: '15px', color: theme.textMain, wordBreak: 'break-word' }}>
                           {t.titulo}
                         </h4>
                         <span style={{ fontSize: '10px', padding: '3px 8px', borderRadius: '4px', background: t.prioridade === 'Crítica' ? '#b02a37' : t.prioridade === 'Alta' ? '#dc3545' : '#333', color: '#fff', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
@@ -548,19 +584,19 @@ export default function App() {
                       </div>
 
                       {t.descricao && (
-                        <p style={{ margin: '0 0 12px 0', fontSize: '13px', color: '#ccc', lineHeight: '1.4', wordBreak: 'break-word' }}>
+                        <p style={{ margin: '0 0 12px 0', fontSize: '13px', color: theme.textMuted, lineHeight: '1.4', wordBreak: 'break-word' }}>
                           {t.descricao}
                         </p>
                       )}
                     </div>
 
                     <div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', color: '#aaa', borderTop: '1px solid #333', paddingTop: '10px', marginBottom: '12px', flexWrap: 'wrap', gap: '6px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', color: theme.textMuted, borderTop: `1px solid ${theme.border}`, paddingTop: '10px', marginBottom: '12px', flexWrap: 'wrap', gap: '6px' }}>
                         <div>
                           👤 <strong style={{ color: '#4dabf7' }}>{t.responsavel}</strong>
                         </div>
                         <div>
-                          <span className={infoPrazo.status === 'vencido' ? 'alerta-vencido' : infoPrazo.status === 'hoje' ? 'alerta-hoje' : ''} style={{ color: infoPrazo.status === 'normal' ? '#aaa' : undefined }}>
+                          <span className={infoPrazo.status === 'vencido' ? 'alerta-vencido' : infoPrazo.status === 'hoje' ? 'alerta-hoje' : ''} style={{ color: infoPrazo.status === 'normal' ? theme.textMuted : undefined }}>
                             📅 {infoPrazo.texto}
                           </span>
                         </div>
@@ -570,7 +606,7 @@ export default function App() {
                         {podeAgerir && (
                           <button 
                             onClick={() => abrirModalEdicao(t)}
-                            style={{ background: '#333', border: '1px solid #555', color: '#4dabf7', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}
+                            style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, color: '#4dabf7', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}
                           >
                             ✏️ Editar
                           </button>
@@ -588,7 +624,7 @@ export default function App() {
                         {isGestor && (
                           <button 
                             onClick={() => excluirTarefa(t.id)}
-                            style={{ background: '#333', border: '1px solid #555', color: '#ff6b6b', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px' }}
+                            style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, color: '#ff6b6b', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px' }}
                           >
                             Excluir
                           </button>
@@ -609,48 +645,48 @@ export default function App() {
       {/* MODAL DE EDIÇÃO */}
       {tarefaEditando && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.8)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '20px', boxSizing: 'border-box' }}>
-          <div style={{ background: '#1e1e1e', padding: '30px', borderRadius: '8px', width: '100%', maxWidth: '450px', border: '1px solid #444', boxSizing: 'border-box' }}>
-            <h3 style={{ margin: '0 0 20px 0', color: '#4dabf7', fontSize: '18px', borderBottom: '1px solid #333', paddingBottom: '10px' }}>✏️ Editar Tarefa</h3>
+          <div style={{ background: theme.cardBg, padding: '30px', borderRadius: '8px', width: '100%', maxWidth: '450px', border: `1px solid ${theme.border}`, boxSizing: 'border-box' }}>
+            <h3 style={{ margin: '0 0 20px 0', color: '#4dabf7', fontSize: '18px', borderBottom: `1px solid ${theme.border}`, paddingBottom: '10px' }}>✏️ Editar Tarefa</h3>
             
             <form onSubmit={salvarEdicaoTarefa}>
               <div style={{ marginBottom: '15px' }}>
-                <label style={{ display: 'block', fontSize: '12px', color: '#aaa', marginBottom: '5px' }}>Título *</label>
+                <label style={{ display: 'block', fontSize: '12px', color: theme.textMuted, marginBottom: '5px' }}>Título *</label>
                 <input 
                   type="text" 
                   value={editTitulo} 
                   onChange={(e) => setEditTitulo(e.target.value)} 
                   required 
-                  style={{ width: '100%', padding: '10px', background: '#2d2d2d', border: '1px solid #444', color: '#fff', borderRadius: '4px', boxSizing: 'border-box' }} 
+                  style={{ width: '100%', padding: '10px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '4px', boxSizing: 'border-box' }} 
                 />
               </div>
 
               <div style={{ marginBottom: '15px' }}>
-                <label style={{ display: 'block', fontSize: '12px', color: '#aaa', marginBottom: '5px' }}>Descrição / Detalhes</label>
+                <label style={{ display: 'block', fontSize: '12px', color: theme.textMuted, marginBottom: '5px' }}>Descrição / Detalhes</label>
                 <textarea 
                   rows="3"
                   value={editDescricao} 
                   onChange={(e) => setEditDescricao(e.target.value)} 
-                  style={{ width: '100%', padding: '10px', background: '#2d2d2d', border: '1px solid #444', color: '#fff', borderRadius: '4px', boxSizing: 'border-box', resize: 'vertical' }} 
+                  style={{ width: '100%', padding: '10px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '4px', boxSizing: 'border-box', resize: 'vertical' }} 
                 />
               </div>
 
               <div style={{ display: 'flex', gap: '12px', marginBottom: '25px', flexWrap: 'wrap' }}>
                 <div style={{ flex: '1 1 140px' }}>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#aaa', marginBottom: '5px' }}>Prazo *</label>
+                  <label style={{ display: 'block', fontSize: '12px', color: theme.textMuted, marginBottom: '5px' }}>Prazo *</label>
                   <input 
                     type="date" 
                     value={editPrazo} 
                     onChange={(e) => setEditPrazo(e.target.value)} 
                     required 
-                    style={{ width: '100%', padding: '10px', background: '#2d2d2d', border: '1px solid #444', color: '#fff', borderRadius: '4px', boxSizing: 'border-box' }} 
+                    style={{ width: '100%', padding: '10px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '4px', boxSizing: 'border-box' }} 
                   />
                 </div>
                 <div style={{ flex: '1 1 120px' }}>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#aaa', marginBottom: '5px' }}>Prioridade</label>
+                  <label style={{ display: 'block', fontSize: '12px', color: theme.textMuted, marginBottom: '5px' }}>Prioridade</label>
                   <select 
                     value={editPrioridade} 
                     onChange={(e) => setEditPrioridade(e.target.value)} 
-                    style={{ width: '100%', padding: '10px', background: '#2d2d2d', border: '1px solid #444', color: '#fff', borderRadius: '4px', boxSizing: 'border-box' }}
+                    style={{ width: '100%', padding: '10px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '4px', boxSizing: 'border-box' }}
                   >
                     <option value="Baixa">Baixa</option>
                     <option value="Média">Média</option>
@@ -664,7 +700,7 @@ export default function App() {
                 <button 
                   type="button" 
                   onClick={() => setTarefaEditando(null)}
-                  style={{ flex: 1, padding: '10px', background: '#333', border: '1px solid #555', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+                  style={{ flex: 1, padding: '10px', background: theme.cardInner, border: `1px solid ${theme.border}`, color: theme.textMain, borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
                 >
                   Cancelar
                 </button>
@@ -684,7 +720,7 @@ export default function App() {
   );
 }
 
-function TelaLogin({ onLoginSucesso }) {
+function TelaLogin({ onLoginSucesso, darkMode, setDarkMode, theme }) {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [senhaNova, setSenhaNova] = useState('');
@@ -725,30 +761,37 @@ function TelaLogin({ onLoginSucesso }) {
   };
 
   return (
-    <div style={{ backgroundColor: '#121212', color: '#fff', minHeight: '100vh', width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', fontFamily: 'sans-serif', boxSizing: 'border-box', padding: '20px' }}>
-      <form onSubmit={alterarSenhaMode ? handleAlterarSenha : handleLogin} style={{ background: '#1e1e1e', padding: '35px', borderRadius: '8px', width: '100%', maxWidth: '360px', boxShadow: '0 4px 15px rgba(0,0,0,0.6)', border: '1px solid #333', boxSizing: 'border-box' }}>
+    <div style={{ backgroundColor: theme.bg, color: theme.textMain, minHeight: '100vh', width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', fontFamily: 'sans-serif', boxSizing: 'border-box', padding: '20px', position: 'relative' }}>
+      <button 
+        onClick={() => setDarkMode(!darkMode)}
+        style={{ position: 'absolute', top: '20px', right: '20px', background: theme.cardBg, border: `1px solid ${theme.border}`, color: theme.textMain, padding: '8px 14px', borderRadius: '20px', cursor: 'pointer', fontSize: '13px', fontWeight: 'bold' }}
+      >
+        {darkMode ? '☀️ Modo Claro' : '🌙 Modo Escuro'}
+      </button>
+
+      <form onSubmit={alterarSenhaMode ? handleAlterarSenha : handleLogin} style={{ background: theme.cardBg, padding: '35px', borderRadius: '8px', width: '100%', maxWidth: '360px', boxShadow: '0 4px 15px rgba(0,0,0,0.3)', border: `1px solid ${theme.border}`, boxSizing: 'border-box' }}>
         <h2 style={{ textAlign: 'center', marginBottom: '5px', color: '#4dabf7', fontSize: '18px' }}>Sistema Integrado</h2>
-        <p style={{ textAlign: 'center', color: '#aaa', fontSize: '12px', marginBottom: '25px' }}>NIIP • NOC • NMR</p>
+        <p style={{ textAlign: 'center', color: theme.textMuted, fontSize: '12px', marginBottom: '25px' }}>NIIP • NOC • NMR</p>
         
-        {erro && <p style={{ color: '#ff6b6b', fontSize: '12px', marginBottom: '15px', background: '#2d1a1a', padding: '8px', borderRadius: '4px' }}>{erro}</p>}
-        {mensagemSucesso && <p style={{ color: '#28a745', fontSize: '12px', marginBottom: '15px', background: '#1a2d1a', padding: '8px', borderRadius: '4px' }}>{mensagemSucesso}</p>}
+        {erro && <p style={{ color: '#ff6b6b', fontSize: '12px', marginBottom: '15px', background: darkMode ? '#2d1a1a' : '#f8d7da', padding: '8px', borderRadius: '4px' }}>{erro}</p>}
+        {mensagemSucesso && <p style={{ color: '#28a745', fontSize: '12px', marginBottom: '15px', background: darkMode ? '#1a2d1a' : '#d4edda', padding: '8px', borderRadius: '4px' }}>{mensagemSucesso}</p>}
         
         <div style={{ marginBottom: '15px' }}>
-          <label style={{ display: 'block', fontSize: '12px', marginBottom: '5px', color: '#ccc' }}>E-mail da Equipe</label>
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="seu.email@exemplo.com" style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #444', background: '#2d2d2d', color: '#fff', boxSizing: 'border-box' }} />
+          <label style={{ display: 'block', fontSize: '12px', marginBottom: '5px', color: theme.textMuted }}>E-mail da Equipe</label>
+          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="seu.email@exemplo.com" style={{ width: '100%', padding: '10px', borderRadius: '4px', border: `1px solid ${theme.border}`, background: theme.inputBg, color: theme.inputText, boxSizing: 'border-box' }} />
         </div>
 
         <div style={{ marginBottom: '15px' }}>
-          <label style={{ display: 'block', fontSize: '12px', marginBottom: '5px', color: '#ccc' }}>
+          <label style={{ display: 'block', fontSize: '12px', marginBottom: '5px', color: theme.textMuted }}>
             {alterarSenhaMode ? 'Senha Atual' : 'Senha'}
           </label>
-          <input type="password" value={senha} onChange={(e) => setSenha(e.target.value)} required style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #444', background: '#2d2d2d', color: '#fff', boxSizing: 'border-box' }} />
+          <input type="password" value={senha} onChange={(e) => setSenha(e.target.value)} required style={{ width: '100%', padding: '10px', borderRadius: '4px', border: `1px solid ${theme.border}`, background: theme.inputBg, color: theme.inputText, boxSizing: 'border-box' }} />
         </div>
 
         {alterarSenhaMode && (
           <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', fontSize: '12px', marginBottom: '5px', color: '#ccc' }}>Nova Senha</label>
-            <input type="password" value={senhaNova} onChange={(e) => setSenhaNova(e.target.value)} required style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #444', background: '#2d2d2d', color: '#fff', boxSizing: 'border-box' }} />
+            <label style={{ display: 'block', fontSize: '12px', marginBottom: '5px', color: theme.textMuted }}>Nova Senha</label>
+            <input type="password" value={senhaNova} onChange={(e) => setSenhaNova(e.target.value)} required style={{ width: '100%', padding: '10px', borderRadius: '4px', border: `1px solid ${theme.border}`, background: theme.inputBg, color: theme.inputText, boxSizing: 'border-box' }} />
           </div>
         )}
 
