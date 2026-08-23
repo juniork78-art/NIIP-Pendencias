@@ -76,7 +76,7 @@ const SETORES_DISPONIVEIS = [
   },
   { 
     id: 'nmr', 
-    nome: 'Núcleo de Monitoramento', 
+    nome: 'NMR - Núcleo de Monitoramento', 
     descricao: 'Acompanhamento de alertas, métricas e supervisão contínua.'
   }
 ];
@@ -466,7 +466,7 @@ function TelaLogin({ onLoginSucesso }) {
     <div style={{ backgroundColor: '#121212', color: '#fff', minHeight: '100vh', width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', fontFamily: 'sans-serif', boxSizing: 'border-box', padding: '20px' }}>
       <form onSubmit={handleLogin} style={{ background: '#1e1e1e', padding: '35px', borderRadius: '8px', width: '100%', maxWidth: '360px', boxShadow: '0 4px 15px rgba(0,0,0,0.6)', border: '1px solid #333', boxSizing: 'border-box' }}>
         <h2 style={{ textAlign: 'center', marginBottom: '5px', color: '#4dabf7', fontSize: '18px' }}>Sistema Integrado</h2>
-        <p style={{ textAlign: 'center', color: '#aaa', fontSize: '12px', marginBottom: '25px' }}>NIIP • NOC • Núcleo de Monitoramento</p>
+        <p style={{ textAlign: 'center', color: '#aaa', fontSize: '12px', marginBottom: '25px' }}>NIIP • NOC • NMR</p>
         
         {erro && <p style={{ color: '#ff6b6b', fontSize: '12px', marginBottom: '15px', background: '#2d1a1a', padding: '8px', borderRadius: '4px' }}>{erro}</p>}
         
