@@ -33,6 +33,27 @@ style.innerHTML = `
     animation: piscar 2s infinite;
   }
 
+  /* GRID EXATO DE 4 COLUNAS PARA OS CARTOES */
+  .cards-container-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  @media (max-width: 1400px) {
+    .cards-container-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 1050px) {
+    .cards-container-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
   /* OTIMIZAÇÃO E PREENCHIMENTO PERFEITO PARA DISPOSITIVOS MÓVEIS (CELULARES) */
   @media (max-width: 768px) {
     * {
@@ -52,8 +73,8 @@ style.innerHTML = `
       width: 100% !important;
       gap: 15px !important;
     }
-    .card-tarefa-item {
-      width: 100% !important;
+    .cards-container-grid {
+      grid-template-columns: 1fr !important;
     }
   }
 `;
@@ -690,10 +711,10 @@ export default function App() {
           {tarefasResolvidas.length === 0 ? (
             <p style={{ color: theme.textMuted, fontSize: '14px', textAlign: 'center', padding: '60px 0' }}>Nenhuma tarefa resolvida neste setor ainda.</p>
           ) : (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '15px', width: '100%', boxSizing: 'border-box' }}>
+            <div className="cards-container-grid">
               {tarefasResolvidas.map((t) => {
                 return (
-                  <div key={t.id} className="card-tarefa-item" style={{ background: theme.cardInner, padding: '16px', borderRadius: '6px', borderLeft: '4px solid #28a745', border: `1px solid ${theme.border}`, borderLeftWidth: '4px', opacity: 0.9, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box', width: '320px' }}>
+                  <div key={t.id} style={{ background: theme.cardInner, padding: '16px', borderRadius: '6px', borderLeft: '4px solid #28a745', border: `1px solid ${theme.border}`, borderLeftWidth: '4px', opacity: 0.9, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box', width: '100%' }}>
                     <div>
                       <h4 style={{ margin: '0 0 8px 0', fontSize: '15px', color: theme.textMuted, wordBreak: 'break-word', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                         <span>{t.titulo}</span>
@@ -943,7 +964,7 @@ export default function App() {
                   <h4 style={{ margin: '0 0 12px 0', fontSize: '13px', color: '#ffc107', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '1px solid #ffc107', paddingBottom: '6px' }}>
                     ⭐ Especialistas ({tarefasEspecialistas.length})
                   </h4>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', width: '100%', boxSizing: 'border-box' }}>
+                  <div className="cards-container-grid">
                     {tarefasEspecialistas.map(t => renderizarCardTarefa(t))}
                   </div>
                 </div>
@@ -955,7 +976,7 @@ export default function App() {
                   <h4 style={{ margin: '0 0 12px 0', fontSize: '13px', color: '#4dabf7', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '1px solid #4dabf7', paddingBottom: '6px' }}>
                     🔷 NOC N3 ({tarefasN3.length})
                   </h4>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', width: '100%', boxSizing: 'border-box' }}>
+                  <div className="cards-container-grid">
                     {tarefasN3.map(t => renderizarCardTarefa(t))}
                   </div>
                 </div>
@@ -967,7 +988,7 @@ export default function App() {
                   <h4 style={{ margin: '0 0 12px 0', fontSize: '13px', color: '#20c997', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '1px solid #20c997', paddingBottom: '6px' }}>
                     🟢 N1 ({tarefasN1.length})
                   </h4>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', width: '100%', boxSizing: 'border-box' }}>
+                  <div className="cards-container-grid">
                     {tarefasN1.map(t => renderizarCardTarefa(t))}
                   </div>
                 </div>
@@ -1107,7 +1128,7 @@ export default function App() {
     const isUrgente = infoPrazo.status === 'vencido' || infoPrazo.status === 'hoje' || infoPrazo.status === 'um_dia';
 
     return (
-      <div key={t.id} className={`card-tarefa-item ${isUrgente ? 'card-piscando' : ''}`} style={{ background: theme.cardBg, padding: '16px', borderRadius: '6px', border: `1px solid ${theme.border}`, borderLeft: isUrgente ? undefined : `4px solid #007bff`, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box', width: '310px' }}>
+      <div key={t.id} className={`card-tarefa-item ${isUrgente ? 'card-piscando' : ''}`} style={{ background: theme.cardBg, padding: '16px', borderRadius: '6px', border: `1px solid ${theme.border}`, borderLeft: isUrgente ? undefined : `4px solid #007bff`, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box', width: '100%' }}>
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px', gap: '8px' }}>
             <h4 style={{ margin: 0, fontSize: '15px', color: theme.textMain, wordBreak: 'break-word' }}>
