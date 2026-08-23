@@ -214,7 +214,8 @@ export default function App() {
   
   const registrarLogAuditoria = async (acao, detalhes, tarefaTitulo) => {
     try {
-      await setDoc(doc(collection(db, `${setorSelecionado}_auditoria`)), {
+      const logId = Date.now().toString() + "_" + Math.random().toString(36).substring(2, 7);
+      await setDoc(doc(db, `${setorSelecionado}_auditoria`, logId), {
         usuario: nomeFormatadoGlobal,
         acao,
         detalhes,
