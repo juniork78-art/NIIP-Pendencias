@@ -154,7 +154,28 @@ export default function App() {
   const [loadingAuth, setLoadingAuth] = useState(true);
   const [setorSelecionado, setSetorSelecionado] = useState(null);
   const [paginaAtual, setPaginaAtual] = useState('andamento'); 
-  const [darkMode, setDarkMode] = useState(true);
+  
+  const [darkMode, setDarkMode] = useState(() => {
+    try {
+      const salvo = localStorage.getItem('darkMode_fibralink');
+      if (salvo !== null) {
+        return JSON.parse(salvo);
+      }
+    } catch (e) {
+      console.error("Erro ao ler localStorage", e);
+    }
+    return true;
+  });
+
+  const alternarTema = () => {
+    const novoTema = !darkMode;
+    setDarkMode(novoTema);
+    try {
+      localStorage.setItem('darkMode_fibralink', JSON.stringify(novoTema));
+    } catch (e) {
+      console.error("Erro ao salvar localStorage", e);
+    }
+  };
   
   const [tarefas, setTarefas] = useState([]);
   const [logsAuditoria, setLogsAuditoria] = useState([]);
@@ -179,19 +200,23 @@ export default function App() {
   const [tarefasUrgentesUsuario, setTarefasUrgentesUsuario] = useState([]);
   const [popupJaExibido, setPopupJaExibido] = useState(false);
 
-  // Função customizada para mudar de página empurrando estado no histórico do navegador
   const mudarPagina = (novaPagina) => {
-    window.history.pushState({ pagina: novaPagina }, '');
+    window.history.pushState({ pagina: novaPagina, setor: setorSelecionado }, '');
     setPaginaAtual(novaPagina);
   };
 
   const mudarSetor = (novoSetor) => {
-    window.history.pushState({ setor: novoSetor }, '');
+    window.history.pushState({ pagina: 'andamento', setor: novoSetor }, '');
     setSetorSelecionado(novoSetor);
     setPaginaAtual('andamento');
   };
 
-  // Monitora o botão de Voltar/Avançar do navegador
+  useEffect(() => {
+    if (usuarioLogado) {
+      window.history.replaceState({ pagina: paginaAtual, setor: setorSelecionado }, '');
+    }
+  }, [usuarioLogado, setorSelecionado]);
+
   useEffect(() => {
     const handlePopState = (event) => {
       if (event.state) {
@@ -494,7 +519,7 @@ export default function App() {
   }
 
   if (!usuarioLogado) {
-    return <TelaLogin onLoginSucesso={(email) => setUsuarioLogado(email)} darkMode={darkMode} setDarkMode={setDarkMode} theme={theme} />;
+    return <TelaLogin onLoginSucesso={(email) => setUsuarioLogado(email)} darkMode={darkMode} setDarkMode={alternarTema} theme={theme} />;
   }
 
   const isGustavo = nomeFormatadoGlobal.includes('GUSTAVO');
@@ -521,7 +546,7 @@ export default function App() {
     return (
       <div style={{ backgroundColor: theme.bg, color: theme.textMain, minHeight: '100vh', width: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', fontFamily: 'sans-serif', padding: '15px', boxSizing: 'border-box', position: 'relative' }}>
         <button 
-          onClick={() => setDarkMode(!darkMode)}
+          onClick={alternarTema}
           style={{ position: 'absolute', top: '15px', right: '15px', background: theme.cardBg, border: `1px solid ${theme.border}`, color: theme.textMain, padding: '8px 14px', borderRadius: '20px', cursor: 'pointer', fontSize: '13px', fontWeight: 'bold' }}
         >
           {darkMode ? '☀️ Modo Claro' : '🌙 Modo Escuro'}
@@ -612,7 +637,7 @@ export default function App() {
           </div>
           <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
             <button 
-              onClick={() => setDarkMode(!darkMode)}
+              onClick={alternarTema}
               style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, color: theme.textMain, padding: '8px 14px', borderRadius: '20px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}
             >
               {darkMode ? '☀️ Modo Claro' : '🌙 Modo Escuro'}
@@ -707,7 +732,7 @@ export default function App() {
               </button>
             )}
             <button 
-              onClick={() => setDarkMode(!darkMode)}
+              onClick={alternarTema}
               style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, color: theme.textMain, padding: '8px 14px', borderRadius: '20px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}
             >
               {darkMode ? '☀️ Modo Claro' : '🌙 Modo Escuro'}
@@ -849,7 +874,7 @@ export default function App() {
           </button>
 
           <button 
-            onClick={() => setDarkMode(!darkMode)}
+            onClick={alternarTema}
             style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, color: theme.textMain, padding: '8px 14px', borderRadius: '20px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}
           >
             {darkMode ? '☀️ Modo Claro' : '🌙 Modo Escuro'}
@@ -1238,7 +1263,8 @@ function TelaLogin({ onLoginSucesso, darkMode, setDarkMode, theme }) {
   return (
     <div style={{ backgroundColor: theme.bg, color: theme.textMain, minHeight: '100vh', width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', fontFamily: 'sans-serif', boxSizing: 'border-box', padding: '15px', position: 'relative' }}>
       <button 
-        onClick={() => setDarkMode(!darkMode)}
+        type="button"
+        onClick={setDarkMode}
         style={{ position: 'absolute', top: '15px', right: '15px', background: theme.cardBg, border: `1px solid ${theme.border}`, color: theme.textMain, padding: '8px 14px', borderRadius: '20px', cursor: 'pointer', fontSize: '13px', fontWeight: 'bold' }}
       >
         {darkMode ? '☀️ Modo Claro' : '🌙 Modo Escuro'}
