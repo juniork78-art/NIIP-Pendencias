@@ -249,14 +249,14 @@ export default function App() {
     }
   };
 
-  // Cores dinâmicas para Tema Escuro / Claro
+  // Cores dinâmicas atualizadas (Fundo claro em tom cinza suave: #eef2f5)
   const theme = {
-    bg: darkMode ? '#121212' : '#f4f6f9',
+    bg: darkMode ? '#121212' : '#eef2f5',
     cardBg: darkMode ? '#1e1e1e' : '#ffffff',
-    cardInner: darkMode ? '#252525' : '#fdfdfd',
+    cardInner: darkMode ? '#252525' : '#f8f9fa',
     textMain: darkMode ? '#fff' : '#212529',
-    textMuted: darkMode ? '#aaa' : '#6c757d',
-    border: darkMode ? '#333' : '#ced4da',
+    textMuted: darkMode ? '#aaa' : '#555555',
+    border: darkMode ? '#333' : '#d0d7de',
     inputBg: darkMode ? '#2d2d2d' : '#ffffff',
     inputText: darkMode ? '#fff' : '#212529',
     primary: '#007bff'
@@ -769,7 +769,7 @@ function TelaLogin({ onLoginSucesso, darkMode, setDarkMode, theme }) {
         {darkMode ? '☀️ Modo Claro' : '🌙 Modo Escuro'}
       </button>
 
-      <form onSubmit={alterarSenhaMode ? handleAlterarSenha : handleLogin} style={{ background: theme.cardBg, padding: '35px', borderRadius: '8px', width: '100%', maxWidth: '360px', boxShadow: '0 4px 15px rgba(0,0,0,0.3)', border: `1px solid ${theme.border}`, boxSizing: 'border-box' }}>
+      <form onSubmit={alterarSenhaMode ? handleAlterarSenha : handleLogin} style={{ background: theme.cardBg, padding: '35px', borderRadius: '8px', width: '100%', maxWidth: '360px', boxShadow: '0 4px 15px rgba(0,0,0,0.15)', border: `1px solid ${theme.border}`, boxSizing: 'border-box' }}>
         <h2 style={{ textAlign: 'center', marginBottom: '5px', color: '#4dabf7', fontSize: '18px' }}>Sistema Integrado</h2>
         <p style={{ textAlign: 'center', color: theme.textMuted, fontSize: '12px', marginBottom: '25px' }}>NIIP • NOC • NMR</p>
         
