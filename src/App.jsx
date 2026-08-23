@@ -548,10 +548,16 @@ export default function App() {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
               <button 
-                onClick={() => setPaginaAtual('andamento')} 
+                onClick={() => {
+                  if (window.history.length > 1) {
+                    window.history.back();
+                  } else {
+                    setPaginaAtual('andamento');
+                  }
+                }} 
                 style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, color: theme.textMain, padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}
               >
-                ← Voltar para Painel
+                ← Voltar Página
               </button>
               <span style={{ fontSize: '13px', color: '#ffc107', fontWeight: 'bold' }}>[Menu do Gestor - Auditoria de Alterações]</span>
             </div>
@@ -635,10 +641,16 @@ export default function App() {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
               <button 
-                onClick={() => setPaginaAtual('andamento')} 
+                onClick={() => {
+                  if (window.history.length > 1) {
+                    window.history.back();
+                  } else {
+                    setPaginaAtual('andamento');
+                  }
+                }} 
                 style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, color: theme.textMain, padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}
               >
-                ← Voltar para Pendências
+                ← Voltar Página
               </button>
               <span style={{ fontSize: '13px', color: '#28a745', fontWeight: 'bold' }}>[{setorAtualInfo.nome} - Resolvidas]</span>
             </div>
