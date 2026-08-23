@@ -12,7 +12,8 @@ import {
   setDoc, 
   onSnapshot,
   deleteDoc,
-  updateDoc
+  updateDoc,
+  getDocs
 } from 'firebase/firestore';
 
 const style = document.createElement('style');
@@ -236,6 +237,29 @@ export default function App() {
       });
     } catch (e) {
       console.error("Erro ao registrar log de auditoria", e);
+    }
+  };
+
+  const excluirLogIndividual = async (logId) => {
+    if (window.confirm("Deseja realmente excluir este registro de auditoria?")) {
+      try {
+        await deleteDoc(doc(db, `${setorSelecionado}_auditoria`, logId));
+      } catch (e) {
+        alert("Erro ao excluir log: " + e.message);
+      }
+    }
+  };
+
+  const apagarTodoHistoricoAuditoria = async () => {
+    if (window.confirm("ATENÇÃO: Deseja realmente apagar TODO o histórico de auditoria deste setor? Esta ação não pode ser desfeita.")) {
+      try {
+        const querySnapshot = await getDocs(collection(db, `${setorSelecionado}_auditoria`));
+        const promessas = querySnapshot.docs.map((d) => deleteDoc(d.ref));
+        await Promise.all(promessas);
+        alert("Histórico de auditoria limpo com sucesso!");
+      } catch (e) {
+        alert("Erro ao limpar histórico: " + e.message);
+      }
     }
   };
 
@@ -469,7 +493,7 @@ export default function App() {
   const tarefasN3 = tarefasFiltradas.filter(t => classificarNivelResponsavel(t.responsavel) === 2);
   const tarefasN1 = tarefasFiltradas.filter(t => classificarNivelResponsavel(t.responsavel) === 3);
 
-  // TELA DE AUDITORIA EXCLUSIVA DO GESTOR
+  // TELA DE AUDITORIA EXCLUSIVA DO GESTOR COM OPÇÕES DE APAGAR LOGS
   if (paginaAtual === 'auditoria' && isGestor) {
     return (
       <div className="app-container" style={{ backgroundColor: theme.bg, color: theme.textMain, minHeight: '100vh', width: '100%', padding: '24px', fontFamily: 'sans-serif', boxSizing: 'border-box' }}>
@@ -500,18 +524,30 @@ export default function App() {
         </header>
 
         <div style={{ background: theme.cardBg, padding: '24px', borderRadius: '8px', border: `1px solid ${theme.border}`, width: '100%', boxSizing: 'border-box' }}>
-          <h3 style={{ margin: '0 0 10px 0', color: '#ffc107', fontSize: '18px' }}>🔍 Histórico de Modificações e Prazos Alterados</h3>
-          <p style={{ margin: '0 0 20px 0', fontSize: '13px', color: theme.textMuted }}>
-            Aqui são registradas todas as ações, criações, edições e alterações de datas de vencimento feitas pelos usuários neste setor.
-          </p>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px', borderBottom: `1px solid ${theme.border}`, paddingBottom: '15px' }}>
+            <div>
+              <h3 style={{ margin: '0 0 6px 0', color: '#ffc107', fontSize: '18px' }}>🔍 Histórico de Modificações e Prazos Alterados</h3>
+              <p style={{ margin: 0, fontSize: '13px', color: theme.textMuted }}>
+                Aqui são registradas todas as ações, criações, edições e alterações de datas de vencimento feitas pelos usuários neste setor.
+              </p>
+            </div>
+            {logsAuditoria.length > 0 && (
+              <button 
+                onClick={apagarTodoHistoricoAuditoria}
+                style={{ background: '#dc3545', border: 'none', color: '#fff', padding: '8px 14px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '12px' }}
+              >
+                🗑️ Apagar Todo o Histórico
+              </button>
+            )}
+          </div>
 
           {logsAuditoria.length === 0 ? (
             <p style={{ color: theme.textMuted, fontSize: '14px', textAlign: 'center', padding: '60px 0' }}>Nenhum registro de alteração neste setor ainda.</p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {logsAuditoria.map((log) => (
-                <div key={log.id} style={{ background: theme.cardInner, padding: '15px', borderRadius: '6px', border: `1px solid ${theme.border}`, borderLeft: '4px solid #ffc107', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px' }}>
-                  <div>
+                <div key={log.id} style={{ background: theme.cardInner, padding: '15px', borderRadius: '6px', border: `1px solid ${theme.border}`, borderLeft: '4px solid #ffc107', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '15px' }}>
+                  <div style={{ flex: '1 1 300px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                       <span style={{ background: '#ffc107', color: '#000', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold' }}>{log.acao}</span>
                       <strong style={{ fontSize: '14px', color: theme.textMain }}>{log.tarefaTitulo}</strong>
@@ -523,8 +559,17 @@ export default function App() {
                       📝 Detalhes: {log.detalhes}
                     </div>
                   </div>
-                  <div style={{ fontSize: '11px', color: theme.textMuted, whiteSpace: 'nowrap' }}>
-                    🕒 {log.dataHoraFormatada}
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'space-between', height: '100%', gap: '10px' }}>
+                    <div style={{ fontSize: '11px', color: theme.textMuted, whiteSpace: 'nowrap' }}>
+                      🕒 {log.dataHoraFormatada}
+                    </div>
+                    <button 
+                      onClick={() => excluirLogIndividual(log.id)}
+                      style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, color: '#ff6b6b', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}
+                    >
+                      Excluir Registro
+                    </button>
                   </div>
                 </div>
               ))}
@@ -801,7 +846,7 @@ export default function App() {
           </form>
         </div>
 
-        {/* COLUNA DIREITA: LISTAGEM DE TAREFAS COM CARDS DE TAMANHO FIXO E QUEBRA AUTOMÁTICA */}
+        {/* COLUNA DIREITA: LISTAGEM DE TAREFAS */}
         <div style={{ background: theme.cardBg, padding: '24px', borderRadius: '8px', border: `1px solid ${theme.border}`, width: '100%', boxSizing: 'border-box' }}>
           
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: `1px solid ${theme.border}`, paddingBottom: '10px', flexWrap: 'wrap', gap: '12px' }}>
@@ -940,7 +985,7 @@ export default function App() {
     </div>
   );
 
-  // FUNÇÃO AUXILIAR PARA RENDERIZAR CADA CARD DE TAREFA (COM TAMANHO FIXO PADRÃO)
+  // FUNÇÃO AUXILIAR PARA RENDERIZAR CADA CARD DE TAREFA
   function renderizarCardTarefa(t) {
     const infoPrazo = calcularStatusPrazo(t.prazo);
     const isResponsavelPelaTarefa = nomeFormatadoGlobal.includes(t.responsavel.toUpperCase());
