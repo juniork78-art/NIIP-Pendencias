@@ -213,7 +213,6 @@ export default function App() {
     }
   }, [usuarioLogado, setorSelecionado, nomeFormatadoGlobal, popupJaExibido]);
 
-  // Atualiza o responsável padrão quando muda de setor
   useEffect(() => {
     const integrantes = 
       setorSelecionado === 'noc' ? INTEGRANTES_NOC :
@@ -1015,8 +1014,16 @@ function TelaLogin({ onLoginSucesso, darkMode, setDarkMode, theme }) {
       </button>
 
       <form onSubmit={alterarSenhaMode ? handleAlterarSenha : handleLogin} style={{ background: theme.cardBg, padding: '35px', borderRadius: '8px', width: '100%', maxWidth: '360px', boxShadow: '0 4px 15px rgba(0,0,0,0.15)', border: `1px solid ${theme.border}`, boxSizing: 'border-box' }}>
-        <h2 style={{ textAlign: 'center', marginBottom: '5px', color: '#4dabf7', fontSize: '18px' }}>Sistema Integrado</h2>
-        <p style={{ textAlign: 'center', color: theme.textMuted, fontSize: '12px', marginBottom: '25px' }}>NIIP • NOC • NMR</p>
+        
+        {/* LOGO / IDENTIDADE FIBRALINK */}
+        <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+          <div style={{ display: 'inline-block', background: 'linear-gradient(135deg, #007bff, #00d2ff)', color: '#fff', padding: '8px 16px', borderRadius: '6px', fontWeight: '900', fontSize: '18px', letterSpacing: '1px', boxShadow: '0 4px 10px rgba(0, 123, 255, 0.3)' }}>
+            FIBRALINK
+          </div>
+        </div>
+
+        <h2 style={{ textAlign: 'center', marginBottom: '4px', color: theme.textMain, fontSize: '16px' }}>Sistema Integrado</h2>
+        <p style={{ textAlign: 'center', color: theme.textMuted, fontSize: '11px', marginBottom: '25px' }}>NIIP • NOC • NMR</p>
         
         {erro && <p style={{ color: '#ff6b6b', fontSize: '12px', marginBottom: '15px', background: darkMode ? '#2d1a1a' : '#f8d7da', padding: '8px', borderRadius: '4px' }}>{erro}</p>}
         {mensagemSucesso && <p style={{ color: '#28a745', fontSize: '12px', marginBottom: '15px', background: darkMode ? '#1a2d1a' : '#d4edda', padding: '8px', borderRadius: '4px' }}>{mensagemSucesso}</p>}
