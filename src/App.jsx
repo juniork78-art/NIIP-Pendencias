@@ -295,12 +295,22 @@ export default function App() {
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', color: '#aaa', borderTop: '1px solid #333', paddingTop: '10px' }}>
                     <span>👤 <strong style={{ color: '#4dabf7' }}>{t.responsavel}</strong></span>
-                    <button 
-                      onClick={() => reabrirTarefa(t)}
-                      style={{ background: '#333', border: '1px solid #555', color: '#ffc107', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}
-                    >
-                      🔄 Reabrir Tarefa
-                    </button>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      <button 
+                        onClick={() => reabrirTarefa(t)}
+                        style={{ background: '#333', border: '1px solid #555', color: '#ffc107', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}
+                      >
+                        🔄 Reabrir
+                      </button>
+                      {isGestor && (
+                        <button 
+                          onClick={() => excluirTarefa(t.id)}
+                          style={{ background: '#333', border: '1px solid #555', color: '#ff6b6b', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px' }}
+                        >
+                          Excluir
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}
@@ -492,12 +502,14 @@ export default function App() {
                           ✔ Resolver
                         </button>
                         
-                        <button 
-                          onClick={() => excluirTarefa(t.id)}
-                          style={{ background: '#333', border: '1px solid #555', color: '#ff6b6b', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px' }}
-                        >
-                          Excluir
-                        </button>
+                        {isGestor && (
+                          <button 
+                            onClick={() => excluirTarefa(t.id)}
+                            style={{ background: '#333', border: '1px solid #555', color: '#ff6b6b', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px' }}
+                          >
+                            Excluir
+                          </button>
+                        )}
                       </div>
                     </div>
 
