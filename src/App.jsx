@@ -601,12 +601,12 @@ export default function App() {
                             Excluir
                           </button>
                         )}
-                      </div>
                     </div>
                   </div>
-                );
-              })}
-            </div>
+                </div>
+              );
+            })}
+          </div>
           )}
         </div>
       </div>
@@ -872,13 +872,13 @@ export default function App() {
                             Excluir
                           </button>
                         )}
-                      </div>
                     </div>
-
                   </div>
-                );
-              })}
-            </div>
+
+                </div>
+              );
+            })}
+          </div>
           )}
 
         </div>
@@ -1015,27 +1015,22 @@ function TelaLogin({ onLoginSucesso, darkMode, setDarkMode, theme }) {
 
       <form onSubmit={alterarSenhaMode ? handleAlterarSenha : handleLogin} style={{ background: theme.cardBg, padding: '35px', borderRadius: '8px', width: '100%', maxWidth: '380px', boxShadow: '0 4px 15px rgba(0,0,0,0.15)', border: `1px solid ${theme.border}`, boxSizing: 'border-box' }}>
         
-        {/* LOGO OFICIAL DA FIBRALINK */}
+        {/* CABEÇALHO VISUAL GARANTIDO (FIBRALINK) */}
         <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-          <img 
-            src="/logo.png" 
-            alt="Fibralink" 
-            style={{ maxWidth: '210px', height: 'auto', display: 'inline-block' }} 
-            onError={(e) => {
-              e.target.style.display = 'none';
-            }}
-          />
+          <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '50px', height: '50px', background: '#007bff', borderRadius: '12px', marginBottom: '10px', boxShadow: '0 4px 10px rgba(0,123,255,0.3)' }}>
+            <span style={{ color: '#fff', fontSize: '24px', fontWeight: 'bold' }}>F</span>
+          </div>
+          <h2 style={{ margin: '0 0 4px 0', color: theme.textMain, fontSize: '18px', fontWeight: 'bold' }}>FIBRALINK</h2>
+          <span style={{ fontSize: '12px', color: '#4dabf7', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>Sistema Integrado</span>
+          <p style={{ margin: 0, color: theme.textMuted, fontSize: '11px' }}>NIIP • NOC • NMR</p>
         </div>
 
-        <h2 style={{ textAlign: 'center', marginBottom: '4px', color: theme.textMain, fontSize: '15px' }}>Sistema Integrado</h2>
-        <p style={{ textAlign: 'center', color: theme.textMuted, fontSize: '11px', marginBottom: '25px' }}>NIIP • NOC • NMR</p>
-        
         {erro && <p style={{ color: '#ff6b6b', fontSize: '12px', marginBottom: '15px', background: darkMode ? '#2d1a1a' : '#f8d7da', padding: '8px', borderRadius: '4px' }}>{erro}</p>}
         {mensagemSucesso && <p style={{ color: '#28a745', fontSize: '12px', marginBottom: '15px', background: darkMode ? '#1a2d1a' : '#d4edda', padding: '8px', borderRadius: '4px' }}>{mensagemSucesso}</p>}
         
         <div style={{ marginBottom: '15px' }}>
           <label style={{ display: 'block', fontSize: '12px', marginBottom: '5px', color: theme.textMuted }}>E-mail da Equipe</label>
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="seu.email@exemplo.com" style={{ width: '100%', padding: '10px', borderRadius: '4px', border: `1px solid ${theme.border}`, background: theme.inputBg, color: theme.inputText, boxSizing: 'border-box' }} />
+          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="seu.email@fibralink.net.br" style={{ width: '100%', padding: '10px', borderRadius: '4px', border: `1px solid ${theme.border}`, background: theme.inputBg, color: theme.inputText, boxSizing: 'border-box' }} />
         </div>
 
         <div style={{ marginBottom: '15px' }}>
