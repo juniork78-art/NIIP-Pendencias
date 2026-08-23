@@ -95,6 +95,7 @@ export default function App() {
   
   const [filtroStatus, setFiltroStatus] = useState('todas'); 
   const [filtroResponsavel, setFiltroResponsavel] = useState('todos');
+  const [mostrarResolvidas, setMostrarResolvidas] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -159,12 +160,19 @@ export default function App() {
     }
   };
 
-  const alternarStatus = async (tarefa) => {
-    const novoStatus = tarefa.status === 'Pendente' ? 'Concluída' : 'Pendente';
+  const resolverTarefa = async (tarefa) => {
     try {
-      await updateDoc(doc(db, `${setorSelecionado}_tarefas`, tarefa.id), { status: novoStatus });
+      await updateDoc(doc(db, `${setorSelecionado}_tarefas`, tarefa.id), { status: 'Resolvida' });
     } catch (err) {
-      alert("Erro ao atualizar status: " + err.message);
+      alert("Erro ao resolver tarefa: " + err.message);
+    }
+  };
+
+  const reabrirTarefa = async (tarefa) => {
+    try {
+      await updateDoc(doc(db, `${setorSelecionado}_tarefas`, tarefa.id), { status: 'Pendente' });
+    } catch (err) {
+      alert("Erro ao reabrir tarefa: " + err.message);
     }
   };
 
@@ -232,14 +240,16 @@ export default function App() {
 
   const setorAtualInfo = SETORES_DISPONIVEIS.find(s => s.id === setorSelecionado) || SETORES_DISPONIVEIS[0];
   const pendenciasUrgentesCount = tarefas.filter(t => {
-    if (t.status === 'Concluída') return false;
+    if (t.status === 'Resolvida') return false;
     const st = calcularStatusPrazo(t.prazo);
     return st.status === 'vencido' || st.status === 'hoje';
   }).length;
 
-  const tarefasFiltradas = tarefas.filter(t => {
+  const tarefasAndamento = tarefas.filter(t => t.status !== 'Resolvida');
+  const tarefasResolvidas = tarefas.filter(t => t.status === 'Resolvida');
+
+  const tarefasFiltradas = tarefasAndamento.filter(t => {
     if (filtroStatus === 'pendentes' && t.status !== 'Pendente') return false;
-    if (filtroStatus === 'concluidas' && t.status !== 'Concluída') return false;
     if (filtroResponsavel !== 'todos' && t.responsavel !== filtroResponsavel) return false;
     return true;
   });
@@ -266,15 +276,50 @@ export default function App() {
           </p>
         </div>
         
-        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '15px', flexWrap: 'wrap' }}>
           {pendenciasUrgentesCount > 0 && (
             <div style={{ background: '#ff4d4d', color: '#fff', padding: '8px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: 'bold' }}>
               ⚠️ {pendenciasUrgentesCount} Tarefa(s) Vencida(s) ou para Hoje!
             </div>
           )}
-          <button onClick={() => signOut(auth)} style={{ background: '#dc3545', border: 'none', color: '#fff', padding: '9px 16px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>Sair</button>
+          
+          <button 
+            onClick={() => setMostrarResolvidas(!mostrarResolvidas)}
+            style={{ background: '#2b2b2b', border: '1px solid #444', color: '#4dabf7', padding: '9px 16px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}
+          >
+            📂 Tarefas Resolvidas ({tarefasResolvidas.length})
+          </button>
+
+          <button onClick={() => signOut(auth)} style={{ background: '#dc3545', border: 'none', color: '#fff', padding: '9px 16px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}>Sair</button>
         </div>
       </header>
+
+      {/* PAINEL DE TAREFAS RESOLVIDAS (MODAL / ABA LATERAL) */}
+      {mostrarResolvidas && (
+        <div style={{ background: '#181818', border: '1px solid #444', borderRadius: '8px', padding: '20px', marginBottom: '25px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', borderBottom: '1px solid #333', paddingBottom: '10px' }}>
+            <h3 style={{ margin: 0, color: '#28a745', fontSize: '16px' }}>✅ Histórico de Tarefas Resolvidas</h3>
+            <button onClick={() => setMostrarResolvidas(false)} style={{ background: 'transparent', border: 'none', color: '#aaa', cursor: 'pointer', fontSize: '16px', fontWeight: 'bold' }}>✕ Fechar</button>
+          </div>
+
+          {tarefasResolvidas.length === 0 ? (
+            <p style={{ color: '#777', fontSize: '13px', textAlign: 'center', padding: '20px 0' }}>Nenhuma tarefa resolvida neste setor ainda.</p>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '15px' }}>
+              {tarefasResolvidas.map((t) => (
+                <div key={t.id} style={{ background: '#222', padding: '14px', borderRadius: '6px', borderLeft: '4px solid #28a745', opacity: 0.85 }}>
+                  <h4 style={{ margin: '0 0 6px 0', fontSize: '14px', color: '#fff', textDecoration: 'line-through' }}>{t.titulo}</h4>
+                  {t.descricao && <p style={{ margin: '0 0 10px 0', fontSize: '12px', color: '#aaa' }}>{t.descricao}</p>}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', color: '#888', borderTop: '1px solid #333', paddingTop: '8px' }}>
+                    <span>👤 {t.responsavel}</span>
+                    <button onClick={() => reabrirTarefa(t)} style={{ background: '#333', border: '1px solid #555', color: '#ffc107', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '10px' }}>Reabrir</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* GRID RESPONSIVO SEGURO */}
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(350px, 400px) 1fr', gap: '25px', alignItems: 'start', width: '100%', boxSizing: 'border-box' }}>
@@ -359,12 +404,6 @@ export default function App() {
             <h3 style={{ margin: 0, color: '#fff', fontSize: '16px' }}>📋 Tarefas e Pendências em Andamento</h3>
             
             <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-              <select value={filtroStatus} onChange={(e) => setFiltroStatus(e.target.value)} style={{ padding: '8px', background: '#2d2d2d', border: '1px solid #444', color: '#fff', borderRadius: '4px', fontSize: '12px' }}>
-                <option value="todas">Status: Todas</option>
-                <option value="pendentes">Pendentes</option>
-                <option value="concluidas">Concluídas</option>
-              </select>
-
               <select value={filtroResponsavel} onChange={(e) => setFiltroResponsavel(e.target.value)} style={{ padding: '8px', background: '#2d2d2d', border: '1px solid #444', color: '#fff', borderRadius: '4px', fontSize: '12px' }}>
                 <option value="todos">Responsável: Todos</option>
                 {INTEGRANTES.map(n => <option key={n} value={n}>{n}</option>)}
@@ -373,23 +412,21 @@ export default function App() {
           </div>
 
           {tarefasFiltradas.length === 0 ? (
-            <p style={{ color: '#777', fontSize: '14px', textAlign: 'center', padding: '60px 0' }}>Nenhuma tarefa encontrada com os filtros selecionados.</p>
+            <p style={{ color: '#777', fontSize: '14px', textAlign: 'center', padding: '60px 0' }}>Nenhuma tarefa em andamento encontrada.</p>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '15px', width: '100%', boxSizing: 'border-box' }}>
               {tarefasFiltradas.map((t) => {
                 const infoPrazo = calcularStatusPrazo(t.prazo);
-                const isConcluida = t.status === 'Concluída';
 
                 let borderLeftColor = '#007bff';
-                if (isConcluida) borderLeftColor = '#28a745';
-                else if (infoPrazo.status === 'vencido') borderLeftColor = '#ff4d4d';
+                if (infoPrazo.status === 'vencido') borderLeftColor = '#ff4d4d';
                 else if (infoPrazo.status === 'hoje') borderLeftColor = '#ff9800';
 
                 return (
-                  <div key={t.id} style={{ background: '#252525', padding: '16px', borderRadius: '6px', borderLeft: `4px solid ${borderLeftColor}`, opacity: isConcluida ? 0.7 : 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box' }}>
+                  <div key={t.id} style={{ background: '#252525', padding: '16px', borderRadius: '6px', borderLeft: `4px solid ${borderLeftColor}`, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box' }}>
                     <div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px', gap: '8px' }}>
-                        <h4 style={{ margin: 0, fontSize: '15px', color: isConcluida ? '#aaa' : '#fff', textDecoration: isConcluida ? 'line-through' : 'none', wordBreak: 'break-word' }}>
+                        <h4 style={{ margin: 0, fontSize: '15px', color: '#fff', wordBreak: 'break-word' }}>
                           {t.titulo}
                         </h4>
                         <span style={{ fontSize: '10px', padding: '3px 8px', borderRadius: '4px', background: t.prioridade === 'Crítica' ? '#b02a37' : t.prioridade === 'Alta' ? '#dc3545' : '#333', color: '#fff', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
@@ -418,10 +455,10 @@ export default function App() {
 
                       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
                         <button 
-                          onClick={() => alternarStatus(t)}
-                          style={{ background: isConcluida ? '#6c757d' : '#28a745', border: 'none', color: '#fff', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}
+                          onClick={() => resolverTarefa(t)}
+                          style={{ background: '#28a745', border: 'none', color: '#fff', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}
                         >
-                          {isConcluida ? 'Marcar Pendente' : '✔ Concluir'}
+                          ✔ Resolver
                         </button>
                         
                         <button 
