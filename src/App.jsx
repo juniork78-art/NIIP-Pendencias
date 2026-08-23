@@ -66,10 +66,8 @@ const formatarDataParaBr = (dataStr) => {
   }
 };
 
-// Função para converter automaticamente datas AAAA-MM-DD para DD/MM/AAAA em textos de detalhes antigos
 const corrigirDatasNoTexto = (texto) => {
   if (!texto) return '';
-  // Procura padrões de data como 2026-09-02 e converte para 02/09/2026
   return texto.replace(/\b(\d{4})-(\d{2})-(\d{2})\b/g, (match, ano, mes, dia) => {
     return `${dia}/${mes}/${ano}`;
   });
@@ -149,6 +147,10 @@ export default function App() {
   const [editDescricao, setEditDescricao] = useState('');
   const [editPrazo, setEditPrazo] = useState('');
   const [editPrioridade, setEditPrioridade] = useState('');
+
+  // Estados do Modal de Resolução
+  const [tarefaResolvendo, setTarefaResolvendo] = useState(null);
+  const [detalhesResolucaoInput, setDetalhesResolucaoInput] = useState('');
 
   // Estado do Pop-up de Alerta ao Login
   const [mostrarPopupAlerta, setMostrarPopupAlerta] = useState(false);
@@ -374,10 +376,27 @@ export default function App() {
     }
   };
 
-  const resolverTarefa = async (tarefa) => {
+  const abrirModalResolucao = (tarefa) => {
+    setTarefaResolvendo(tarefa);
+    setDetalhesResolucaoInput('');
+  };
+
+  const confirmarResolucaoTarefa = async (e) => {
+    e.preventDefault();
+    if (!detalhesResolucaoInput.trim()) {
+      alert("Por favor, preencha os detalhes de como a tarefa foi resolvida.");
+      return;
+    }
+
     try {
-      await updateDoc(doc(db, `${setorSelecionado}_tarefas`, tarefa.id), { status: 'Resolvida' });
-      await registrarLogAuditoria("RESOLUÇÃO", `Marcou a tarefa como resolvida`, tarefa.titulo);
+      await updateDoc(doc(db, `${setorSelecionado}_tarefas`, tarefaResolvendo.id), { 
+        status: 'Resolvida',
+        detalhesResolucao: detalhesResolucaoInput.trim()
+      });
+      await registrarLogAuditoria("RESOLUÇÃO", `Resolvida. Detalhes: "${detalhesResolucaoInput.trim()}"`, tarefaResolvendo.titulo);
+      setTarefaResolvendo(null);
+      setDetalhesResolucaoInput('');
+      alert("Tarefa marcada como resolvida com sucesso!");
     } catch (err) {
       alert("Erro ao resolver tarefa: " + err.message);
     }
@@ -385,7 +404,10 @@ export default function App() {
 
   const reabrirTarefa = async (tarefa) => {
     try {
-      await updateDoc(doc(db, `${setorSelecionado}_tarefas`, tarefa.id), { status: 'Pendente' });
+      await updateDoc(doc(db, `${setorSelecionado}_tarefas`, tarefa.id), { 
+        status: 'Pendente',
+        detalhesResolucao: null 
+      });
       await registrarLogAuditoria("REABERTURA", `Reabriu a tarefa`, tarefa.titulo);
     } catch (err) {
       alert("Erro ao reabrir tarefa: " + err.message);
@@ -659,9 +681,15 @@ export default function App() {
                         <span style={{ fontSize: '11px', color: '#28a745', fontWeight: 'bold' }}>(Resolvido)</span>
                       </h4>
                       {t.descricao && (
-                        <p style={{ margin: '0 0 12px 0', fontSize: '13px', color: theme.textMuted, lineHeight: '1.4', wordBreak: 'break-word' }}>
+                        <p style={{ margin: '0 0 8px 0', fontSize: '13px', color: theme.textMuted, lineHeight: '1.4', wordBreak: 'break-word' }}>
                           {t.descricao}
                         </p>
+                      )}
+                      {t.detalhesResolucao && (
+                        <div style={{ background: darkMode ? '#1e2922' : '#e6f4ea', padding: '8px 10px', borderRadius: '4px', marginBottom: '12px', borderLeft: '3px solid #28a745' }}>
+                          <span style={{ fontSize: '11px', color: '#28a745', fontWeight: 'bold', display: 'block', marginBottom: '2px' }}>Detalhes da Resolução:</span>
+                          <p style={{ margin: 0, fontSize: '12px', color: theme.textMain, wordBreak: 'break-word' }}>{t.detalhesResolucao}</p>
+                        </div>
                       )}
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', color: theme.textMuted, borderTop: `1px solid ${theme.border}`, paddingTop: '10px' }}>
@@ -1007,6 +1035,48 @@ export default function App() {
         </div>
       )}
 
+      {/* MODAL DE RESOLUÇÃO DA TAREFA */}
+      {tarefaResolvendo && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.8)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '20px', boxSizing: 'border-box' }}>
+          <div style={{ background: theme.cardBg, padding: '30px', borderRadius: '8px', width: '100%', maxWidth: '450px', border: `1px solid ${theme.border}`, boxSizing: 'border-box' }}>
+            <h3 style={{ margin: '0 0 10px 0', color: '#28a745', fontSize: '18px' }}>✔ Resolver Tarefa</h3>
+            <p style={{ fontSize: '13px', color: theme.textMuted, marginBottom: '20px' }}>
+              Informe os detalhes ou o procedimento utilizado para solucionar a tarefa: <strong>{tarefaResolvendo.titulo}</strong>
+            </p>
+            
+            <form onSubmit={confirmarResolucaoTarefa}>
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', fontSize: '12px', color: theme.textMuted, marginBottom: '5px' }}>Detalhes da Resolução *</label>
+                <textarea 
+                  rows="4"
+                  placeholder="Ex: Enlace estabilizado após substituição do SFP na ponta A."
+                  value={detalhesResolucaoInput} 
+                  onChange={(e) => setDetalhesResolucaoInput(e.target.value)} 
+                  required 
+                  style={{ width: '100%', padding: '10px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '4px', boxSizing: 'border-box', resize: 'vertical' }} 
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button 
+                  type="button" 
+                  onClick={() => setTarefaResolvendo(null)}
+                  style={{ flex: 1, padding: '10px', background: theme.cardInner, border: `1px solid ${theme.border}`, color: theme.textMain, borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+                >
+                  Cancelar
+                </button>
+                <button 
+                  type="submit" 
+                  style={{ flex: 1, padding: '10px', background: '#28a745', border: 'none', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+                >
+                  Confirmar Resolução
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 
@@ -1060,7 +1130,7 @@ export default function App() {
 
             {podeAgerir && (
               <button 
-                onClick={() => resolverTarefa(t)}
+                onClick={() => abrirModalResolucao(t)}
                 style={{ background: '#28a745', border: 'none', color: '#fff', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}
               >
                 ✔ Resolver
