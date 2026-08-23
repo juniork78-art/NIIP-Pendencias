@@ -106,12 +106,8 @@ const INTEGRANTES_NIIP = ["Francisco", "Gabriel", "Walgney"];
 const INTEGRANTES_NOC = ["Gustavo", "Stevan", "Gilvan", "Kessy", "João", "Lucas", "Tolentino"];
 const INTEGRANTES_NMR = ["Dhennifer"];
 
+// ORDEM SOLICITADA: NOC, NMR e por fim NIIP
 const SETORES_DISPONIVEIS = [
-  { 
-    id: 'niip', 
-    nome: 'NIIP - Núcleo de Informática e Inspeção de POPs', 
-    descricao: 'Gestão de tarefas, prazos e manutenções da infraestrutura de POPs.'
-  },
   { 
     id: 'noc', 
     nome: 'NOC - Network Operations Center', 
@@ -121,6 +117,11 @@ const SETORES_DISPONIVEIS = [
     id: 'nmr', 
     nome: 'NMR - Núcleo de Monitoramento', 
     descricao: 'Acompanhamento de alertas, métricas e supervisão contínua.'
+  },
+  { 
+    id: 'niip', 
+    nome: 'NIIP - Núcleo de Informática e Inspeção de POPs', 
+    descricao: 'Gestão de tarefas, prazos e manutenções da infraestrutura de POPs.'
   }
 ];
 
