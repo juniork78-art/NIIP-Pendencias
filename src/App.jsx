@@ -116,6 +116,7 @@ export default function App() {
   const [descricao, setDescription] = useState('');
   const [prazo, setPrazo] = useState('');
   const [prioridade, setPrioridade] = useState('Média');
+  const [responsavelSelecionadoGestor, setResponsavelSelecionadoGestor] = useState('');
   
   const [filtroResponsavel, setFiltroResponsavel] = useState('todos');
 
@@ -211,6 +212,17 @@ export default function App() {
       };
     }
   }, [usuarioLogado, setorSelecionado, nomeFormatadoGlobal, popupJaExibido]);
+
+  // Atualiza o responsável padrão quando muda de setor
+  useEffect(() => {
+    const integrantes = 
+      setorSelecionado === 'noc' ? INTEGRANTES_NOC :
+      setorSelecionado === 'nmr' ? INTEGRANTES_NMR : INTEGRANTES_NIIP;
+    
+    if (integrantes.length > 0) {
+      setResponsavelSelecionadoGestor(integrantes[0]);
+    }
+  }, [setorSelecionado]);
   
   const registrarLogAuditoria = async (acao, detalhes, tarefaTitulo) => {
     try {
@@ -235,7 +247,7 @@ export default function App() {
   };
 
   const integrantesAtuais = obterIntegrantesSetor();
-  const responsavelAutomatico = integrantesAtuais.find(n => nomeFormatadoGlobal.includes(n.toUpperCase())) || integrantesAtuais[0] || 'Gestor';
+  const responsavelFinal = isGestor ? responsavelSelecionadoGestor : (integrantesAtuais.find(n => nomeFormatadoGlobal.includes(n.toUpperCase())) || integrantesAtuais[0] || 'Gestor');
 
   const adicionarTarefa = async (e) => {
     e.preventDefault();
@@ -249,7 +261,7 @@ export default function App() {
     const tarefaObj = {
       titulo: titulo.trim(),
       descricao: descricao.trim(),
-      responsavel: responsavelAutomatico,
+      responsavel: responsavelFinal,
       prazo,
       prioridade,
       status: 'Pendente',
@@ -259,7 +271,7 @@ export default function App() {
 
     try {
       await setDoc(doc(db, `${setorSelecionado}_tarefas`, novaTarefaId), tarefaObj);
-      await registrarLogAuditoria("CRIAÇÃO", `Criou a tarefa com prazo ${prazo} e prioridade ${prioridade}`, titulo.trim());
+      await registrarLogAuditoria("CRIAÇÃO", `Criou a tarefa para [${responsavelFinal}] com prazo ${prazo} e prioridade ${prioridade}`, titulo.trim());
       setTitulo('');
       setDescription('');
       setPrazo('');
@@ -723,13 +735,27 @@ export default function App() {
             </div>
 
             <div style={{ marginBottom: '15px' }}>
-              <label style={{ display: 'block', fontSize: '12px', color: theme.textMuted, marginBottom: '5px' }}>Responsável (Automático)</label>
-              <input 
-                type="text" 
-                value={responsavelAutomatico} 
-                disabled 
-                style={{ width: '100%', padding: '10px', background: darkMode ? '#252525' : '#e9ecef', border: `1px solid ${theme.border}`, color: '#4dabf7', borderRadius: '4px', boxSizing: 'border-box', fontWeight: 'bold', cursor: 'not-allowed' }} 
-              />
+              <label style={{ display: 'block', fontSize: '12px', color: theme.textMuted, marginBottom: '5px' }}>
+                {isGestor ? 'Responsável (Escolher Colaborador)' : 'Responsável (Automático)'}
+              </label>
+              {isGestor ? (
+                <select 
+                  value={responsavelSelecionadoGestor} 
+                  onChange={(e) => setResponsavelSelecionadoGestor(e.target.value)} 
+                  style={{ width: '100%', padding: '10px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '4px', boxSizing: 'border-box', fontWeight: 'bold' }}
+                >
+                  {integrantesAtuais.map(nome => (
+                    <option key={nome} value={nome}>{nome}</option>
+                  ))}
+                </select>
+              ) : (
+                <input 
+                  type="text" 
+                  value={responsavelFinal} 
+                  disabled 
+                  style={{ width: '100%', padding: '10px', background: darkMode ? '#252525' : '#e9ecef', border: `1px solid ${theme.border}`, color: '#4dabf7', borderRadius: '4px', boxSizing: 'border-box', fontWeight: 'bold', cursor: 'not-allowed' }} 
+                />
+              )}
             </div>
 
             <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
