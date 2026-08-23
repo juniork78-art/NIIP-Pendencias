@@ -340,39 +340,46 @@ export default function App() {
             <p style={{ color: '#777', fontSize: '14px', textAlign: 'center', padding: '60px 0' }}>Nenhuma tarefa resolvida neste setor ainda.</p>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '15px', width: '100%', boxSizing: 'border-box' }}>
-              {tarefasResolvidas.map((t) => (
-                <div key={t.id} style={{ background: '#252525', padding: '16px', borderRadius: '6px', borderLeft: '4px solid #28a745', opacity: 0.9, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box' }}>
-                  <div>
-                    <h4 style={{ margin: '0 0 8px 0', fontSize: '15px', color: '#aaa', textDecoration: 'line-through', wordBreak: 'break-word' }}>
-                      {t.titulo}
-                    </h4>
-                    {t.descricao && (
-                      <p style={{ margin: '0 0 12px 0', fontSize: '13px', color: '#888', lineHeight: '1.4', wordBreak: 'break-word' }}>
-                        {t.descricao}
-                      </p>
-                    )}
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', color: '#aaa', borderTop: '1px solid #333', paddingTop: '10px' }}>
-                    <span>👤 <strong style={{ color: '#4dabf7' }}>{t.responsavel}</strong></span>
-                    <div style={{ display: 'flex', gap: '6px' }}>
-                      <button 
-                        onClick={() => reabrirTarefa(t)}
-                        style={{ background: '#333', border: '1px solid #555', color: '#ffc107', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}
-                      >
-                        🔄 Reabrir
-                      </button>
-                      {isGestor && (
-                        <button 
-                          onClick={() => excluirTarefa(t.id)}
-                          style={{ background: '#333', border: '1px solid #555', color: '#ff6b6b', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px' }}
-                        >
-                          Excluir
-                        </button>
+              {tarefasResolvidas.map((t) => {
+                const isResponsavelPelaTarefa = nomeFormatado.includes(t.responsavel.toUpperCase());
+                const podeAgerir = isGestor || isResponsavelPelaTarefa;
+
+                return (
+                  <div key={t.id} style={{ background: '#252525', padding: '16px', borderRadius: '6px', borderLeft: '4px solid #28a745', opacity: 0.9, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box' }}>
+                    <div>
+                      <h4 style={{ margin: '0 0 8px 0', fontSize: '15px', color: '#aaa', textDecoration: 'line-through', wordBreak: 'break-word' }}>
+                        {t.titulo}
+                      </h4>
+                      {t.descricao && (
+                        <p style={{ margin: '0 0 12px 0', fontSize: '13px', color: '#888', lineHeight: '1.4', wordBreak: 'break-word' }}>
+                          {t.descricao}
+                        </p>
                       )}
                     </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', color: '#aaa', borderTop: '1px solid #333', paddingTop: '10px' }}>
+                      <span>👤 <strong style={{ color: '#4dabf7' }}>{t.responsavel}</strong></span>
+                      <div style={{ display: 'flex', gap: '6px' }}>
+                        {podeAgerir && (
+                          <button 
+                            onClick={() => reabrirTarefa(t)}
+                            style={{ background: '#333', border: '1px solid #555', color: '#ffc107', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}
+                          >
+                            🔄 Reabrir
+                          </button>
+                        )}
+                        {isGestor && (
+                          <button 
+                            onClick={() => excluirTarefa(t.id)}
+                            style={{ background: '#333', border: '1px solid #555', color: '#ff6b6b', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px' }}
+                          >
+                            Excluir
+                          </button>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -518,7 +525,7 @@ export default function App() {
               {tarefasFiltradas.map((t) => {
                 const infoPrazo = calcularStatusPrazo(t.prazo);
                 const isResponsavelPelaTarefa = nomeFormatado.includes(t.responsavel.toUpperCase());
-                const podeEditar = isGestor || isResponsavelPelaTarefa;
+                const podeAgerir = isGestor || isResponsavelPelaTarefa;
 
                 let borderLeftColor = '#007bff';
                 if (infoPrazo.status === 'vencido') borderLeftColor = '#ff4d4d';
@@ -556,7 +563,7 @@ export default function App() {
                       </div>
 
                       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', flexWrap: 'wrap' }}>
-                        {podeEditar && (
+                        {podeAgerir && (
                           <button 
                             onClick={() => abrirModalEdicao(t)}
                             style={{ background: '#333', border: '1px solid #555', color: '#4dabf7', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}
@@ -565,12 +572,14 @@ export default function App() {
                           </button>
                         )}
 
-                        <button 
-                          onClick={() => resolverTarefa(t)}
-                          style={{ background: '#28a745', border: 'none', color: '#fff', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}
-                        >
-                          ✔ Resolver
-                        </button>
+                        {podeAgerir && (
+                          <button 
+                            onClick={() => resolverTarefa(t)}
+                            style={{ background: '#28a745', border: 'none', color: '#fff', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}
+                          >
+                            ✔ Resolver
+                          </button>
+                        )}
                         
                         {isGestor && (
                           <button 
