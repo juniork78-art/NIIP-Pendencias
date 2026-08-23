@@ -85,6 +85,7 @@ export default function App() {
   const [usuarioLogado, setUsuarioLogado] = useState(null);
   const [loadingAuth, setLoadingAuth] = useState(true);
   const [setorSelecionado, setSetorSelecionado] = useState(null);
+  const [paginaAtual, setPaginaAtual] = useState('andamento'); // 'andamento' ou 'resolvidas'
   
   const [tarefas, setTarefas] = useState([]);
   const [titulo, setTitulo] = useState('');
@@ -166,6 +167,14 @@ export default function App() {
     }
   };
 
+  const reabrirTarefa = async (tarefa) => {
+    try {
+      await updateDoc(doc(db, `${setorSelecionado}_tarefas`, tarefa.id), { status: 'Pendente' });
+    } catch (err) {
+      alert("Erro ao reabrir tarefa: " + err.message);
+    }
+  };
+
   const excluirTarefa = async (id) => {
     if (window.confirm("Deseja realmente excluir esta tarefa do painel?")) {
       try {
@@ -174,54 +183,6 @@ export default function App() {
         alert("Erro ao excluir: " + err.message);
       }
     }
-  };
-
-  const abrirJanelaResolvidas = () => {
-    const tarefasResolvidas = tarefas.filter(t => t.status === 'Resolvida');
-    const setorAtualInfo = SETORES_DISPONIVEIS.find(s => s.id === setorSelecionado);
-
-    const novaJanela = window.open('', '_blank');
-    if (!novaJanela) {
-      alert("Permita pop-ups no seu navegador para abrir a nova janela.");
-      return;
-    }
-
-    const htmlConteudo = `
-      <!DOCTYPE html>
-      <html lang="pt-BR">
-      <head>
-        <meta charset="UTF-8">
-        <title>Tarefas Resolvidas - ${setorAtualInfo ? setorAtualInfo.nome : 'Setor'}</title>
-        <style>
-          body { background-color: #121212; color: #fff; font-family: sans-serif; padding: 30px; margin: 0; }
-          h2 { color: #28a745; border-bottom: 1px solid #333; padding-bottom: 10px; margin-top: 0; }
-          .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px; margin-top: 20px; }
-          .card { background: #1e1e1e; border: 1px solid #333; border-left: 4px solid #28a745; padding: 16px; border-radius: 6px; }
-          h4 { margin: 0 0 6px 0; font-size: 15px; text-decoration: line-through; color: #ccc; }
-          p { margin: 0 0 12px 0; font-size: 13px; color: #999; }
-          .footer { font-size: 12px; color: #aaa; border-top: 1px solid #2d2d2d; paddingTop: 10px; }
-          .empty { text-align: center; color: #777; margin-top: 50px; font-size: 15px; }
-        </style>
-      </head>
-      <body>
-        <h2>✅ Tarefas Resolvidas — ${setorAtualInfo ? setorAtualInfo.nome : ''}</h2>
-        ${tarefasResolvidas.length === 0 ? '<p class="empty">Nenhuma tarefa resolvida registrada neste setor.</p>' : `
-          <div class="grid">
-            ${tarefasResolvidas.map(t => `
-              <div class="card">
-                <h4>${t.titulo}</h4>
-                ${t.descricao ? `<p>${t.descricao}</p>` : ''}
-                <div class="footer">👤 Responsável: <strong>${t.responsavel}</strong></div>
-              </div>
-            `).join('')}
-          </div>
-        `}
-      </body>
-      </html>
-    `;
-
-    novaJanela.document.write(htmlConteudo);
-    novaJanela.document.close();
   };
 
   if (loadingAuth) {
@@ -246,7 +207,7 @@ export default function App() {
             {SETORES_DISPONIVEIS.map(setor => (
               <div 
                 key={setor.id} 
-                onClick={() => setSetorSelecionado(setor.id)}
+                onClick={() => { setSetorSelecionado(setor.id); setPaginaAtual('andamento'); }}
                 style={{ 
                   background: '#1e1e1e', 
                   border: '1px solid #444', 
@@ -284,13 +245,73 @@ export default function App() {
   }).length;
 
   const tarefasAndamento = tarefas.filter(t => t.status !== 'Resolvida');
-  const tarefasResolvidasCount = tarefas.filter(t => t.status === 'Resolvida').length;
+  const tarefasResolvidas = tarefas.filter(t => t.status === 'Resolvida');
 
   const tarefasFiltradas = tarefasAndamento.filter(t => {
     if (filtroResponsavel !== 'todos' && t.responsavel !== filtroResponsavel) return false;
     return true;
   });
 
+  // TELA INTERNA DE TAREFAS RESOLVIDAS
+  if (paginaAtual === 'resolvidas') {
+    return (
+      <div style={{ backgroundColor: '#121212', color: '#fff', minHeight: '100vh', width: '100%', padding: '24px', fontFamily: 'sans-serif', boxSizing: 'border-box' }}>
+        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #333', paddingBottom: '15px', marginBottom: '25px', flexWrap: 'wrap', gap: '15px', width: '100%', boxSizing: 'border-box' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
+              <button 
+                onClick={() => setPaginaAtual('andamento')} 
+                style={{ background: '#333', border: 'none', color: '#fff', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}
+              >
+                ← Voltar para Pendências
+              </button>
+              <span style={{ fontSize: '13px', color: '#28a745', fontWeight: 'bold' }}>[{setorAtualInfo.nome} - Resolvidas]</span>
+            </div>
+            <p style={{ margin: 0, fontSize: '13px', color: '#aaa' }}>
+              Histórico completo de tarefas concluídas.
+            </p>
+          </div>
+          <button onClick={() => signOut(auth)} style={{ background: '#dc3545', border: 'none', color: '#fff', padding: '9px 16px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}>Sair</button>
+        </header>
+
+        <div style={{ background: '#1e1e1e', padding: '24px', borderRadius: '8px', border: '1px solid #333', width: '100%', boxSizing: 'border-box' }}>
+          <h3 style={{ margin: '0 0 20px 0', color: '#28a745', fontSize: '18px', borderBottom: '1px solid #444', paddingBottom: '10px' }}>✅ Tarefas Resolvidas ({tarefasResolvidas.length})</h3>
+
+          {tarefasResolvidas.length === 0 ? (
+            <p style={{ color: '#777', fontSize: '14px', textAlign: 'center', padding: '60px 0' }}>Nenhuma tarefa resolvida neste setor ainda.</p>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '15px', width: '100%', boxSizing: 'border-box' }}>
+              {tarefasResolvidas.map((t) => (
+                <div key={t.id} style={{ background: '#252525', padding: '16px', borderRadius: '6px', borderLeft: '4px solid #28a745', opacity: 0.9, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box' }}>
+                  <div>
+                    <h4 style={{ margin: '0 0 8px 0', fontSize: '15px', color: '#aaa', textDecoration: 'line-through', wordBreak: 'break-word' }}>
+                      {t.titulo}
+                    </h4>
+                    {t.descricao && (
+                      <p style={{ margin: '0 0 12px 0', fontSize: '13px', color: '#888', lineHeight: '1.4', wordBreak: 'break-word' }}>
+                        {t.descricao}
+                      </p>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', color: '#aaa', borderTop: '1px solid #333', paddingTop: '10px' }}>
+                    <span>👤 <strong style={{ color: '#4dabf7' }}>{t.responsavel}</strong></span>
+                    <button 
+                      onClick={() => reabrirTarefa(t)}
+                      style={{ background: '#333', border: '1px solid #555', color: '#ffc107', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}
+                    >
+                      🔄 Reabrir Tarefa
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // TELA PRINCIPAL DE ANDAMENTO
   return (
     <div style={{ backgroundColor: '#121212', color: '#fff', minHeight: '100vh', width: '100%', padding: '24px', fontFamily: 'sans-serif', boxSizing: 'border-box' }}>
       
@@ -321,10 +342,10 @@ export default function App() {
           )}
           
           <button 
-            onClick={abrirJanelaResolvidas}
-            style={{ background: '#2b2b2b', border: '1px solid #444', color: '#4dabf7', padding: '9px 16px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}
+            onClick={() => setPaginaAtual('resolvidas')}
+            style={{ background: '#2b2b2b', border: '1px solid #444', color: '#28a745', padding: '9px 16px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}
           >
-            📂 Ver Resolvidas em Nova Janela ({tarefasResolvidasCount})
+            ✅ Tarefas Resolvidas ({tarefasResolvidas.length})
           </button>
 
           <button onClick={() => signOut(auth)} style={{ background: '#dc3545', border: 'none', color: '#fff', padding: '9px 16px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}>Sair</button>
