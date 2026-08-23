@@ -4,7 +4,7 @@ import {
   signInWithEmailAndPassword, 
   signOut, 
   onAuthStateChanged,
-  sendPasswordResetEmail
+  updatePassword
 } from 'firebase/auth';
 import { 
   collection, 
@@ -530,9 +530,10 @@ export default function App() {
 function TelaLogin({ onLoginSucesso }) {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
+  const [senhaNova, setSenhaNova] = useState('');
   const [erro, setErro] = useState('');
   const [mensagemSucesso, setMensagemSucesso] = useState('');
-  const [esqueciSenhaMode, setEsqueciSenhaMode] = useState(false);
+  const [alterarSenhaMode, setAlterarSenhaMode] = useState(false);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -546,25 +547,31 @@ function TelaLogin({ onLoginSucesso }) {
     }
   };
 
-  const handleRecuperarSenha = async (e) => {
+  const handleAlterarSenha = async (e) => {
     e.preventDefault();
     setErro('');
     setMensagemSucesso('');
-    if (!email.trim()) {
-      setErro("Por favor, digite seu e-mail no campo acima primeiro.");
+    if (!email.trim() || !senha.trim() || !senhaNova.trim()) {
+      setErro("Preencha todos os campos para alterar a senha.");
       return;
     }
     try {
-      await sendPasswordResetEmail(auth, email);
-      setMensagemSucesso("E-mail de redefinição enviado! Verifique sua caixa de entrada.");
+      // Faz login com a credencial atual para validar e obter o usuário
+      const userCredential = await signInWithEmailAndPassword(auth, email, senha);
+      // Atualiza para a nova senha informada
+      await updatePassword(userCredential.user, senhaNova);
+      setMensagemSucesso("Senha alterada com sucesso! Você já pode entrar com a nova senha.");
+      setSenha('');
+      setSenhaNova('');
+      setAlterarSenhaMode(false);
     } catch (e) {
-      setErro("Erro ao enviar e-mail. Verifique se o endereço está correto.");
+      setErro("Erro ao alterar senha: Verifique se o e-mail e a senha atual estão corretos.");
     }
   };
 
   return (
     <div style={{ backgroundColor: '#121212', color: '#fff', minHeight: '100vh', width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', fontFamily: 'sans-serif', boxSizing: 'border-box', padding: '20px' }}>
-      <form onSubmit={esqueciSenhaMode ? handleRecuperarSenha : handleLogin} style={{ background: '#1e1e1e', padding: '35px', borderRadius: '8px', width: '100%', maxWidth: '360px', boxShadow: '0 4px 15px rgba(0,0,0,0.6)', border: '1px solid #333', boxSizing: 'border-box' }}>
+      <form onSubmit={alterarSenhaMode ? handleAlterarSenha : handleLogin} style={{ background: '#1e1e1e', padding: '35px', borderRadius: '8px', width: '100%', maxWidth: '360px', boxShadow: '0 4px 15px rgba(0,0,0,0.6)', border: '1px solid #333', boxSizing: 'border-box' }}>
         <h2 style={{ textAlign: 'center', marginBottom: '5px', color: '#4dabf7', fontSize: '18px' }}>Sistema Integrado</h2>
         <p style={{ textAlign: 'center', color: '#aaa', fontSize: '12px', marginBottom: '25px' }}>NIIP • NOC • NMR</p>
         
@@ -576,24 +583,31 @@ function TelaLogin({ onLoginSucesso }) {
           <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="seu.email@exemplo.com" style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #444', background: '#2d2d2d', color: '#fff', boxSizing: 'border-box' }} />
         </div>
 
-        {!esqueciSenhaMode && (
+        <div style={{ marginBottom: '15px' }}>
+          <label style={{ display: 'block', fontSize: '12px', marginBottom: '5px', color: '#ccc' }}>
+            {alterarSenhaMode ? 'Senha Atual' : 'Senha'}
+          </label>
+          <input type="password" value={senha} onChange={(e) => setSenha(e.target.value)} required style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #444', background: '#2d2d2d', color: '#fff', boxSizing: 'border-box' }} />
+        </div>
+
+        {alterarSenhaMode && (
           <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', fontSize: '12px', marginBottom: '5px', color: '#ccc' }}>Senha</label>
-            <input type="password" value={senha} onChange={(e) => setSenha(e.target.value)} required style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #444', background: '#2d2d2d', color: '#fff', boxSizing: 'border-box' }} />
+            <label style={{ display: 'block', fontSize: '12px', marginBottom: '5px', color: '#ccc' }}>Nova Senha</label>
+            <input type="password" value={senhaNova} onChange={(e) => setSenhaNova(e.target.value)} required style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #444', background: '#2d2d2d', color: '#fff', boxSizing: 'border-box' }} />
           </div>
         )}
 
         <button type="submit" style={{ width: '100%', padding: '12px', background: '#007bff', border: 'none', color: '#fff', fontWeight: 'bold', borderRadius: '4px', cursor: 'pointer', marginBottom: '15px' }}>
-          {esqueciSenhaMode ? 'Enviar Link de Redefinição' : 'Entrar no Sistema'}
+          {alterarSenhaMode ? 'Atualizar para Nova Senha' : 'Entrar no Sistema'}
         </button>
 
         <div style={{ textAlign: 'center' }}>
           <button 
             type="button" 
-            onClick={() => { setEsqueciSenhaMode(!esqueciSenhaMode); setErro(''); setMensagemSucesso(''); }}
+            onClick={() => { setAlterarSenhaMode(!alterarSenhaMode); setErro(''); setMensagemSucesso(''); }}
             style={{ background: 'transparent', border: 'none', color: '#4dabf7', cursor: 'pointer', fontSize: '12px', textDecoration: 'underline' }}
           >
-            {esqueciSenhaMode ? '← Voltar para o Login' : 'Esqueci / Redefinir minha senha'}
+            {alterarSenhaMode ? '← Voltar para o Login' : 'Alterar minha senha'}
           </button>
         </div>
       </form>
