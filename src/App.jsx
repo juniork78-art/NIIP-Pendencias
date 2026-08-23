@@ -1015,7 +1015,7 @@ function TelaLogin({ onLoginSucesso, darkMode, setDarkMode, theme }) {
 
       <form onSubmit={alterarSenhaMode ? handleAlterarSenha : handleLogin} style={{ background: theme.cardBg, padding: '35px', borderRadius: '8px', width: '100%', maxWidth: '380px', boxShadow: '0 4px 15px rgba(0,0,0,0.15)', border: `1px solid ${theme.border}`, boxSizing: 'border-box' }}>
         
-        {/* LOGO DA PASTA PUBLIC (logo.png) */}
+        {/* LOGO DA PASTA PUBLIC (logo.png) COM ORDEM NOC • NMR • NIIP */}
         <div style={{ textAlign: 'center', marginBottom: '20px' }}>
           <img 
             src="/logo.png" 
@@ -1026,7 +1026,7 @@ function TelaLogin({ onLoginSucesso, darkMode, setDarkMode, theme }) {
             }}
           />
           <span style={{ fontSize: '12px', color: '#4dabf7', fontWeight: 'bold', display: 'block', marginBottom: '2px' }}>Sistema Integrado</span>
-          <p style={{ margin: 0, color: theme.textMuted, fontSize: '11px' }}>NIIP • NOC • NMR</p>
+          <p style={{ margin: 0, color: theme.textMuted, fontSize: '11px' }}>NOC • NMR • NIIP</p>
         </div>
 
         {erro && <p style={{ color: '#ff6b6b', fontSize: '12px', marginBottom: '15px', background: darkMode ? '#2d1a1a' : '#f8d7da', padding: '8px', borderRadius: '4px' }}>{erro}</p>}
