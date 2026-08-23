@@ -97,6 +97,14 @@ export default function App() {
   
   const [filtroResponsavel, setFiltroResponsavel] = useState('todos');
 
+  // Estados do Modal de Edição
+  const [tarefaEditando, setTarefaEditando] = useState(null);
+  const [editTitulo, setEditTitulo] = useState('');
+  const [editDescricao, setEditDescricao] = useState('');
+  const [editResponsavel, setEditResponsavel] = useState('');
+  const [editPrazo, setEditPrazo] = useState('');
+  const [editPrioridade, setEditPrioridade] = useState('');
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
@@ -172,6 +180,37 @@ export default function App() {
       alert("Tarefa cadastrada com sucesso!");
     } catch (err) {
       alert("Erro ao salvar tarefa: " + err.message);
+    }
+  };
+
+  const abrirModalEdicao = (tarefa) => {
+    setTarefaEditando(tarefa);
+    setEditTitulo(tarefa.titulo || '');
+    setEditDescricao(tarefa.descricao || '');
+    setEditResponsavel(tarefa.responsavel || INTEGRANTES[0]);
+    setEditPrazo(tarefa.prazo || '');
+    setEditPrioridade(tarefa.prioridade || 'Média');
+  };
+
+  const salvarEdicaoTarefa = async (e) => {
+    e.preventDefault();
+    if (!editTitulo.trim() || !editPrazo) {
+      alert("Preencha o título e a data limite!");
+      return;
+    }
+
+    try {
+      await updateDoc(doc(db, `${setorSelecionado}_tarefas`, tarefaEditando.id), {
+        titulo: editTitulo.trim(),
+        descricao: editDescricao.trim(),
+        responsavel: editResponsavel,
+        prazo: editPrazo,
+        prioridade: editPrioridade
+      });
+      setTarefaEditando(null);
+      alert("Tarefa atualizada com sucesso!");
+    } catch (err) {
+      alert("Erro ao atualizar tarefa: " + err.message);
     }
   };
 
@@ -514,7 +553,14 @@ export default function App() {
                         </div>
                       </div>
 
-                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', flexWrap: 'wrap' }}>
+                        <button 
+                          onClick={() => abrirModalEdicao(t)}
+                          style={{ background: '#333', border: '1px solid #555', color: '#4dabf7', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}
+                        >
+                          ✏️ Editar
+                        </button>
+
                         <button 
                           onClick={() => resolverTarefa(t)}
                           style={{ background: '#28a745', border: 'none', color: '#fff', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}
@@ -542,6 +588,94 @@ export default function App() {
         </div>
 
       </div>
+
+      {/* MODAL DE EDIÇÃO */}
+      {tarefaEditando && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.8)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '20px', boxSizing: 'border-box' }}>
+          <div style={{ background: '#1e1e1e', padding: '30px', borderRadius: '8px', width: '100%', maxWidth: '450px', border: '1px solid #444', boxSizing: 'border-box' }}>
+            <h3 style={{ margin: '0 0 20px 0', color: '#4dabf7', fontSize: '18px', borderBottom: '1px solid #333', paddingBottom: '10px' }}>✏️ Editar Tarefa</h3>
+            
+            <form onSubmit={salvarEdicaoTarefa}>
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'block', fontSize: '12px', color: '#aaa', marginBottom: '5px' }}>Título *</label>
+                <input 
+                  type="text" 
+                  value={editTitulo} 
+                  onChange={(e) => setEditTitulo(e.target.value)} 
+                  required 
+                  style={{ width: '100%', padding: '10px', background: '#2d2d2d', border: '1px solid #444', color: '#fff', borderRadius: '4px', boxSizing: 'border-box' }} 
+                />
+              </div>
+
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'block', fontSize: '12px', color: '#aaa', marginBottom: '5px' }}>Descrição / Detalhes</label>
+                <textarea 
+                  rows="3"
+                  value={editDescricao} 
+                  onChange={(e) => setEditDescricao(e.target.value)} 
+                  style={{ width: '100%', padding: '10px', background: '#2d2d2d', border: '1px solid #444', color: '#fff', borderRadius: '4px', boxSizing: 'border-box', resize: 'vertical' }} 
+                />
+              </div>
+
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'block', fontSize: '12px', color: '#aaa', marginBottom: '5px' }}>Responsável</label>
+                <select 
+                  value={editResponsavel} 
+                  onChange={(e) => setEditResponsavel(e.target.value)} 
+                  style={{ width: '100%', padding: '10px', background: '#2d2d2d', border: '1px solid #444', color: '#fff', borderRadius: '4px', boxSizing: 'border-box' }}
+                >
+                  {INTEGRANTES.map(nome => (
+                    <option key={nome} value={nome}>{nome}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px', marginBottom: '25px', flexWrap: 'wrap' }}>
+                <div style={{ flex: '1 1 140px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#aaa', marginBottom: '5px' }}>Prazo *</label>
+                  <input 
+                    type="date" 
+                    value={editPrazo} 
+                    onChange={(e) => setEditPrazo(e.target.value)} 
+                    required 
+                    style={{ width: '100%', padding: '10px', background: '#2d2d2d', border: '1px solid #444', color: '#fff', borderRadius: '4px', boxSizing: 'border-box' }} 
+                  />
+                </div>
+                <div style={{ flex: '1 1 120px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#aaa', marginBottom: '5px' }}>Prioridade</label>
+                  <select 
+                    value={editPrioridade} 
+                    onChange={(e) => setEditPrioridade(e.target.value)} 
+                    style={{ width: '100%', padding: '10px', background: '#2d2d2d', border: '1px solid #444', color: '#fff', borderRadius: '4px', boxSizing: 'border-box' }}
+                  >
+                    <option value="Baixa">Baixa</option>
+                    <option value="Média">Média</option>
+                    <option value="Alta">Alta</option>
+                    <option value="Crítica">Crítica</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button 
+                  type="button" 
+                  onClick={() => setTarefaEditando(null)}
+                  style={{ flex: 1, padding: '10px', background: '#333', border: '1px solid #555', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+                >
+                  Cancelar
+                </button>
+                <button 
+                  type="submit" 
+                  style={{ flex: 1, padding: '10px', background: '#007bff', border: 'none', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+                >
+                  Salvar Alterações
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
