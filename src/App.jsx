@@ -62,7 +62,9 @@ const calcularStatusPrazo = (dataStr) => {
   }
 };
 
-const INTEGRANTES = ["Francisco", "Gabriel", "Walgney", "Gustavo", "Stevan", "Gilvan", "Kessy", "João", "Lucas", "Tolentino", "Dhennifer"];
+const INTEGRANTES_NIIP = ["Francisco", "Gabriel", "Walgney"];
+const INTEGRANTES_NOC = ["Gustavo", "Stevan", "Gilvan", "Kessy", "João", "Lucas", "Tolentino"];
+const INTEGRANTES_NMR = ["Dhennifer"];
 
 const SETORES_DISPONIVEIS = [
   { 
@@ -150,7 +152,15 @@ export default function App() {
   }, [usuarioLogado, setorSelecionado]);
 
   const nomeFormatadoGlobal = usuarioLogado ? usuarioLogado.split('@')[0].replace('.', ' ').toUpperCase() : '';
-  const responsavelAutomatico = INTEGRANTES.find(n => nomeFormatadoGlobal.includes(n.toUpperCase())) || (nomeFormatadoGlobal.includes('DUANDYS') ? 'Gestor' : 'Francisco');
+  
+  const obterIntegrantesSetor = () => {
+    if (setorSelecionado === 'noc') return INTEGRANTES_NOC;
+    if (setorSelecionado === 'nmr') return INTEGRANTES_NMR;
+    return INTEGRANTES_NIIP;
+  };
+
+  const integrantesAtuais = obterIntegrantesSetor();
+  const responsavelAutomatico = integrantesAtuais.find(n => nomeFormatadoGlobal.includes(n.toUpperCase())) || integrantesAtuais[0] || 'Gestor';
 
   const adicionarTarefa = async (e) => {
     e.preventDefault();
@@ -507,7 +517,7 @@ export default function App() {
             <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
               <select value={filtroResponsavel} onChange={(e) => setFiltroResponsavel(e.target.value)} style={{ padding: '8px', background: '#2d2d2d', border: '1px solid #444', color: '#fff', borderRadius: '4px', fontSize: '12px' }}>
                 <option value="todos">Responsável: Todos</option>
-                {INTEGRANTES.map(n => <option key={n} value={n}>{n}</option>)}
+                {integrantesAtuais.map(n => <option key={n} value={n}>{n}</option>)}
               </select>
             </div>
           </div>
