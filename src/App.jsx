@@ -91,7 +91,6 @@ export default function App() {
   const [tarefas, setTarefas] = useState([]);
   const [titulo, setTitulo] = useState('');
   const [descricao, setDescription] = useState('');
-  const [responsavel, setResponsavel] = useState('Francisco');
   const [prazo, setPrazo] = useState('');
   const [prioridade, setPrioridade] = useState('Média');
   
@@ -101,7 +100,6 @@ export default function App() {
   const [tarefaEditando, setTarefaEditando] = useState(null);
   const [editTitulo, setEditTitulo] = useState('');
   const [editDescricao, setEditDescricao] = useState('');
-  const [editResponsavel, setEditResponsavel] = useState('');
   const [editPrazo, setEditPrazo] = useState('');
   const [editPrioridade, setEditPrioridade] = useState('');
 
@@ -151,6 +149,9 @@ export default function App() {
     }
   }, [usuarioLogado, setorSelecionado]);
 
+  const nomeFormatadoGlobal = usuarioLogado ? usuarioLogado.split('@')[0].replace('.', ' ').toUpperCase() : '';
+  const responsavelAutomatico = INTEGRANTES.find(n => nomeFormatadoGlobal.includes(n.toUpperCase())) || (nomeFormatadoGlobal.includes('DUANDYS') ? 'Gestor' : 'Francisco');
+
   const adicionarTarefa = async (e) => {
     e.preventDefault();
     if (!titulo.trim() || !prazo) {
@@ -159,16 +160,15 @@ export default function App() {
     }
 
     const novaTarefaId = Date.now().toString();
-    const nomeUsuarioLogado = usuarioLogado.split('@')[0].replace('.', ' ').toUpperCase();
 
     const tarefaObj = {
       titulo: titulo.trim(),
       descricao: descricao.trim(),
-      responsavel,
+      responsavel: responsavelAutomatico,
       prazo,
       prioridade,
       status: 'Pendente',
-      criadoPor: nomeUsuarioLogado,
+      criadoPor: nomeFormatadoGlobal,
       criadoEm: Date.now()
     };
 
@@ -187,7 +187,6 @@ export default function App() {
     setTarefaEditando(tarefa);
     setEditTitulo(tarefa.titulo || '');
     setEditDescricao(tarefa.descricao || '');
-    setEditResponsavel(tarefa.responsavel || INTEGRANTES[0]);
     setEditPrazo(tarefa.prazo || '');
     setEditPrioridade(tarefa.prioridade || 'Média');
   };
@@ -203,7 +202,6 @@ export default function App() {
       await updateDoc(doc(db, `${setorSelecionado}_tarefas`, tarefaEditando.id), {
         titulo: editTitulo.trim(),
         descricao: editDescricao.trim(),
-        responsavel: editResponsavel,
         prazo: editPrazo,
         prioridade: editPrioridade
       });
@@ -248,10 +246,9 @@ export default function App() {
     return <TelaLogin onLoginSucesso={(email) => setUsuarioLogado(email)} />;
   }
 
-  const nomeFormatado = usuarioLogado.split('@')[0].replace('.', ' ').toUpperCase();
-  const isGestor = nomeFormatado.includes('DUANDYS');
-  const isEspecialista = nomeFormatado.includes('GILVAN') || nomeFormatado.includes('STEVAN');
-  const isTecnicoN1 = nomeFormatado.includes('FRANCISCO') || nomeFormatado.includes('GABRIEL') || nomeFormatado.includes('WALGNEY');
+  const isGestor = nomeFormatadoGlobal.includes('DUANDYS');
+  const isEspecialista = nomeFormatadoGlobal.includes('GILVAN') || nomeFormatadoGlobal.includes('STEVAN');
+  const isTecnicoN1 = nomeFormatadoGlobal.includes('FRANCISCO') || nomeFormatadoGlobal.includes('GABRIEL') || nomeFormatadoGlobal.includes('WALGNEY');
   
   const tipoCargo = isGestor ? 'Gestor' : isEspecialista ? 'Especialista' : isTecnicoN1 ? 'Técnico N1' : 'Integrante';
 
@@ -327,7 +324,7 @@ export default function App() {
               <span style={{ fontSize: '13px', color: '#28a745', fontWeight: 'bold' }}>[{setorAtualInfo.nome} - Resolvidas]</span>
             </div>
             <p style={{ margin: 0, fontSize: '13px', color: '#aaa' }}>
-              Usuário: <strong>{nomeFormatado}</strong> ({tipoCargo})
+              Usuário: <strong>{nomeFormatadoGlobal}</strong> ({tipoCargo})
             </p>
           </div>
           <button onClick={() => signOut(auth)} style={{ background: '#dc3545', border: 'none', color: '#fff', padding: '9px 16px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}>Sair</button>
@@ -341,7 +338,7 @@ export default function App() {
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '15px', width: '100%', boxSizing: 'border-box' }}>
               {tarefasResolvidas.map((t) => {
-                const isResponsavelPelaTarefa = nomeFormatado.includes(t.responsavel.toUpperCase());
+                const isResponsavelPelaTarefa = nomeFormatadoGlobal.includes(t.responsavel.toUpperCase());
                 const podeAgerir = isGestor || isResponsavelPelaTarefa;
 
                 return (
@@ -406,7 +403,7 @@ export default function App() {
             <span style={{ fontSize: '13px', color: '#4dabf7', fontWeight: 'bold' }}>[{setorAtualInfo.nome}]</span>
           </div>
           <p style={{ margin: 0, fontSize: '13px', color: '#aaa' }}>
-            Usuário: <strong>{nomeFormatado}</strong> ({tipoCargo})
+            Usuário: <strong>{nomeFormatadoGlobal}</strong> ({tipoCargo})
           </p>
         </div>
         
@@ -460,16 +457,13 @@ export default function App() {
             </div>
 
             <div style={{ marginBottom: '15px' }}>
-              <label style={{ display: 'block', fontSize: '12px', color: '#aaa', marginBottom: '5px' }}>Responsável (Integrante)</label>
-              <select 
-                value={responsavel} 
-                onChange={(e) => setResponsavel(e.target.value)} 
-                style={{ width: '100%', padding: '10px', background: '#2d2d2d', border: '1px solid #444', color: '#fff', borderRadius: '4px', boxSizing: 'border-box' }}
-              >
-                {INTEGRANTES.map(nome => (
-                  <option key={nome} value={nome}>{nome}</option>
-                ))}
-              </select>
+              <label style={{ display: 'block', fontSize: '12px', color: '#aaa', marginBottom: '5px' }}>Responsável (Automático)</label>
+              <input 
+                type="text" 
+                value={responsavelAutomatico} 
+                disabled 
+                style={{ width: '100%', padding: '10px', background: '#252525', border: '1px solid #444', color: '#4dabf7', borderRadius: '4px', boxSizing: 'border-box', fontWeight: 'bold', cursor: 'not-allowed' }} 
+              />
             </div>
 
             <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
@@ -524,7 +518,7 @@ export default function App() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '15px', width: '100%', boxSizing: 'border-box' }}>
               {tarefasFiltradas.map((t) => {
                 const infoPrazo = calcularStatusPrazo(t.prazo);
-                const isResponsavelPelaTarefa = nomeFormatado.includes(t.responsavel.toUpperCase());
+                const isResponsavelPelaTarefa = nomeFormatadoGlobal.includes(t.responsavel.toUpperCase());
                 const podeAgerir = isGestor || isResponsavelPelaTarefa;
 
                 let borderLeftColor = '#007bff';
@@ -628,19 +622,6 @@ export default function App() {
                   onChange={(e) => setEditDescricao(e.target.value)} 
                   style={{ width: '100%', padding: '10px', background: '#2d2d2d', border: '1px solid #444', color: '#fff', borderRadius: '4px', boxSizing: 'border-box', resize: 'vertical' }} 
                 />
-              </div>
-
-              <div style={{ marginBottom: '15px' }}>
-                <label style={{ display: 'block', fontSize: '12px', color: '#aaa', marginBottom: '5px' }}>Responsável</label>
-                <select 
-                  value={editResponsavel} 
-                  onChange={(e) => setEditResponsavel(e.target.value)} 
-                  style={{ width: '100%', padding: '10px', background: '#2d2d2d', border: '1px solid #444', color: '#fff', borderRadius: '4px', boxSizing: 'border-box' }}
-                >
-                  {INTEGRANTES.map(nome => (
-                    <option key={nome} value={nome}>{nome}</option>
-                  ))}
-                </select>
               </div>
 
               <div style={{ display: 'flex', gap: '12px', marginBottom: '25px', flexWrap: 'wrap' }}>
