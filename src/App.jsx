@@ -33,7 +33,6 @@ style.innerHTML = `
     animation: piscar 2s infinite;
   }
 
-  /* GRID EXATO DE 4 COLUNAS PARA OS CARTOES */
   .cards-container-grid {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -54,7 +53,6 @@ style.innerHTML = `
     }
   }
 
-  /* OTIMIZAÇÃO E PREENCHIMENTO PERFEITO PARA DISPOSITIVOS MÓVEIS (CELULARES) */
   @media (max-width: 768px) {
     * {
       box-sizing: border-box;
@@ -133,7 +131,6 @@ const INTEGRANTES_NIIP = ["Francisco", "Gabriel", "Walgney"];
 const INTEGRANTES_NOC = ["Gustavo", "Stevan", "Gilvan", "Kessy", "João", "Lucas", "Tolentino"];
 const INTEGRANTES_NMR = ["Dhennifer"];
 
-// ORDEM: NOC, NMR e por fim NIIP
 const SETORES_DISPONIVEIS = [
   { 
     id: 'noc', 
@@ -156,7 +153,7 @@ export default function App() {
   const [usuarioLogado, setUsuarioLogado] = useState(null);
   const [loadingAuth, setLoadingAuth] = useState(true);
   const [setorSelecionado, setSetorSelecionado] = useState(null);
-  const [paginaAtual, setPaginaAtual] = useState('andamento'); // 'andamento', 'resolvidas' ou 'auditoria'
+  const [paginaAtual, setPaginaAtual] = useState('andamento'); 
   const [darkMode, setDarkMode] = useState(true);
   
   const [tarefas, setTarefas] = useState([]);
@@ -169,18 +166,15 @@ export default function App() {
   
   const [filtroResponsavel, setFiltroResponsavel] = useState('todos');
 
-  // Estados do Modal de Edição
   const [tarefaEditando, setTarefaEditando] = useState(null);
   const [editTitulo, setEditTitulo] = useState('');
   const [editDescricao, setEditDescricao] = useState('');
   const [editPrazo, setEditPrazo] = useState('');
   const [editPrioridade, setEditPrioridade] = useState('');
 
-  // Estados do Modal de Resolução
   const [tarefaResolvendo, setTarefaResolvendo] = useState(null);
   const [detalhesResolucaoInput, setDetalhesResolucaoInput] = useState('');
 
-  // Estado do Pop-up de Alerta ao Login
   const [mostrarPopupAlerta, setMostrarPopupAlerta] = useState(false);
   const [tarefasUrgentesUsuario, setTarefasUrgentesUsuario] = useState([]);
   const [popupJaExibido, setPopupJaExibido] = useState(false);
@@ -249,7 +243,6 @@ export default function App() {
         }
       });
 
-      // Carrega logs de auditoria do setor
       const unsubLogs = onSnapshot(collection(db, `${setorSelecionado}_auditoria`), (snapshot) => {
         const logsLista = [];
         snapshot.forEach((docSnap) => {
@@ -556,7 +549,6 @@ export default function App() {
     return true;
   });
 
-  // SEPARAÇÃO HIERÁRQUICA: ESPECIALISTAS (1) ACIMA, NOC N3 (2) NO MEIO, N1 (3) ABAIXO
   const classificarNivelResponsavel = (nomeResp) => {
     const nomeU = (nomeResp || '').toUpperCase();
     if (nomeU.includes('GILVAN') || nomeU.includes('STEVAN')) return 1; 
@@ -568,7 +560,7 @@ export default function App() {
   const tarefasN3 = tarefasFiltradas.filter(t => classificarNivelResponsavel(t.responsavel) === 2);
   const tarefasN1 = tarefasFiltradas.filter(t => classificarNivelResponsavel(t.responsavel) === 3);
 
-  // TELA DE AUDITORIA EXCLUSIVA DO GESTOR COM OPÇÕES DE APAGAR LOGS
+  // TELA DE AUDITORIA
   if (paginaAtual === 'auditoria' && isGestor) {
     return (
       <div className="app-container" style={{ backgroundColor: theme.bg, color: theme.textMain, minHeight: '100vh', width: '100%', padding: '15px', fontFamily: 'sans-serif', boxSizing: 'border-box' }}>
@@ -576,13 +568,7 @@ export default function App() {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
               <button 
-                onClick={() => {
-                  if (window.history.length > 1) {
-                    window.history.back();
-                  } else {
-                    setPaginaAtual('andamento');
-                  }
-                }} 
+                onClick={() => setPaginaAtual('andamento')} 
                 style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, color: theme.textMain, padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}
               >
                 ← Voltar Página
@@ -661,7 +647,7 @@ export default function App() {
     );
   }
 
-  // TELA INTERNA DE TAREFAS RESOLVIDAS
+  // TELA DE TAREFAS RESOLVIDAS
   if (paginaAtual === 'resolvidas') {
     return (
       <div className="app-container" style={{ backgroundColor: theme.bg, color: theme.textMain, minHeight: '100vh', width: '100%', padding: '15px', fontFamily: 'sans-serif', boxSizing: 'border-box' }}>
@@ -669,13 +655,7 @@ export default function App() {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
               <button 
-                onClick={() => {
-                  if (window.history.length > 1) {
-                    window.history.back();
-                  } else {
-                    setPaginaAtual('andamento');
-                  }
-                }} 
+                onClick={() => setPaginaAtual('andamento')} 
                 style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, color: theme.textMain, padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}
               >
                 ← Voltar Página
@@ -712,50 +692,48 @@ export default function App() {
             <p style={{ color: theme.textMuted, fontSize: '14px', textAlign: 'center', padding: '60px 0' }}>Nenhuma tarefa resolvida neste setor ainda.</p>
           ) : (
             <div className="cards-container-grid">
-              {tarefasResolvidas.map((t) => {
-                return (
-                  <div key={t.id} style={{ background: theme.cardInner, padding: '16px', borderRadius: '6px', borderLeft: '4px solid #28a745', border: `1px solid ${theme.border}`, borderLeftWidth: '4px', opacity: 0.9, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box', width: '100%' }}>
-                    <div>
-                      <h4 style={{ margin: '0 0 8px 0', fontSize: '15px', color: theme.textMuted, wordBreak: 'break-word', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                        <span>{t.titulo}</span>
-                        <span style={{ fontSize: '11px', color: '#28a745', fontWeight: 'bold' }}>(Resolvido)</span>
-                      </h4>
-                      {t.descricao && (
-                        <p style={{ margin: '0 0 8px 0', fontSize: '13px', color: theme.textMuted, lineHeight: '1.4', wordBreak: 'break-word' }}>
-                          {t.descricao}
-                        </p>
-                      )}
-                      {t.detalhesResolucao && (
-                        <div style={{ background: darkMode ? '#1e2922' : '#e6f4ea', padding: '8px 10px', borderRadius: '4px', marginBottom: '12px', borderLeft: '3px solid #28a745' }}>
-                          <span style={{ fontSize: '11px', color: '#28a745', fontWeight: 'bold', display: 'block', marginBottom: '2px' }}>Detalhes da Resolução:</span>
-                          <p style={{ margin: 0, fontSize: '12px', color: theme.textMain, wordBreak: 'break-word' }}>{t.detalhesResolucao}</p>
-                        </div>
-                      )}
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', color: theme.textMuted, borderTop: `1px solid ${theme.border}`, paddingTop: '10px' }}>
-                      <span>👤 <strong style={{ color: '#4dabf7' }}>{t.responsavel}</strong></span>
-                      <div style={{ display: 'flex', gap: '6px' }}>
-                        {isGestor && (
-                          <button 
-                            onClick={() => reabrirTarefa(t)}
-                            style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, color: '#ffc107', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}
-                          >
-                            🔄 Reabrir
-                          </button>
-                        )}
-                        {isGestor && (
-                          <button 
-                            onClick={() => excluirTarefa(t.id, t.titulo)}
-                            style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, color: '#ff6b6b', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px' }}
-                          >
-                            Excluir
-                          </button>
-                        )}
+              {tarefasResolvidas.map((t) => (
+                <div key={t.id} style={{ background: theme.cardInner, padding: '16px', borderRadius: '6px', borderLeft: '4px solid #28a745', border: `1px solid ${theme.border}`, borderLeftWidth: '4px', opacity: 0.9, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box', width: '100%' }}>
+                  <div>
+                    <h4 style={{ margin: '0 0 8px 0', fontSize: '15px', color: theme.textMuted, wordBreak: 'break-word', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      <span>{t.titulo}</span>
+                      <span style={{ fontSize: '11px', color: '#28a745', fontWeight: 'bold' }}>(Resolvido)</span>
+                    </h4>
+                    {t.descricao && (
+                      <p style={{ margin: '0 0 8px 0', fontSize: '13px', color: theme.textMuted, lineHeight: '1.4', wordBreak: 'break-word' }}>
+                        {t.descricao}
+                      </p>
+                    )}
+                    {t.detalhesResolucao && (
+                      <div style={{ background: darkMode ? '#1e2922' : '#e6f4ea', padding: '8px 10px', borderRadius: '4px', marginBottom: '12px', borderLeft: '3px solid #28a745' }}>
+                        <span style={{ fontSize: '11px', color: '#28a745', fontWeight: 'bold', display: 'block', marginBottom: '2px' }}>Detalhes da Resolução:</span>
+                        <p style={{ margin: 0, fontSize: '12px', color: theme.textMain, wordBreak: 'break-word' }}>{t.detalhesResolucao}</p>
                       </div>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', color: theme.textMuted, borderTop: `1px solid ${theme.border}`, paddingTop: '10px' }}>
+                    <span>👤 <strong style={{ color: '#4dabf7' }}>{t.responsavel}</strong></span>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      {isGestor && (
+                        <button 
+                          onClick={() => reabrirTarefa(t)}
+                          style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, color: '#ffc107', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}
+                        >
+                          🔄 Reabrir
+                        </button>
+                      )}
+                      {isGestor && (
+                        <button 
+                          onClick={() => excluirTarefa(t.id, t.titulo)}
+                          style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, color: '#ff6b6b', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px' }}
+                        >
+                          Excluir
+                        </button>
+                      )}
                     </div>
                   </div>
-                );
-              })}
+                </div>
+              ))}
             </div>
           )}
         </div>
@@ -767,7 +745,6 @@ export default function App() {
   return (
     <div className="app-container" style={{ backgroundColor: theme.bg, color: theme.textMain, minHeight: '100vh', width: '100%', padding: '15px', fontFamily: 'sans-serif', boxSizing: 'border-box', position: 'relative' }}>
       
-      {/* POP-UP DE ALERTA DE TAREFAS CRÍTICAS AO LOGAR */}
       {mostrarPopupAlerta && tarefasUrgentesUsuario.length > 0 && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.85)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, padding: '15px', boxSizing: 'border-box' }}>
           <div style={{ background: theme.cardBg, padding: '25px', borderRadius: '10px', width: '100%', maxWidth: '520px', border: '2px solid #ff4d4d', boxShadow: '0 8px 30px rgba(255, 77, 77, 0.3)', boxSizing: 'border-box', textAlign: 'center' }}>
@@ -799,7 +776,6 @@ export default function App() {
         </div>
       )}
 
-      {/* HEADER */}
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `1px solid ${theme.border}`, paddingBottom: '15px', marginBottom: '25px', flexWrap: 'wrap', gap: '15px', width: '100%', boxSizing: 'border-box' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
@@ -852,7 +828,6 @@ export default function App() {
         </div>
       </header>
 
-      {/* GRID DO COMPUTADOR E CELULAR */}
       <div className="main-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(320px, 380px) 1fr', gap: '20px', alignItems: 'start', width: '100%', boxSizing: 'border-box' }}>
         
         {/* COLUNA ESQUERDA: CADASTRAR TAREFA */}
@@ -958,38 +933,35 @@ export default function App() {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%', boxSizing: 'border-box' }}>
               
-              {/* 1. SEÇÃO DE ESPECIALISTAS (ACIMA) */}
               {tarefasEspecialistas.length > 0 && (
                 <div style={{ background: theme.cardInner, padding: '12px', borderRadius: '8px', border: `1px solid ${theme.border}`, width: '100%', boxSizing: 'border-box' }}>
                   <h4 style={{ margin: '0 0 12px 0', fontSize: '13px', color: '#ffc107', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '1px solid #ffc107', paddingBottom: '6px' }}>
                     ⭐ Especialistas ({tarefasEspecialistas.length})
                   </h4>
                   <div className="cards-container-grid">
-                    {tarefasEspecialistas.map(t => renderizarCardTarefa(t))}
+                    {tarefasEspecialistas.map(t => renderizarCardTarefa(t, theme, isGestor, nomeFormatadoGlobal, abrirModalEdicao, abrirModalResolucao, excluirTarefa))}
                   </div>
                 </div>
               )}
 
-              {/* 2. SEÇÃO DE NOC N3 (NO MEIO) */}
               {tarefasN3.length > 0 && (
                 <div style={{ background: theme.cardInner, padding: '12px', borderRadius: '8px', border: `1px solid ${theme.border}`, width: '100%', boxSizing: 'border-box' }}>
                   <h4 style={{ margin: '0 0 12px 0', fontSize: '13px', color: '#4dabf7', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '1px solid #4dabf7', paddingBottom: '6px' }}>
                     🔷 NOC N3 ({tarefasN3.length})
                   </h4>
                   <div className="cards-container-grid">
-                    {tarefasN3.map(t => renderizarCardTarefa(t))}
+                    {tarefasN3.map(t => renderizarCardTarefa(t, theme, isGestor, nomeFormatadoGlobal, abrirModalEdicao, abrirModalResolucao, excluirTarefa))}
                   </div>
                 </div>
               )}
 
-              {/* 3. SEÇÃO DE N1 (ABAIXO) */}
               {tarefasN1.length > 0 && (
                 <div style={{ background: theme.cardInner, padding: '12px', borderRadius: '8px', border: `1px solid ${theme.border}`, width: '100%', boxSizing: 'border-box' }}>
                   <h4 style={{ margin: '0 0 12px 0', fontSize: '13px', color: '#20c997', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '1px solid #20c997', paddingBottom: '6px' }}>
                     🟢 N1 ({tarefasN1.length})
                   </h4>
                   <div className="cards-container-grid">
-                    {tarefasN1.map(t => renderizarCardTarefa(t))}
+                    {tarefasN1.map(t => renderizarCardTarefa(t, theme, isGestor, nomeFormatadoGlobal, abrirModalEdicao, abrirModalResolucao, excluirTarefa))}
                   </div>
                 </div>
               )}
@@ -1075,7 +1047,7 @@ export default function App() {
         </div>
       )}
 
-      {/* MODAL DE RESOLUÇÃO DA TAREFA */}
+      {/* MODAL DE RESOLUÇÃO */}
       {tarefaResolvendo && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.8)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '15px', boxSizing: 'border-box' }}>
           <div style={{ background: theme.cardBg, padding: '25px', borderRadius: '8px', width: '100%', maxWidth: '450px', border: `1px solid ${theme.border}`, boxSizing: 'border-box' }}>
@@ -1119,77 +1091,76 @@ export default function App() {
 
     </div>
   );
+}
 
-  // FUNÇÃO AUXILIAR PARA RENDERIZAR CADA CARD DE TAREFA
-  function renderizarCardTarefa(t) {
-    const infoPrazo = calcularStatusPrazo(t.prazo);
-    const isResponsavelPelaTarefa = nomeFormatadoGlobal.includes(t.responsavel.toUpperCase());
-    const podeAgerir = isGestor || isResponsavelPelaTarefa;
-    const isUrgente = infoPrazo.status === 'vencido' || infoPrazo.status === 'hoje' || infoPrazo.status === 'um_dia';
+function renderizarCardTarefa(t, theme, isGestor, nomeFormatadoGlobal, abrirModalEdicao, abrirModalResolucao, excluirTarefa) {
+  const infoPrazo = calcularStatusPrazo(t.prazo);
+  const isResponsavelPelaTarefa = nomeFormatadoGlobal.includes(t.responsavel.toUpperCase());
+  const podeAgerir = isGestor || isResponsavelPelaTarefa;
+  const isUrgente = infoPrazo.status === 'vencido' || infoPrazo.status === 'hoje' || infoPrazo.status === 'um_dia';
 
-    return (
-      <div key={t.id} className={`card-tarefa-item ${isUrgente ? 'card-piscando' : ''}`} style={{ background: theme.cardBg, padding: '16px', borderRadius: '6px', border: `1px solid ${theme.border}`, borderLeft: isUrgente ? undefined : `4px solid #007bff`, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box', width: '100%' }}>
-        <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px', gap: '8px' }}>
-            <h4 style={{ margin: 0, fontSize: '15px', color: theme.textMain, wordBreak: 'break-word' }}>
-              {t.titulo}
-            </h4>
-            <span style={{ fontSize: '10px', padding: '3px 8px', borderRadius: '4px', background: t.prioridade === 'Crítica' ? '#b02a37' : t.prioridade === 'Alta' ? '#dc3545' : '#333', color: '#fff', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
-              {t.prioridade}
+  return (
+    <div key={t.id} className={`card-tarefa-item ${isUrgente ? 'card-piscando' : ''}`} style={{ background: theme.cardBg, padding: '16px', borderRadius: '6px', border: `1px solid ${theme.border}`, borderLeft: isUrgente ? undefined : `4px solid #007bff`, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box', width: '100%' }}>
+      <div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px', gap: '8px' }}>
+          <h4 style={{ margin: 0, fontSize: '15px', color: theme.textMain, wordBreak: 'break-word' }}>
+            {t.titulo}
+          </h4>
+          <span style={{ fontSize: '10px', padding: '3px 8px', borderRadius: '4px', background: t.prioridade === 'Crítica' ? '#b02a37' : t.prioridade === 'Alta' ? '#dc3545' : '#333', color: '#fff', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
+            {t.prioridade}
+          </span>
+        </div>
+
+        {t.descricao && (
+          <p style={{ margin: '0 0 12px 0', fontSize: '13px', color: theme.textMuted, lineHeight: '1.4', wordBreak: 'break-word' }}>
+            {t.descricao}
+          </p>
+        )}
+      </div>
+
+      <div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', color: theme.textMuted, borderTop: `1px solid ${theme.border}`, paddingTop: '10px', marginBottom: '12px', flexWrap: 'wrap', gap: '6px' }}>
+          <div>
+            👤 <strong style={{ color: '#4dabf7' }}>{t.responsavel}</strong>
+          </div>
+          <div>
+            <span className={isUrgente ? 'alerta-vencido' : ''} style={{ color: infoPrazo.status === 'normal' ? theme.textMuted : undefined }}>
+              📅 {infoPrazo.texto}
             </span>
           </div>
+        </div>
 
-          {t.descricao && (
-            <p style={{ margin: '0 0 12px 0', fontSize: '13px', color: theme.textMuted, lineHeight: '1.4', wordBreak: 'break-word' }}>
-              {t.descricao}
-            </p>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', flexWrap: 'wrap' }}>
+          {podeAgerir && (
+            <button 
+              onClick={() => abrirModalEdicao(t)}
+              style={{ background: theme.cardInner, border: `1px solid ${theme.border}`, color: '#4dabf7', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}
+            >
+              ✏️ Editar
+            </button>
+          )}
+
+          {podeAgerir && (
+            <button 
+              onClick={() => abrirModalResolucao(t)}
+              style={{ background: '#28a745', border: 'none', color: '#fff', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}
+            >
+              ✔ Resolver
+            </button>
+          )}
+          
+          {isGestor && (
+            <button 
+              onClick={() => excluirTarefa(t.id, t.titulo)}
+              style={{ background: theme.cardInner, border: `1px solid ${theme.border}`, color: '#ff6b6b', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px' }}
+            >
+              Excluir
+            </button>
           )}
         </div>
-
-        <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', color: theme.textMuted, borderTop: `1px solid ${theme.border}`, paddingTop: '10px', marginBottom: '12px', flexWrap: 'wrap', gap: '6px' }}>
-            <div>
-              👤 <strong style={{ color: '#4dabf7' }}>{t.responsavel}</strong>
-            </div>
-            <div>
-              <span className={isUrgente ? 'alerta-vencido' : ''} style={{ color: infoPrazo.status === 'normal' ? theme.textMuted : undefined }}>
-                📅 {infoPrazo.texto}
-              </span>
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', flexWrap: 'wrap' }}>
-            {podeAgerir && (
-              <button 
-                onClick={() => abrirModalEdicao(t)}
-                style={{ background: theme.cardInner, border: `1px solid ${theme.border}`, color: '#4dabf7', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}
-              >
-                ✏️ Editar
-              </button>
-            )}
-
-            {podeAgerir && (
-              <button 
-                onClick={() => abrirModalResolucao(t)}
-                style={{ background: '#28a745', border: 'none', color: '#fff', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}
-              >
-                ✔ Resolver
-              </button>
-            )}
-            
-            {isGestor && (
-              <button 
-                onClick={() => excluirTarefa(t.id, t.titulo)}
-                style={{ background: theme.cardInner, border: `1px solid ${theme.border}`, color: '#ff6b6b', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px' }}
-              >
-                Excluir
-              </button>
-            )}
-          </div>
-        </div>
       </div>
-    );
-  }
+    </div>
+  );
 }
 
 function TelaLogin({ onLoginSucesso, darkMode, setDarkMode, theme }) {
@@ -1244,7 +1215,6 @@ function TelaLogin({ onLoginSucesso, darkMode, setDarkMode, theme }) {
 
       <form onSubmit={alterarSenhaMode ? handleAlterarSenha : handleLogin} style={{ background: theme.cardBg, padding: '30px 20px', borderRadius: '8px', width: '100%', maxWidth: '380px', boxShadow: '0 4px 15px rgba(0,0,0,0.15)', border: `1px solid ${theme.border}`, boxSizing: 'border-box' }}>
         
-        {/* LOGO DA PASTA PUBLIC (logo.png) COM ORDEM NOC • NMR • NIIP */}
         <div style={{ textAlign: 'center', marginBottom: '20px' }}>
           <img 
             src="/logo.png" 
