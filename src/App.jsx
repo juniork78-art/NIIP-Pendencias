@@ -53,6 +53,19 @@ style.innerHTML = `
 `;
 document.head.appendChild(style);
 
+const formatarDataParaBr = (dataStr) => {
+  if (!dataStr) return '';
+  try {
+    const parts = dataStr.split('-');
+    if (parts.length === 3) {
+      return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
+    return dataStr;
+  } catch (e) {
+    return dataStr;
+  }
+};
+
 const calcularStatusPrazo = (dataStr) => {
   if (!dataStr) return { status: 'normal', texto: '', diasAtraso: 0 };
   try {
@@ -294,7 +307,8 @@ export default function App() {
 
     try {
       await setDoc(doc(db, `${setorSelecionado}_tarefas`, novaTarefaId), tarefaObj);
-      await registrarLogAuditoria("CRIAÇÃO", `Criou a tarefa para [${responsavelFinal}] com prazo ${prazo} e prioridade ${prioridade}`, titulo.trim());
+      const prazoBr = formatarDataParaBr(prazo);
+      await registrarLogAuditoria("CRIAÇÃO", `Criou a tarefa para [${responsavelFinal}] com prazo ${prazoBr} e prioridade ${prioridade}`, titulo.trim());
       setTitulo('');
       setDescription('');
       setPrazo('');
@@ -322,7 +336,9 @@ export default function App() {
     try {
       let alteracoesStr = [];
       if (tarefaEditando.prazo !== editPrazo) {
-        alteracoesStr.push(`Prazo alterado de [${tarefaEditando.prazo}] para [${editPrazo}]`);
+        const antigoBr = formatarDataParaBr(tarefaEditando.prazo);
+        const novoBr = formatarDataParaBr(editPrazo);
+        alteracoesStr.push(`Prazo alterado de [${antigoBr}] para [${novoBr}]`);
       }
       if (tarefaEditando.titulo !== editTitulo.trim()) {
         alteracoesStr.push(`Título alterado para "${editTitulo.trim()}"`);
