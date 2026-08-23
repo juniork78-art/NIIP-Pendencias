@@ -35,7 +35,7 @@ style.innerHTML = `
 document.head.appendChild(style);
 
 const calcularStatusPrazo = (dataStr) => {
-  if (!dataStr) return { status: 'normal', texto: '' };
+  if (!dataStr) return { status: 'normal', texto: '', diasAtraso: 0 };
   try {
     const parts = dataStr.split('-'); 
     if (parts.length === 3) {
@@ -51,15 +51,15 @@ const calcularStatusPrazo = (dataStr) => {
 
       const dataFormatada = `${String(day).padStart(2, '0')}/${String(month + 1).padStart(2, '0')}/${year}`;
 
-      if (diffDays < 0) return { status: 'vencido', texto: `Vencido há ${Math.abs(diffDays)} dia(s) (${dataFormatada})` };
-      if (diffDays === 0) return { status: 'hoje', texto: `Vence HOJE (${dataFormatada})` };
-      if (diffDays === 1) return { status: 'um_dia', texto: `Vence AMANHÃ (${dataFormatada})` };
-      if (diffDays <= 3) return { status: 'proximo', texto: `Vence em ${diffDays} dia(s) (${dataFormatada})` };
-      return { status: 'normal', texto: `Prazo: ${dataFormatada}` };
+      if (diffDays < 0) return { status: 'vencido', texto: `Vencido há ${Math.abs(diffDays)} dia(s) (${dataFormatada})`, diasAtraso: Math.abs(diffDays) };
+      if (diffDays === 0) return { status: 'hoje', texto: `Vence HOJE (${dataFormatada})`, diasAtraso: 0 };
+      if (diffDays === 1) return { status: 'um_dia', texto: `Vence AMANHÃ (${dataFormatada})`, diasAtraso: 0 };
+      if (diffDays <= 3) return { status: 'proximo', texto: `Vence em ${diffDays} dia(s) (${dataFormatada})`, diasAtraso: 0 };
+      return { status: 'normal', texto: `Prazo: ${dataFormatada}`, diasAtraso: 0 };
     }
-    return { status: 'normal', texto: '' };
+    return { status: 'normal', texto: '', diasAtraso: 0 };
   } catch (e) {
-    return { status: 'normal', texto: '' };
+    return { status: 'normal', texto: '', diasAtraso: 0 };
   }
 };
 
@@ -107,11 +107,17 @@ export default function App() {
   const [editPrazo, setEditPrazo] = useState('');
   const [editPrioridade, setEditPrioridade] = useState('');
 
+  // Estado do Pop-up de Alerta ao Login
+  const [mostrarPopupAlerta, setMostrarPopupAlerta] = useState(false);
+  const [tarefasUrgentesUsuario, setTarefasUrgentesUsuario] = useState([]);
+  const [popupJaExibido, setPopupJaExibido] = useState(false);
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         const emailLower = user.email.toLowerCase();
         setUsuarioLogado(user.email);
+        setPopupJaExibido(false); // Reseta para exibir o popup ao trocar de sessão
 
         if (emailLower.includes('duandys')) {
           setSetorSelecionado(null);
@@ -133,11 +139,14 @@ export default function App() {
       } else {
         setUsuarioLogado(null);
         setSetorSelecionado(null);
+        setPopupJaExibido(false);
       }
       setLoadingAuth(false);
     });
     return () => unsubscribe();
   }, []);
+
+  const nomeFormatadoGlobal = usuarioLogado ? usuarioLogado.split('@')[0].replace('.', ' ').toUpperCase() : '';
 
   useEffect(() => {
     if (usuarioLogado && setorSelecionado) {
@@ -148,12 +157,27 @@ export default function App() {
         });
         lista.sort((a, b) => b.criadoEm - a.criadoEm);
         setTarefas(lista);
+
+        // Verifica se há tarefas vencidas ou vencendo amanhã atribuídas ao usuário logado
+        if (!popupJaExibido) {
+          const minhasUrgentes = lista.filter(t => {
+            if (t.status === 'Resolvida') return false;
+            const isMeu = nomeFormatadoGlobal.includes(t.responsavel.toUpperCase());
+            if (!isMeu) return false;
+            const st = calcularStatusPrazo(t.prazo);
+            return st.status === 'vencido' || st.status === 'hoje' || st.status === 'um_dia';
+          });
+
+          if (minhasUrgentes.length > 0) {
+            setTarefasUrgentesUsuario(minhasUrgentes);
+            setMostrarPopupAlerta(true);
+            setPopupJaExibido(true);
+          }
+        }
       });
       return () => unsub();
     }
-  }, [usuarioLogado, setorSelecionado]);
-
-  const nomeFormatadoGlobal = usuarioLogado ? usuarioLogado.split('@')[0].replace('.', ' ').toUpperCase() : '';
+  }, [usuarioLogado, setorSelecionado, nomeFormatadoGlobal, popupJaExibido]);
   
   const obterIntegrantesSetor = () => {
     if (setorSelecionado === 'noc') return INTEGRANTES_NOC;
@@ -440,8 +464,40 @@ export default function App() {
 
   // TELA PRINCIPAL DE ANDAMENTO
   return (
-    <div style={{ backgroundColor: theme.bg, color: theme.textMain, minHeight: '100vh', width: '100%', padding: '24px', fontFamily: 'sans-serif', boxSizing: 'border-box' }}>
+    <div style={{ backgroundColor: theme.bg, color: theme.textMain, minHeight: '100vh', width: '100%', padding: '24px', fontFamily: 'sans-serif', boxSizing: 'border-box', position: 'relative' }}>
       
+      {/* POP-UP DE ALERTA DE TAREFAS CRÍTICAS AO LOGAR */}
+      {mostrarPopupAlerta && tarefasUrgentesUsuario.length > 0 && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.85)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, padding: '20px', boxSizing: 'border-box' }}>
+          <div style={{ background: theme.cardBg, padding: '30px', borderRadius: '10px', width: '100%', maxWidth: '520px', border: '2px solid #ff4d4d', boxShadow: '0 8px 30px rgba(255, 77, 77, 0.3)', boxSizing: 'border-box', textAlign: 'center' }}>
+            <div style={{ fontSize: '36px', marginBottom: '10px' }}>🚨</div>
+            <h2 style={{ margin: '0 0 10px 0', color: '#ff4d4d', fontSize: '20px' }}>Atenção, {nomeFormatadoGlobal}!</h2>
+            <p style={{ fontSize: '14px', color: theme.textMuted, marginBottom: '20px', lineHeight: '1.5' }}>
+              Você possui <strong>{tarefasUrgentesUsuario.length}</strong> tarefa(s) sob sua responsabilidade que está(ão) com prazo crítico ou vencida(s):
+            </p>
+
+            <div style={{ maxHeight: '250px', overflowY: 'auto', marginBottom: '25px', display: 'flex', flexDirection: 'column', gap: '10px', textAlign: 'left' }}>
+              {tarefasUrgentesUsuario.map(t => {
+                const st = calcularStatusPrazo(t.prazo);
+                return (
+                  <div key={t.id} style={{ background: theme.cardInner, padding: '12px 15px', borderRadius: '6px', borderLeft: '4px solid #ff4d4d', border: `1px solid ${theme.border}`, borderLeftWidth: '4px' }}>
+                    <div style={{ fontWeight: 'bold', fontSize: '14px', color: theme.textMain, marginBottom: '4px' }}>{t.titulo}</div>
+                    <div style={{ fontSize: '12px', color: '#ff4d4d', fontWeight: 'bold' }}>📅 {st.texto}</div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <button 
+              onClick={() => setMostrarPopupAlerta(false)}
+              style={{ width: '100%', padding: '12px', background: '#ff4d4d', border: 'none', color: '#fff', fontWeight: 'bold', borderRadius: '6px', cursor: 'pointer', fontSize: '14px' }}
+            >
+              Entendido, acessar painel
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* HEADER */}
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `1px solid ${theme.border}`, paddingBottom: '15px', marginBottom: '25px', flexWrap: 'wrap', gap: '15px', width: '100%', boxSizing: 'border-box' }}>
         <div>
