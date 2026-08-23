@@ -517,6 +517,8 @@ export default function App() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '15px', width: '100%', boxSizing: 'border-box' }}>
               {tarefasFiltradas.map((t) => {
                 const infoPrazo = calcularStatusPrazo(t.prazo);
+                const isResponsavelPelaTarefa = nomeFormatado.includes(t.responsavel.toUpperCase());
+                const podeEditar = isGestor || isResponsavelPelaTarefa;
 
                 let borderLeftColor = '#007bff';
                 if (infoPrazo.status === 'vencido') borderLeftColor = '#ff4d4d';
@@ -554,12 +556,14 @@ export default function App() {
                       </div>
 
                       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', flexWrap: 'wrap' }}>
-                        <button 
-                          onClick={() => abrirModalEdicao(t)}
-                          style={{ background: '#333', border: '1px solid #555', color: '#4dabf7', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}
-                        >
-                          ✏️ Editar
-                        </button>
+                        {podeEditar && (
+                          <button 
+                            onClick={() => abrirModalEdicao(t)}
+                            style={{ background: '#333', border: '1px solid #555', color: '#4dabf7', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}
+                          >
+                            ✏️ Editar
+                          </button>
+                        )}
 
                         <button 
                           onClick={() => resolverTarefa(t)}
