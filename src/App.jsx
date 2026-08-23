@@ -33,7 +33,7 @@ style.innerHTML = `
     animation: piscar 2s infinite;
   }
 
-  /* OTIMIZAÇÃO EXCLUSIVA PARA DISPOSITIVOS MÓVEIS (CELULARES) */
+  /* OTIMIZAÇÃO E PREENCHIMENTO PERFEITO PARA DISPOSITIVOS MÓVEIS (CELULARES) */
   @media (max-width: 768px) {
     * {
       box-sizing: border-box;
@@ -43,11 +43,17 @@ style.innerHTML = `
       padding: 0;
       overflow-x: hidden;
     }
+    .app-container {
+      padding: 10px !important;
+      width: 100% !important;
+    }
     .main-grid {
       grid-template-columns: 1fr !important;
+      width: 100% !important;
+      gap: 15px !important;
     }
-    .app-container {
-      padding: 15px !important;
+    .card-tarefa-item {
+      width: 100% !important;
     }
   }
 `;
@@ -106,7 +112,7 @@ const INTEGRANTES_NIIP = ["Francisco", "Gabriel", "Walgney"];
 const INTEGRANTES_NOC = ["Gustavo", "Stevan", "Gilvan", "Kessy", "João", "Lucas", "Tolentino"];
 const INTEGRANTES_NMR = ["Dhennifer"];
 
-// ORDEM SOLICITADA: NOC, NMR e por fim NIIP
+// ORDEM: NOC, NMR e por fim NIIP
 const SETORES_DISPONIVEIS = [
   { 
     id: 'noc', 
@@ -468,10 +474,10 @@ export default function App() {
 
   if (!setorSelecionado && isGestor) {
     return (
-      <div style={{ backgroundColor: theme.bg, color: theme.textMain, minHeight: '100vh', width: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', fontFamily: 'sans-serif', padding: '20px', boxSizing: 'border-box', position: 'relative' }}>
+      <div style={{ backgroundColor: theme.bg, color: theme.textMain, minHeight: '100vh', width: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', fontFamily: 'sans-serif', padding: '15px', boxSizing: 'border-box', position: 'relative' }}>
         <button 
           onClick={() => setDarkMode(!darkMode)}
-          style={{ position: 'absolute', top: '20px', right: '20px', background: theme.cardBg, border: `1px solid ${theme.border}`, color: theme.textMain, padding: '8px 14px', borderRadius: '20px', cursor: 'pointer', fontSize: '13px', fontWeight: 'bold' }}
+          style={{ position: 'absolute', top: '15px', right: '15px', background: theme.cardBg, border: `1px solid ${theme.border}`, color: theme.textMain, padding: '8px 14px', borderRadius: '20px', cursor: 'pointer', fontSize: '13px', fontWeight: 'bold' }}
         >
           {darkMode ? '☀️ Modo Claro' : '🌙 Modo Escuro'}
         </button>
@@ -544,7 +550,7 @@ export default function App() {
   // TELA DE AUDITORIA EXCLUSIVA DO GESTOR COM OPÇÕES DE APAGAR LOGS
   if (paginaAtual === 'auditoria' && isGestor) {
     return (
-      <div className="app-container" style={{ backgroundColor: theme.bg, color: theme.textMain, minHeight: '100vh', width: '100%', padding: '24px', fontFamily: 'sans-serif', boxSizing: 'border-box' }}>
+      <div className="app-container" style={{ backgroundColor: theme.bg, color: theme.textMain, minHeight: '100vh', width: '100%', padding: '15px', fontFamily: 'sans-serif', boxSizing: 'border-box' }}>
         <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `1px solid ${theme.border}`, paddingBottom: '15px', marginBottom: '25px', flexWrap: 'wrap', gap: '15px', width: '100%', boxSizing: 'border-box' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
@@ -577,7 +583,7 @@ export default function App() {
           </div>
         </header>
 
-        <div style={{ background: theme.cardBg, padding: '24px', borderRadius: '8px', border: `1px solid ${theme.border}`, width: '100%', boxSizing: 'border-box' }}>
+        <div style={{ background: theme.cardBg, padding: '15px', borderRadius: '8px', border: `1px solid ${theme.border}`, width: '100%', boxSizing: 'border-box' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px', borderBottom: `1px solid ${theme.border}`, paddingBottom: '15px' }}>
             <div>
               <h3 style={{ margin: '0 0 6px 0', color: '#ffc107', fontSize: '18px' }}>🔍 Histórico de Modificações e Prazos Alterados</h3>
@@ -600,7 +606,7 @@ export default function App() {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {logsAuditoria.map((log) => (
-                <div key={log.id} style={{ background: theme.cardInner, padding: '15px', borderRadius: '6px', border: `1px solid ${theme.border}`, borderLeft: log.acao === 'RESOLUÇÃO' ? '4px solid #28a745' : '4px solid #ffc107', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '15px' }}>
+                <div key={log.id} style={{ background: theme.cardInner, padding: '15px', borderRadius: '6px', border: `1px solid ${theme.border}`, borderLeft: log.acao === 'RESOLUÇÃO' ? '4px solid #28a745' : '4px solid #ffc107', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '15px', width: '100%', boxSizing: 'border-box' }}>
                   <div style={{ flex: '1 1 300px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                       <span style={{ background: log.acao === 'RESOLUÇÃO' ? '#28a745' : '#ffc107', color: log.acao === 'RESOLUÇÃO' ? '#fff' : '#000', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold' }}>{log.acao}</span>
@@ -637,7 +643,7 @@ export default function App() {
   // TELA INTERNA DE TAREFAS RESOLVIDAS
   if (paginaAtual === 'resolvidas') {
     return (
-      <div className="app-container" style={{ backgroundColor: theme.bg, color: theme.textMain, minHeight: '100vh', width: '100%', padding: '24px', fontFamily: 'sans-serif', boxSizing: 'border-box' }}>
+      <div className="app-container" style={{ backgroundColor: theme.bg, color: theme.textMain, minHeight: '100vh', width: '100%', padding: '15px', fontFamily: 'sans-serif', boxSizing: 'border-box' }}>
         <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `1px solid ${theme.border}`, paddingBottom: '15px', marginBottom: '25px', flexWrap: 'wrap', gap: '15px', width: '100%', boxSizing: 'border-box' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
@@ -678,7 +684,7 @@ export default function App() {
           </div>
         </header>
 
-        <div style={{ background: theme.cardBg, padding: '24px', borderRadius: '8px', border: `1px solid ${theme.border}`, width: '100%', boxSizing: 'border-box' }}>
+        <div style={{ background: theme.cardBg, padding: '15px', borderRadius: '8px', border: `1px solid ${theme.border}`, width: '100%', boxSizing: 'border-box' }}>
           <h3 style={{ margin: '0 0 20px 0', color: '#28a745', fontSize: '18px', borderBottom: `1px solid ${theme.border}`, paddingBottom: '10px' }}>✅ Tarefas Resolvidas ({tarefasResolvidas.length})</h3>
 
           {tarefasResolvidas.length === 0 ? (
@@ -687,7 +693,7 @@ export default function App() {
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '15px', width: '100%', boxSizing: 'border-box' }}>
               {tarefasResolvidas.map((t) => {
                 return (
-                  <div key={t.id} style={{ background: theme.cardInner, padding: '16px', borderRadius: '6px', borderLeft: '4px solid #28a745', border: `1px solid ${theme.border}`, borderLeftWidth: '4px', opacity: 0.9, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box', width: '320px' }}>
+                  <div key={t.id} className="card-tarefa-item" style={{ background: theme.cardInner, padding: '16px', borderRadius: '6px', borderLeft: '4px solid #28a745', border: `1px solid ${theme.border}`, borderLeftWidth: '4px', opacity: 0.9, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box', width: '320px' }}>
                     <div>
                       <h4 style={{ margin: '0 0 8px 0', fontSize: '15px', color: theme.textMuted, wordBreak: 'break-word', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                         <span>{t.titulo}</span>
@@ -738,12 +744,12 @@ export default function App() {
 
   // TELA PRINCIPAL DE ANDAMENTO
   return (
-    <div className="app-container" style={{ backgroundColor: theme.bg, color: theme.textMain, minHeight: '100vh', width: '100%', padding: '24px', fontFamily: 'sans-serif', boxSizing: 'border-box', position: 'relative' }}>
+    <div className="app-container" style={{ backgroundColor: theme.bg, color: theme.textMain, minHeight: '100vh', width: '100%', padding: '15px', fontFamily: 'sans-serif', boxSizing: 'border-box', position: 'relative' }}>
       
       {/* POP-UP DE ALERTA DE TAREFAS CRÍTICAS AO LOGAR */}
       {mostrarPopupAlerta && tarefasUrgentesUsuario.length > 0 && (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.85)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, padding: '20px', boxSizing: 'border-box' }}>
-          <div style={{ background: theme.cardBg, padding: '30px', borderRadius: '10px', width: '100%', maxWidth: '520px', border: '2px solid #ff4d4d', boxShadow: '0 8px 30px rgba(255, 77, 77, 0.3)', boxSizing: 'border-box', textAlign: 'center' }}>
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.85)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, padding: '15px', boxSizing: 'border-box' }}>
+          <div style={{ background: theme.cardBg, padding: '25px', borderRadius: '10px', width: '100%', maxWidth: '520px', border: '2px solid #ff4d4d', boxShadow: '0 8px 30px rgba(255, 77, 77, 0.3)', boxSizing: 'border-box', textAlign: 'center' }}>
             <div style={{ fontSize: '36px', marginBottom: '10px' }}>🚨</div>
             <h2 style={{ margin: '0 0 10px 0', color: '#ff4d4d', fontSize: '20px' }}>Atenção, {nomeFormatadoGlobal}!</h2>
             <p style={{ fontSize: '14px', color: theme.textMuted, marginBottom: '20px', lineHeight: '1.5' }}>
@@ -825,11 +831,11 @@ export default function App() {
         </div>
       </header>
 
-      {/* GRID DO COMPUTADOR */}
-      <div className="main-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(350px, 400px) 1fr', gap: '25px', alignItems: 'start', width: '100%', boxSizing: 'border-box' }}>
+      {/* GRID DO COMPUTADOR E CELULAR */}
+      <div className="main-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(320px, 380px) 1fr', gap: '20px', alignItems: 'start', width: '100%', boxSizing: 'border-box' }}>
         
         {/* COLUNA ESQUERDA: CADASTRAR TAREFA */}
-        <div style={{ background: theme.cardBg, padding: '24px', borderRadius: '8px', border: `1px solid ${theme.border}`, width: '100%', boxSizing: 'border-box' }}>
+        <div style={{ background: theme.cardBg, padding: '20px', borderRadius: '8px', border: `1px solid ${theme.border}`, width: '100%', boxSizing: 'border-box' }}>
           <h3 style={{ margin: '0 0 20px 0', color: theme.textMain, fontSize: '16px', borderBottom: `1px solid ${theme.border}`, paddingBottom: '10px' }}>➕ Nova Tarefa de Longo Prazo</h3>
           
           <form onSubmit={adicionarTarefa}>
@@ -913,7 +919,7 @@ export default function App() {
         </div>
 
         {/* COLUNA DIREITA: LISTAGEM DE TAREFAS */}
-        <div style={{ background: theme.cardBg, padding: '24px', borderRadius: '8px', border: `1px solid ${theme.border}`, width: '100%', boxSizing: 'border-box' }}>
+        <div style={{ background: theme.cardBg, padding: '20px', borderRadius: '8px', border: `1px solid ${theme.border}`, width: '100%', boxSizing: 'border-box' }}>
           
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: `1px solid ${theme.border}`, paddingBottom: '10px', flexWrap: 'wrap', gap: '12px' }}>
             <h3 style={{ margin: 0, color: theme.textMain, fontSize: '16px' }}>📋 Tarefas e Pendências em Andamento</h3>
@@ -929,15 +935,15 @@ export default function App() {
           {tarefasFiltradas.length === 0 ? (
             <p style={{ color: theme.textMuted, fontSize: '14px', textAlign: 'center', padding: '60px 0' }}>Nenhuma tarefa em andamento encontrada.</p>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '25px', width: '100%', boxSizing: 'border-box' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%', boxSizing: 'border-box' }}>
               
               {/* 1. SEÇÃO DE ESPECIALISTAS (ACIMA) */}
               {tarefasEspecialistas.length > 0 && (
-                <div style={{ background: theme.cardInner, padding: '15px', borderRadius: '8px', border: `1px solid ${theme.border}` }}>
+                <div style={{ background: theme.cardInner, padding: '12px', borderRadius: '8px', border: `1px solid ${theme.border}`, width: '100%', boxSizing: 'border-box' }}>
                   <h4 style={{ margin: '0 0 12px 0', fontSize: '13px', color: '#ffc107', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '1px solid #ffc107', paddingBottom: '6px' }}>
                     ⭐ Especialistas ({tarefasEspecialistas.length})
                   </h4>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', width: '100%', boxSizing: 'border-box' }}>
                     {tarefasEspecialistas.map(t => renderizarCardTarefa(t))}
                   </div>
                 </div>
@@ -945,11 +951,11 @@ export default function App() {
 
               {/* 2. SEÇÃO DE NOC N3 (NO MEIO) */}
               {tarefasN3.length > 0 && (
-                <div style={{ background: theme.cardInner, padding: '15px', borderRadius: '8px', border: `1px solid ${theme.border}` }}>
+                <div style={{ background: theme.cardInner, padding: '12px', borderRadius: '8px', border: `1px solid ${theme.border}`, width: '100%', boxSizing: 'border-box' }}>
                   <h4 style={{ margin: '0 0 12px 0', fontSize: '13px', color: '#4dabf7', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '1px solid #4dabf7', paddingBottom: '6px' }}>
                     🔷 NOC N3 ({tarefasN3.length})
                   </h4>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', width: '100%', boxSizing: 'border-box' }}>
                     {tarefasN3.map(t => renderizarCardTarefa(t))}
                   </div>
                 </div>
@@ -957,11 +963,11 @@ export default function App() {
 
               {/* 3. SEÇÃO DE N1 (ABAIXO) */}
               {tarefasN1.length > 0 && (
-                <div style={{ background: theme.cardInner, padding: '15px', borderRadius: '8px', border: `1px solid ${theme.border}` }}>
+                <div style={{ background: theme.cardInner, padding: '12px', borderRadius: '8px', border: `1px solid ${theme.border}`, width: '100%', boxSizing: 'border-box' }}>
                   <h4 style={{ margin: '0 0 12px 0', fontSize: '13px', color: '#20c997', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '1px solid #20c997', paddingBottom: '6px' }}>
                     🟢 N1 ({tarefasN1.length})
                   </h4>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', width: '100%', boxSizing: 'border-box' }}>
                     {tarefasN1.map(t => renderizarCardTarefa(t))}
                   </div>
                 </div>
@@ -976,8 +982,8 @@ export default function App() {
 
       {/* MODAL DE EDIÇÃO */}
       {tarefaEditando && (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.8)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '20px', boxSizing: 'border-box' }}>
-          <div style={{ background: theme.cardBg, padding: '30px', borderRadius: '8px', width: '100%', maxWidth: '450px', border: `1px solid ${theme.border}`, boxSizing: 'border-box' }}>
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.8)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '15px', boxSizing: 'border-box' }}>
+          <div style={{ background: theme.cardBg, padding: '25px', borderRadius: '8px', width: '100%', maxWidth: '450px', border: `1px solid ${theme.border}`, boxSizing: 'border-box' }}>
             <h3 style={{ margin: '0 0 20px 0', color: '#4dabf7', fontSize: '18px', borderBottom: `1px solid ${theme.border}`, paddingBottom: '10px' }}>✏️ Editar Tarefa</h3>
             
             <form onSubmit={salvarEdicaoTarefa}>
@@ -1050,8 +1056,8 @@ export default function App() {
 
       {/* MODAL DE RESOLUÇÃO DA TAREFA */}
       {tarefaResolvendo && (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.8)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '20px', boxSizing: 'border-box' }}>
-          <div style={{ background: theme.cardBg, padding: '30px', borderRadius: '8px', width: '100%', maxWidth: '450px', border: `1px solid ${theme.border}`, boxSizing: 'border-box' }}>
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.8)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '15px', boxSizing: 'border-box' }}>
+          <div style={{ background: theme.cardBg, padding: '25px', borderRadius: '8px', width: '100%', maxWidth: '450px', border: `1px solid ${theme.border}`, boxSizing: 'border-box' }}>
             <h3 style={{ margin: '0 0 10px 0', color: '#28a745', fontSize: '18px' }}>✔ Resolver Tarefa</h3>
             <p style={{ fontSize: '13px', color: theme.textMuted, marginBottom: '20px' }}>
               Informe o relato ou os detalhes de como a tarefa foi resolvida: <strong>{tarefaResolvendo.titulo}</strong>
@@ -1101,7 +1107,7 @@ export default function App() {
     const isUrgente = infoPrazo.status === 'vencido' || infoPrazo.status === 'hoje' || infoPrazo.status === 'um_dia';
 
     return (
-      <div key={t.id} className={isUrgente ? 'card-piscando' : ''} style={{ background: theme.cardBg, padding: '16px', borderRadius: '6px', border: `1px solid ${theme.border}`, borderLeft: isUrgente ? undefined : `4px solid #007bff`, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box', width: '310px' }}>
+      <div key={t.id} className={`card-tarefa-item ${isUrgente ? 'card-piscando' : ''}`} style={{ background: theme.cardBg, padding: '16px', borderRadius: '6px', border: `1px solid ${theme.border}`, borderLeft: isUrgente ? undefined : `4px solid #007bff`, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box', width: '310px' }}>
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px', gap: '8px' }}>
             <h4 style={{ margin: 0, fontSize: '15px', color: theme.textMain, wordBreak: 'break-word' }}>
@@ -1207,15 +1213,15 @@ function TelaLogin({ onLoginSucesso, darkMode, setDarkMode, theme }) {
   };
 
   return (
-    <div style={{ backgroundColor: theme.bg, color: theme.textMain, minHeight: '100vh', width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', fontFamily: 'sans-serif', boxSizing: 'border-box', padding: '20px', position: 'relative' }}>
+    <div style={{ backgroundColor: theme.bg, color: theme.textMain, minHeight: '100vh', width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', fontFamily: 'sans-serif', boxSizing: 'border-box', padding: '15px', position: 'relative' }}>
       <button 
         onClick={() => setDarkMode(!darkMode)}
-        style={{ position: 'absolute', top: '20px', right: '20px', background: theme.cardBg, border: `1px solid ${theme.border}`, color: theme.textMain, padding: '8px 14px', borderRadius: '20px', cursor: 'pointer', fontSize: '13px', fontWeight: 'bold' }}
+        style={{ position: 'absolute', top: '15px', right: '15px', background: theme.cardBg, border: `1px solid ${theme.border}`, color: theme.textMain, padding: '8px 14px', borderRadius: '20px', cursor: 'pointer', fontSize: '13px', fontWeight: 'bold' }}
       >
         {darkMode ? '☀️ Modo Claro' : '🌙 Modo Escuro'}
       </button>
 
-      <form onSubmit={alterarSenhaMode ? handleAlterarSenha : handleLogin} style={{ background: theme.cardBg, padding: '35px', borderRadius: '8px', width: '100%', maxWidth: '380px', boxShadow: '0 4px 15px rgba(0,0,0,0.15)', border: `1px solid ${theme.border}`, boxSizing: 'border-box' }}>
+      <form onSubmit={alterarSenhaMode ? handleAlterarSenha : handleLogin} style={{ background: theme.cardBg, padding: '30px 20px', borderRadius: '8px', width: '100%', maxWidth: '380px', boxShadow: '0 4px 15px rgba(0,0,0,0.15)', border: `1px solid ${theme.border}`, boxSizing: 'border-box' }}>
         
         {/* LOGO DA PASTA PUBLIC (logo.png) COM ORDEM NOC • NMR • NIIP */}
         <div style={{ textAlign: 'center', marginBottom: '20px' }}>
