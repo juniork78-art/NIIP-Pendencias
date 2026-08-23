@@ -179,6 +179,37 @@ export default function App() {
   const [tarefasUrgentesUsuario, setTarefasUrgentesUsuario] = useState([]);
   const [popupJaExibido, setPopupJaExibido] = useState(false);
 
+  // Função customizada para mudar de página empurrando estado no histórico do navegador
+  const mudarPagina = (novaPagina) => {
+    window.history.pushState({ pagina: novaPagina }, '');
+    setPaginaAtual(novaPagina);
+  };
+
+  const mudarSetor = (novoSetor) => {
+    window.history.pushState({ setor: novoSetor }, '');
+    setSetorSelecionado(novoSetor);
+    setPaginaAtual('andamento');
+  };
+
+  // Monitora o botão de Voltar/Avançar do navegador
+  useEffect(() => {
+    const handlePopState = (event) => {
+      if (event.state) {
+        if (event.state.pagina) {
+          setPaginaAtual(event.state.pagina);
+        }
+        if (event.state.setor !== undefined) {
+          setSetorSelecionado(event.state.setor);
+        }
+      } else {
+        setPaginaAtual('andamento');
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
@@ -504,7 +535,7 @@ export default function App() {
             {SETORES_DISPONIVEIS.map(setor => (
               <div 
                 key={setor.id} 
-                onClick={() => { setSetorSelecionado(setor.id); setPaginaAtual('andamento'); }}
+                onClick={() => mudarSetor(setor.id)}
                 style={{ 
                   background: theme.cardBg, 
                   border: `1px solid ${theme.border}`, 
@@ -568,7 +599,7 @@ export default function App() {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
               <button 
-                onClick={() => setPaginaAtual('andamento')} 
+                onClick={() => mudarPagina('andamento')} 
                 style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, color: theme.textMain, padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}
               >
                 ← Voltar Página
@@ -655,7 +686,7 @@ export default function App() {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
               <button 
-                onClick={() => setPaginaAtual('andamento')} 
+                onClick={() => mudarPagina('andamento')} 
                 style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, color: theme.textMain, padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}
               >
                 ← Voltar Página
@@ -669,7 +700,7 @@ export default function App() {
           <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
             {isGestor && (
               <button 
-                onClick={() => setPaginaAtual('auditoria')}
+                onClick={() => mudarPagina('auditoria')}
                 style={{ background: theme.cardBg, border: '1px solid #ffc107', color: '#ffc107', padding: '8px 14px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}
               >
                 🛡️ Menu Auditoria
@@ -781,7 +812,7 @@ export default function App() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
             {isGestor && (
               <button 
-                onClick={() => setSetorSelecionado(null)} 
+                onClick={() => mudarSetor(null)} 
                 style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, color: theme.textMain, padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px' }}
               >
                 ← Trocar Setor
@@ -797,7 +828,7 @@ export default function App() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '15px', flexWrap: 'wrap' }}>
           {isGestor && (
             <button 
-              onClick={() => setPaginaAtual('auditoria')}
+              onClick={() => mudarPagina('auditoria')}
               style={{ background: theme.cardBg, border: '1px solid #ffc107', color: '#ffc107', padding: '9px 16px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}
             >
               🛡️ Menu Auditoria
@@ -811,7 +842,7 @@ export default function App() {
           )}
           
           <button 
-            onClick={() => setPaginaAtual('resolvidas')}
+            onClick={() => mudarPagina('resolvidas')}
             style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, color: '#28a745', padding: '9px 16px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}
           >
             ✅ Tarefas Resolvidas ({tarefasResolvidas.length})
