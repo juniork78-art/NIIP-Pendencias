@@ -103,9 +103,8 @@ export default function App() {
         const emailLower = user.email.toLowerCase();
         setUsuarioLogado(user.email);
 
-        // Atribuição automática de setor baseada no e-mail
         if (emailLower.includes('duandys')) {
-          setSetorSelecionado(null); // Gestor escolhe
+          setSetorSelecionado(null);
         } else if (
           emailLower.includes('gustavo') || 
           emailLower.includes('stevan') || 
@@ -212,6 +211,8 @@ export default function App() {
 
   const nomeFormatado = usuarioLogado.split('@')[0].replace('.', ' ').toUpperCase();
   const isGestor = nomeFormatado.includes('DUANDYS');
+  const isEspecialista = nomeFormatado.includes('GILVAN') || nomeFormatado.includes('STEVAN');
+  const tipoCargo = isGestor ? 'Gestor' : isEspecialista ? 'Especialista' : 'Integrante';
 
   if (!setorSelecionado && isGestor) {
     return (
@@ -285,7 +286,7 @@ export default function App() {
               <span style={{ fontSize: '13px', color: '#28a745', fontWeight: 'bold' }}>[{setorAtualInfo.nome} - Resolvidas]</span>
             </div>
             <p style={{ margin: 0, fontSize: '13px', color: '#aaa' }}>
-              Histórico completo de tarefas concluídas.
+              Usuário: <strong>{nomeFormatado}</strong> ({tipoCargo})
             </p>
           </div>
           <button onClick={() => signOut(auth)} style={{ background: '#dc3545', border: 'none', color: '#fff', padding: '9px 16px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}>Sair</button>
@@ -357,7 +358,7 @@ export default function App() {
             <span style={{ fontSize: '13px', color: '#4dabf7', fontWeight: 'bold' }}>[{setorAtualInfo.nome}]</span>
           </div>
           <p style={{ margin: 0, fontSize: '13px', color: '#aaa' }}>
-            Usuário: <strong>{nomeFormatado}</strong> ({isGestor ? 'Gestor' : 'Integrante'})
+            Usuário: <strong>{nomeFormatado}</strong> ({tipoCargo})
           </p>
         </div>
         
