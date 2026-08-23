@@ -1013,16 +1013,22 @@ function TelaLogin({ onLoginSucesso, darkMode, setDarkMode, theme }) {
         {darkMode ? '☀️ Modo Claro' : '🌙 Modo Escuro'}
       </button>
 
-      <form onSubmit={alterarSenhaMode ? handleAlterarSenha : handleLogin} style={{ background: theme.cardBg, padding: '35px', borderRadius: '8px', width: '100%', maxWidth: '360px', boxShadow: '0 4px 15px rgba(0,0,0,0.15)', border: `1px solid ${theme.border}`, boxSizing: 'border-box' }}>
+      <form onSubmit={alterarSenhaMode ? handleAlterarSenha : handleLogin} style={{ background: theme.cardBg, padding: '35px', borderRadius: '8px', width: '100%', maxWidth: '380px', boxShadow: '0 4px 15px rgba(0,0,0,0.15)', border: `1px solid ${theme.border}`, boxSizing: 'border-box' }}>
         
-        {/* LOGO / IDENTIDADE FIBRALINK */}
+        {/* LOGO OFICIAL DA FIBRALINK */}
         <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-          <div style={{ display: 'inline-block', background: 'linear-gradient(135deg, #007bff, #00d2ff)', color: '#fff', padding: '8px 16px', borderRadius: '6px', fontWeight: '900', fontSize: '18px', letterSpacing: '1px', boxShadow: '0 4px 10px rgba(0, 123, 255, 0.3)' }}>
-            FIBRALINK
-          </div>
+          <img 
+            src="/logo.png" 
+            alt="Fibralink" 
+            style={{ maxWidth: '210px', height: 'auto', display: 'inline-block' }} 
+            onError={(e) => {
+              // Fallback caso a imagem demore ou não seja encontrada na pasta public
+              e.target.style.display = 'none';
+            }}
+          />
         </div>
 
-        <h2 style={{ textAlign: 'center', marginBottom: '4px', color: theme.textMain, fontSize: '16px' }}>Sistema Integrado</h2>
+        <h2 style={{ textAlign: 'center', marginBottom: '4px', color: theme.textMain, fontSize: '15px' }}>Sistema Integrado</h2>
         <p style={{ textAlign: 'center', color: theme.textMuted, fontSize: '11px', marginBottom: '25px' }}>NIIP • NOC • NMR</p>
         
         {erro && <p style={{ color: '#ff6b6b', fontSize: '12px', marginBottom: '15px', background: darkMode ? '#2d1a1a' : '#f8d7da', padding: '8px', borderRadius: '4px' }}>{erro}</p>}
