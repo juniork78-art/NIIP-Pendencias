@@ -601,12 +601,12 @@ export default function App() {
                             Excluir
                           </button>
                         )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
           )}
         </div>
       </div>
@@ -872,13 +872,13 @@ export default function App() {
                             Excluir
                           </button>
                         )}
+                      </div>
                     </div>
-                  </div>
 
-                </div>
-              );
-            })}
-          </div>
+                  </div>
+                );
+              })}
+            </div>
           )}
 
         </div>
@@ -1015,13 +1015,17 @@ function TelaLogin({ onLoginSucesso, darkMode, setDarkMode, theme }) {
 
       <form onSubmit={alterarSenhaMode ? handleAlterarSenha : handleLogin} style={{ background: theme.cardBg, padding: '35px', borderRadius: '8px', width: '100%', maxWidth: '380px', boxShadow: '0 4px 15px rgba(0,0,0,0.15)', border: `1px solid ${theme.border}`, boxSizing: 'border-box' }}>
         
-        {/* CABEÇALHO VISUAL GARANTIDO (FIBRALINK) */}
+        {/* LOGO DA PASTA PUBLIC (logo.png) */}
         <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '50px', height: '50px', background: '#007bff', borderRadius: '12px', marginBottom: '10px', boxShadow: '0 4px 10px rgba(0,123,255,0.3)' }}>
-            <span style={{ color: '#fff', fontSize: '24px', fontWeight: 'bold' }}>F</span>
-          </div>
-          <h2 style={{ margin: '0 0 4px 0', color: theme.textMain, fontSize: '18px', fontWeight: 'bold' }}>FIBRALINK</h2>
-          <span style={{ fontSize: '12px', color: '#4dabf7', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>Sistema Integrado</span>
+          <img 
+            src="/logo.png" 
+            alt="Logo Fibralink" 
+            style={{ maxWidth: '190px', maxHeight: '65px', height: 'auto', objectFit: 'contain', display: 'inline-block', marginBottom: '5px' }} 
+            onError={(e) => {
+              e.target.style.display = 'none';
+            }}
+          />
+          <span style={{ fontSize: '12px', color: '#4dabf7', fontWeight: 'bold', display: 'block', marginBottom: '2px' }}>Sistema Integrado</span>
           <p style={{ margin: 0, color: theme.textMuted, fontSize: '11px' }}>NIIP • NOC • NMR</p>
         </div>
 
