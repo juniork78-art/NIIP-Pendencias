@@ -249,7 +249,6 @@ export default function App() {
     }
   };
 
-  // Cores dinâmicas atualizadas (Fundo claro em tom cinza suave: #eef2f5)
   const theme = {
     bg: darkMode ? '#121212' : '#eef2f5',
     cardBg: darkMode ? '#1e1e1e' : '#ffffff',
@@ -271,10 +270,25 @@ export default function App() {
   }
 
   const isGestor = nomeFormatadoGlobal.includes('DUANDYS');
+  const isGustavo = nomeFormatadoGlobal.includes('GUSTAVO');
+  const isDhennifer = nomeFormatadoGlobal.includes('DHENNIFER');
   const isEspecialista = nomeFormatadoGlobal.includes('GILVAN') || nomeFormatadoGlobal.includes('STEVAN');
+  const isNocN1 = nomeFormatadoGlobal.includes('TOLENTINO') || nomeFormatadoGlobal.includes('KESSY') || nomeFormatadoGlobal.includes('JOAO') || nomeFormatadoGlobal.includes('LUCAS');
   const isTecnicoN1 = nomeFormatadoGlobal.includes('FRANCISCO') || nomeFormatadoGlobal.includes('GABRIEL') || nomeFormatadoGlobal.includes('WALGNEY');
   
-  const tipoCargo = isGestor ? 'Gestor' : isEspecialista ? 'Especialista' : isTecnicoN1 ? 'Técnico N1' : 'Integrante';
+  const tipoCargo = isGestor 
+    ? 'Gestor' 
+    : isGustavo 
+    ? 'NOC N3' 
+    : isDhennifer 
+    ? 'Analista N1' 
+    : isEspecialista 
+    ? 'Especialista' 
+    : isNocN1 
+    ? 'NOC N1' 
+    : isTecnicoN1 
+    ? 'Técnico N1' 
+    : 'Integrante';
 
   if (!setorSelecionado && isGestor) {
     return (
