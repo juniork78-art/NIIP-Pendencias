@@ -12,9 +12,7 @@ import {
   setDoc, 
   onSnapshot,
   deleteDoc,
-  updateDoc,
-  addLink,
-  addDoc
+  updateDoc
 } from 'firebase/firestore';
 
 const style = document.createElement('style');
