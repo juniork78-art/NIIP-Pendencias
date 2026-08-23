@@ -384,7 +384,7 @@ export default function App() {
   const confirmarResolucaoTarefa = async (e) => {
     e.preventDefault();
     if (!detalhesResolucaoInput.trim()) {
-      alert("Por favor, preencha os detalhes de como a tarefa foi resolvida.");
+      alert("Por favor, preencha o relato/detalhes de como a tarefa foi resolvida.");
       return;
     }
 
@@ -393,7 +393,7 @@ export default function App() {
         status: 'Resolvida',
         detalhesResolucao: detalhesResolucaoInput.trim()
       });
-      await registrarLogAuditoria("RESOLUÇÃO", `Resolvida. Detalhes: "${detalhesResolucaoInput.trim()}"`, tarefaResolvendo.titulo);
+      await registrarLogAuditoria("RESOLUÇÃO", `Resolução da pendência. Relato: "${detalhesResolucaoInput.trim()}"`, tarefaResolvendo.titulo);
       setTarefaResolvendo(null);
       setDetalhesResolucaoInput('');
       alert("Tarefa marcada como resolvida com sucesso!");
@@ -575,7 +575,7 @@ export default function App() {
             <div>
               <h3 style={{ margin: '0 0 6px 0', color: '#ffc107', fontSize: '18px' }}>🔍 Histórico de Modificações e Prazos Alterados</h3>
               <p style={{ margin: 0, fontSize: '13px', color: theme.textMuted }}>
-                Aqui são registradas todas as ações, criações, edições e alterações de datas de vencimento feitas pelos usuários neste setor.
+                Aqui são registradas todas as ações, criações, edições, resoluções e alterações de datas feitas pelos usuários neste setor.
               </p>
             </div>
             {logsAuditoria.length > 0 && (
@@ -593,10 +593,10 @@ export default function App() {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {logsAuditoria.map((log) => (
-                <div key={log.id} style={{ background: theme.cardInner, padding: '15px', borderRadius: '6px', border: `1px solid ${theme.border}`, borderLeft: '4px solid #ffc107', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '15px' }}>
+                <div key={log.id} style={{ background: theme.cardInner, padding: '15px', borderRadius: '6px', border: `1px solid ${theme.border}`, borderLeft: log.acao === 'RESOLUÇÃO' ? '4px solid #28a745' : '4px solid #ffc107', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '15px' }}>
                   <div style={{ flex: '1 1 300px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                      <span style={{ background: '#ffc107', color: '#000', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold' }}>{log.acao}</span>
+                      <span style={{ background: log.acao === 'RESOLUÇÃO' ? '#28a745' : '#ffc107', color: log.acao === 'RESOLUÇÃO' ? '#fff' : '#000', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold' }}>{log.acao}</span>
                       <strong style={{ fontSize: '14px', color: theme.textMain }}>{log.tarefaTitulo}</strong>
                     </div>
                     <div style={{ fontSize: '13px', color: '#4dabf7', marginBottom: '6px' }}>
@@ -1041,12 +1041,12 @@ export default function App() {
           <div style={{ background: theme.cardBg, padding: '30px', borderRadius: '8px', width: '100%', maxWidth: '450px', border: `1px solid ${theme.border}`, boxSizing: 'border-box' }}>
             <h3 style={{ margin: '0 0 10px 0', color: '#28a745', fontSize: '18px' }}>✔ Resolver Tarefa</h3>
             <p style={{ fontSize: '13px', color: theme.textMuted, marginBottom: '20px' }}>
-              Informe os detalhes ou o procedimento utilizado para solucionar a tarefa: <strong>{tarefaResolvendo.titulo}</strong>
+              Informe o relato ou os detalhes de como a tarefa foi resolvida: <strong>{tarefaResolvendo.titulo}</strong>
             </p>
             
             <form onSubmit={confirmarResolucaoTarefa}>
               <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', fontSize: '12px', color: theme.textMuted, marginBottom: '5px' }}>Detalhes da Resolução *</label>
+                <label style={{ display: 'block', fontSize: '12px', color: theme.textMuted, marginBottom: '5px' }}>Relato / Detalhes da Resolução *</label>
                 <textarea 
                   rows="4"
                   placeholder="Ex: Enlace estabilizado após substituição do SFP na ponta A."
