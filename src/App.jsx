@@ -101,7 +101,6 @@ export default function App() {
       if (user) {
         setUsuarioLogado(user.email);
         const emailLower = user.email.toLowerCase();
-        // Se NÃO for o gestor (duandys), trava direto no setor 'niip'
         if (!emailLower.includes('duandys')) {
           setSetorSelecionado('niip');
         }
@@ -183,7 +182,6 @@ export default function App() {
     return <div style={{ color: '#fff', textAlign: 'center', marginTop: '20vh', fontFamily: 'sans-serif' }}>Carregando sistema...</div>;
   }
 
-  // 1. TELA DE LOGIN
   if (!usuarioLogado) {
     return <TelaLogin onLoginSucesso={(email) => setUsuarioLogado(email)} />;
   }
@@ -191,10 +189,9 @@ export default function App() {
   const nomeFormatado = usuarioLogado.split('@')[0].replace('.', ' ').toUpperCase();
   const isGestor = nomeFormatado.includes('DUANDYS');
 
-  // 2. TELA DE SELEÇÃO DE SETOR (Exclusiva para o Gestor)
   if (!setorSelecionado && isGestor) {
     return (
-      <div style={{ backgroundColor: '#121212', color: '#fff', minHeight: '100vh', width: '100vw', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', fontFamily: 'sans-serif', padding: '20px', boxSizing: 'border-box' }}>
+      <div style={{ backgroundColor: '#121212', color: '#fff', minHeight: '100vh', width: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', fontFamily: 'sans-serif', padding: '20px', boxSizing: 'border-box' }}>
         <div style={{ maxWidth: '650px', width: '100%', textAlign: 'center' }}>
           <h1 style={{ fontSize: '26px', color: '#4dabf7', marginBottom: '8px' }}>Selecione o Setor</h1>
           <p style={{ color: '#aaa', fontSize: '14px', marginBottom: '30px' }}>Painel do Gestor - Escolha qual núcleo deseja administrar:</p>
@@ -233,7 +230,6 @@ export default function App() {
     );
   }
 
-  // 3. TELA DE PENDÊNCIAS DO SETOR SELECIONADO
   const setorAtualInfo = SETORES_DISPONIVEIS.find(s => s.id === setorSelecionado) || SETORES_DISPONIVEIS[0];
   const pendenciasUrgentesCount = tarefas.filter(t => {
     if (t.status === 'Concluída') return false;
@@ -249,10 +245,10 @@ export default function App() {
   });
 
   return (
-    <div style={{ backgroundColor: '#121212', color: '#fff', minHeight: '100vh', width: '100vw', padding: '20px 30px', fontFamily: 'sans-serif', boxSizing: 'border-box', overflowX: 'hidden' }}>
+    <div style={{ backgroundColor: '#121212', color: '#fff', minHeight: '100vh', width: '100%', padding: '24px', fontFamily: 'sans-serif', boxSizing: 'border-box' }}>
       
       {/* HEADER */}
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #333', paddingBottom: '15px', marginBottom: '25px', flexWrap: 'wrap', gap: '15px', width: '100%' }}>
+      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #333', paddingBottom: '15px', marginBottom: '25px', flexWrap: 'wrap', gap: '15px', width: '100%', boxSizing: 'border-box' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
             {isGestor && (
@@ -263,7 +259,7 @@ export default function App() {
                 ← Trocar Setor
               </button>
             )}
-            <span style={{ fontSize: '12px', color: '#4dabf7', fontWeight: 'bold' }}>[{setorAtualInfo.nome}]</span>
+            <span style={{ fontSize: '13px', color: '#4dabf7', fontWeight: 'bold' }}>[{setorAtualInfo.nome}]</span>
           </div>
           <p style={{ margin: 0, fontSize: '13px', color: '#aaa' }}>
             Usuário: <strong>{nomeFormatado}</strong> ({isGestor ? 'Gestor' : 'Integrante'})
@@ -280,8 +276,8 @@ export default function App() {
         </div>
       </header>
 
-      {/* GRID EXPANDIDO DE PONTA A PONTA */}
-      <div style={{ display: 'grid', gridTemplateColumns: '400px 1fr', gap: '25px', alignItems: 'start', width: '100%' }}>
+      {/* GRID RESPONSIVO SEGURO */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(350px, 400px) 1fr', gap: '25px', alignItems: 'start', width: '100%', boxSizing: 'border-box' }}>
         
         {/* COLUNA ESQUERDA: CADASTRAR TAREFA */}
         <div style={{ background: '#1e1e1e', padding: '24px', borderRadius: '8px', border: '1px solid #333', width: '100%', boxSizing: 'border-box' }}>
@@ -324,8 +320,8 @@ export default function App() {
               </select>
             </div>
 
-            <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
-              <div style={{ flex: 1 }}>
+            <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
+              <div style={{ flex: '1 1 140px' }}>
                 <label style={{ display: 'block', fontSize: '12px', color: '#aaa', marginBottom: '5px' }}>Data Limite (Prazo) *</label>
                 <input 
                   type="date" 
@@ -335,7 +331,7 @@ export default function App() {
                   style={{ width: '100%', padding: '10px', background: '#2d2d2d', border: '1px solid #444', color: '#fff', borderRadius: '4px', boxSizing: 'border-box' }} 
                 />
               </div>
-              <div style={{ flex: 1 }}>
+              <div style={{ flex: '1 1 120px' }}>
                 <label style={{ display: 'block', fontSize: '12px', color: '#aaa', marginBottom: '5px' }}>Prioridade</label>
                 <select 
                   value={prioridade} 
@@ -379,7 +375,7 @@ export default function App() {
           {tarefasFiltradas.length === 0 ? (
             <p style={{ color: '#777', fontSize: '14px', textAlign: 'center', padding: '60px 0' }}>Nenhuma tarefa encontrada com os filtros selecionados.</p>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '15px', width: '100%' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '15px', width: '100%', boxSizing: 'border-box' }}>
               {tarefasFiltradas.map((t) => {
                 const infoPrazo = calcularStatusPrazo(t.prazo);
                 const isConcluida = t.status === 'Concluída';
@@ -467,8 +463,8 @@ function TelaLogin({ onLoginSucesso }) {
   };
 
   return (
-    <div style={{ backgroundColor: '#121212', color: '#fff', minHeight: '100vh', width: '100vw', display: 'flex', justifyContent: 'center', alignItems: 'center', fontFamily: 'sans-serif', boxSizing: 'border-box' }}>
-      <form onSubmit={handleLogin} style={{ background: '#1e1e1e', padding: '35px', borderRadius: '8px', width: '360px', boxShadow: '0 4px 15px rgba(0,0,0,0.6)', border: '1px solid #333', boxSizing: 'border-box' }}>
+    <div style={{ backgroundColor: '#121212', color: '#fff', minHeight: '100vh', width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', fontFamily: 'sans-serif', boxSizing: 'border-box', padding: '20px' }}>
+      <form onSubmit={handleLogin} style={{ background: '#1e1e1e', padding: '35px', borderRadius: '8px', width: '100%', maxWidth: '360px', boxShadow: '0 4px 15px rgba(0,0,0,0.6)', border: '1px solid #333', boxSizing: 'border-box' }}>
         <h2 style={{ textAlign: 'center', marginBottom: '5px', color: '#4dabf7', fontSize: '18px' }}>Sistema Integrado</h2>
         <p style={{ textAlign: 'center', color: '#aaa', fontSize: '12px', marginBottom: '25px' }}>NIIP • NOC • Núcleo de Monitoramento</p>
         
