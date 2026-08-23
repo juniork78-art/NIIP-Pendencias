@@ -165,6 +165,7 @@ export default function App() {
   }, []);
 
   const nomeFormatadoGlobal = usuarioLogado ? usuarioLogado.split('@')[0].replace('.', ' ').toUpperCase() : '';
+  const isGestor = nomeFormatadoGlobal.includes('DUANDYS');
 
   useEffect(() => {
     if (usuarioLogado && setorSelecionado) {
@@ -311,7 +312,6 @@ export default function App() {
     return <TelaLogin onLoginSucesso={(email) => setUsuarioLogado(email)} darkMode={darkMode} setDarkMode={setDarkMode} theme={theme} />;
   }
 
-  const isGestor = nomeFormatadoGlobal.includes('DUANDYS');
   const isGustavo = nomeFormatadoGlobal.includes('GUSTAVO');
   const isDhennifer = nomeFormatadoGlobal.includes('DHENNIFER');
   const isEspecialista = nomeFormatadoGlobal.includes('GILVAN') || nomeFormatadoGlobal.includes('STEVAN');
@@ -433,9 +433,6 @@ export default function App() {
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '15px', width: '100%', boxSizing: 'border-box' }}>
               {tarefasResolvidas.map((t) => {
-                const isResponsavelPelaTarefa = nomeFormatadoGlobal.includes(t.responsavel.toUpperCase());
-                const podeAgerir = isGestor || isResponsavelPelaTarefa;
-
                 return (
                   <div key={t.id} style={{ background: theme.cardInner, padding: '16px', borderRadius: '6px', borderLeft: '4px solid #28a745', border: `1px solid ${theme.border}`, borderLeftWidth: '4px', opacity: 0.9, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box' }}>
                     <div>
@@ -451,7 +448,7 @@ export default function App() {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', color: theme.textMuted, borderTop: `1px solid ${theme.border}`, paddingTop: '10px' }}>
                       <span>👤 <strong style={{ color: '#4dabf7' }}>{t.responsavel}</strong></span>
                       <div style={{ display: 'flex', gap: '6px' }}>
-                        {podeAgerir && (
+                        {isGestor && (
                           <button 
                             onClick={() => reabrirTarefa(t)}
                             style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, color: '#ffc107', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}
