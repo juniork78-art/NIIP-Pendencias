@@ -12,7 +12,9 @@ import {
   setDoc, 
   onSnapshot,
   deleteDoc,
-  updateDoc
+  updateDoc,
+  addLink,
+  addDoc
 } from 'firebase/firestore';
 
 const style = document.createElement('style');
@@ -107,10 +109,11 @@ export default function App() {
   const [usuarioLogado, setUsuarioLogado] = useState(null);
   const [loadingAuth, setLoadingAuth] = useState(true);
   const [setorSelecionado, setSetorSelecionado] = useState(null);
-  const [paginaAtual, setPaginaAtual] = useState('andamento'); // 'andamento' ou 'resolvidas'
+  const [paginaAtual, setPaginaAtual] = useState('andamento'); // 'andamento', 'resolvidas' ou 'auditoria'
   const [darkMode, setDarkMode] = useState(true);
   
   const [tarefas, setTarefas] = useState([]);
+  const [logsAuditoria, setLogsAuditoria] = useState([]);
   const [titulo, setTitulo] = useState('');
   const [descricao, setDescription] = useState('');
   const [prazo, setPrazo] = useState('');
@@ -193,10 +196,39 @@ export default function App() {
           }
         }
       });
-      return () => unsub();
+
+      // Carrega logs de auditoria do setor
+      const unsubLogs = onSnapshot(collection(db, `${setorSelecionado}_auditoria`), (snapshot) => {
+        const logsLista = [];
+        snapshot.forEach((docSnap) => {
+          logsLista.push({ id: docSnap.id, ...docSnap.data() });
+        });
+        logsLista.sort((a, b) => b.timestamp - a.timestamp);
+        setLogsAuditoria(logsLista);
+      });
+
+      return () => {
+        unsub();
+        unsubLogs();
+      };
     }
   }, [usuarioLogado, setorSelecionado, nomeFormatadoGlobal, popupJaExibido]);
   
+  const registrarLogAuditoria = async (acao, detalhes, tarefaTitulo) => {
+    try {
+      await setDoc(doc(collection(db, `${setorSelecionado}_auditoria`)), {
+        usuario: nomeFormatadoGlobal,
+        acao,
+        detalhes,
+        tarefaTitulo,
+        timestamp: Date.now(),
+        dataHoraFormatada: new Date().toLocaleString('pt-BR')
+      });
+    } catch (e) {
+      console.error("Erro ao registrar log de auditoria", e);
+    }
+  };
+
   const obterIntegrantesSetor = () => {
     if (setorSelecionado === 'noc') return INTEGRANTES_NOC;
     if (setorSelecionado === 'nmr') return INTEGRANTES_NMR;
@@ -228,6 +260,7 @@ export default function App() {
 
     try {
       await setDoc(doc(db, `${setorSelecionado}_tarefas`, novaTarefaId), tarefaObj);
+      await registrarLogAuditoria("CRIAÇÃO", `Criou a tarefa com prazo ${prazo} e prioridade ${prioridade}`, titulo.trim());
       setTitulo('');
       setDescription('');
       setPrazo('');
@@ -253,12 +286,28 @@ export default function App() {
     }
 
     try {
+      let alteracoesStr = [];
+      if (tarefaEditando.prazo !== editPrazo) {
+        alteracoesStr.push(`Prazo alterado de [${tarefaEditando.prazo}] para [${editPrazo}]`);
+      }
+      if (tarefaEditando.titulo !== editTitulo.trim()) {
+        alteracoesStr.push(`Título alterado para "${editTitulo.trim()}"`);
+      }
+      if (tarefaEditando.prioridade !== editPrioridade) {
+        alteracoesStr.push(`Prioridade alterada para ${editPrioridade}`);
+      }
+
       await updateDoc(doc(db, `${setorSelecionado}_tarefas`, tarefaEditando.id), {
         titulo: editTitulo.trim(),
         descricao: editDescricao.trim(),
         prazo: editPrazo,
         prioridade: editPrioridade
       });
+
+      if (alteracoesStr.length > 0) {
+        await registrarLogAuditoria("EDIÇÃO/ALTERAÇÃO", alteracoesStr.join(' | '), editTitulo.trim());
+      }
+
       setTarefaEditando(null);
       alert("Tarefa atualizada com sucesso!");
     } catch (err) {
@@ -269,6 +318,7 @@ export default function App() {
   const resolverTarefa = async (tarefa) => {
     try {
       await updateDoc(doc(db, `${setorSelecionado}_tarefas`, tarefa.id), { status: 'Resolvida' });
+      await registrarLogAuditoria("RESOLUÇÃO", `Marcou a tarefa como resolvida`, tarefa.titulo);
     } catch (err) {
       alert("Erro ao resolver tarefa: " + err.message);
     }
@@ -277,15 +327,17 @@ export default function App() {
   const reabrirTarefa = async (tarefa) => {
     try {
       await updateDoc(doc(db, `${setorSelecionado}_tarefas`, tarefa.id), { status: 'Pendente' });
+      await registrarLogAuditoria("REABERTURA", `Reabriu a tarefa`, tarefa.titulo);
     } catch (err) {
       alert("Erro ao reabrir tarefa: " + err.message);
     }
   };
 
-  const excluirTarefa = async (id) => {
+  const excluirTarefa = async (id, tituloTarefa) => {
     if (window.confirm("Deseja realmente excluir esta tarefa do painel?")) {
       try {
         await deleteDoc(doc(db, `${setorSelecionado}_tarefas`, id));
+        await registrarLogAuditoria("EXCLUSÃO", `Excluiu a tarefa`, tituloTarefa || 'Sem título');
       } catch (err) {
         alert("Erro ao excluir: " + err.message);
       }
@@ -395,6 +447,72 @@ export default function App() {
     return true;
   });
 
+  // TELA DE AUDITORIA EXCLUSIVA DO GESTOR
+  if (paginaAtual === 'auditoria' && isGestor) {
+    return (
+      <div className="app-container" style={{ backgroundColor: theme.bg, color: theme.textMain, minHeight: '100vh', width: '100%', padding: '24px', fontFamily: 'sans-serif', boxSizing: 'border-box' }}>
+        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `1px solid ${theme.border}`, paddingBottom: '15px', marginBottom: '25px', flexWrap: 'wrap', gap: '15px', width: '100%', boxSizing: 'border-box' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
+              <button 
+                onClick={() => setPaginaAtual('andamento')} 
+                style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, color: theme.textMain, padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}
+              >
+                ← Voltar para Painel
+              </button>
+              <span style={{ fontSize: '13px', color: '#ffc107', fontWeight: 'bold' }}>[Menu do Gestor - Auditoria de Alterações]</span>
+            </div>
+            <p style={{ margin: 0, fontSize: '13px', color: theme.textMuted }}>
+              Gestor: <strong>{nomeFormatadoGlobal}</strong> ({setorAtualInfo.nome})
+            </p>
+          </div>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+            <button 
+              onClick={() => setDarkMode(!darkMode)}
+              style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, color: theme.textMain, padding: '8px 14px', borderRadius: '20px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}
+            >
+              {darkMode ? '☀️ Modo Claro' : '🌙 Modo Escuro'}
+            </button>
+            <button onClick={() => signOut(auth)} style={{ background: '#dc3545', border: 'none', color: '#fff', padding: '9px 16px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}>Sair</button>
+          </div>
+        </header>
+
+        <div style={{ background: theme.cardBg, padding: '24px', borderRadius: '8px', border: `1px solid ${theme.border}`, width: '100%', boxSizing: 'border-box' }}>
+          <h3 style={{ margin: '0 0 10px 0', color: '#ffc107', fontSize: '18px' }}>🔍 Histórico de Modificações e Prazos Alterados</h3>
+          <p style={{ margin: '0 0 20px 0', fontSize: '13px', color: theme.textMuted }}>
+            Aqui são registradas todas as ações, criações, edições e alterações de datas de vencimento feitas pelos usuários neste setor.
+          </p>
+
+          {logsAuditoria.length === 0 ? (
+            <p style={{ color: theme.textMuted, fontSize: '14px', textAlign: 'center', padding: '60px 0' }}>Nenhum registro de alteração neste setor ainda.</p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {logsAuditoria.map((log) => (
+                <div key={log.id} style={{ background: theme.cardInner, padding: '15px', borderRadius: '6px', border: `1px solid ${theme.border}`, borderLeft: '4px solid #ffc107', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px' }}>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                      <span style={{ background: '#ffc107', color: '#000', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold' }}>{log.acao}</span>
+                      <strong style={{ fontSize: '14px', color: theme.textMain }}>{log.tarefaTitulo}</strong>
+                    </div>
+                    <div style={{ fontSize: '13px', color: '#4dabf7', marginBottom: '6px' }}>
+                      👤 Usuário: <strong>{log.usuario}</strong>
+                    </div>
+                    <div style={{ fontSize: '13px', color: theme.textMuted }}>
+                      📝 Detalhes: {log.detalhes}
+                    </div>
+                  </div>
+                  <div style={{ fontSize: '11px', color: theme.textMuted, whiteSpace: 'nowrap' }}>
+                    🕒 {log.dataHoraFormatada}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   // TELA INTERNA DE TAREFAS RESOLVIDAS
   if (paginaAtual === 'resolvidas') {
     return (
@@ -415,6 +533,14 @@ export default function App() {
             </p>
           </div>
           <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+            {isGestor && (
+              <button 
+                onClick={() => setPaginaAtual('auditoria')}
+                style={{ background: theme.cardBg, border: '1px solid #ffc107', color: '#ffc107', padding: '8px 14px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}
+              >
+                🛡️ Menu Auditoria
+              </button>
+            )}
             <button 
               onClick={() => setDarkMode(!darkMode)}
               style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, color: theme.textMain, padding: '8px 14px', borderRadius: '20px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}
@@ -459,7 +585,7 @@ export default function App() {
                         )}
                         {isGestor && (
                           <button 
-                            onClick={() => excluirTarefa(t.id)}
+                            onClick={() => excluirTarefa(t.id, t.titulo)}
                             style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, color: '#ff6b6b', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px' }}
                           >
                             Excluir
@@ -533,6 +659,15 @@ export default function App() {
         </div>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '15px', flexWrap: 'wrap' }}>
+          {isGestor && (
+            <button 
+              onClick={() => setPaginaAtual('auditoria')}
+              style={{ background: theme.cardBg, border: '1px solid #ffc107', color: '#ffc107', padding: '9px 16px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}
+            >
+              🛡️ Menu Auditoria
+            </button>
+          )}
+
           {pendenciasUrgentesCount > 0 && (
             <div style={{ background: '#ff4d4d', color: '#fff', padding: '8px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: 'bold' }}>
               ⚠️ {pendenciasUrgentesCount} Tarefa(s) Vencida(s) ou Próximas do Vencimento!
@@ -707,7 +842,7 @@ export default function App() {
                         
                         {isGestor && (
                           <button 
-                            onClick={() => excluirTarefa(t.id)}
+                            onClick={() => excluirTarefa(t.id, t.titulo)}
                             style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, color: '#ff6b6b', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px' }}
                           >
                             Excluir
