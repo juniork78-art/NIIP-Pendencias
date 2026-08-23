@@ -66,6 +66,15 @@ const formatarDataParaBr = (dataStr) => {
   }
 };
 
+// Função para converter automaticamente datas AAAA-MM-DD para DD/MM/AAAA em textos de detalhes antigos
+const corrigirDatasNoTexto = (texto) => {
+  if (!texto) return '';
+  // Procura padrões de data como 2026-09-02 e converte para 02/09/2026
+  return texto.replace(/\b(\d{4})-(\d{2})-(\d{2})\b/g, (match, ano, mes, dia) => {
+    return `${dia}/${mes}/${ano}`;
+  });
+};
+
 const calcularStatusPrazo = (dataStr) => {
   if (!dataStr) return { status: 'normal', texto: '', diasAtraso: 0 };
   try {
@@ -572,7 +581,7 @@ export default function App() {
                       👤 Usuário: <strong>{log.usuario}</strong>
                     </div>
                     <div style={{ fontSize: '13px', color: theme.textMuted }}>
-                      📝 Detalhes: {log.detalhes}
+                      📝 Detalhes: {corrigirDatasNoTexto(log.detalhes)}
                     </div>
                   </div>
                   
