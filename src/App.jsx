@@ -62,7 +62,7 @@ const calcularStatusPrazo = (dataStr) => {
   }
 };
 
-const INTEGRANTES = ["Francisco", "Gabriel", "Walgney"];
+const INTEGRANTES = ["Francisco", "Gabriel", "Walgney", "Gustavo", "Stevan", "Gilvan", "Kessy", "João", "Lucas", "Tolentino", "Dhennifer"];
 
 const SETORES_DISPONIVEIS = [
   { 
@@ -100,9 +100,25 @@ export default function App() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
-        setUsuarioLogado(user.email);
         const emailLower = user.email.toLowerCase();
-        if (!emailLower.includes('duandys')) {
+        setUsuarioLogado(user.email);
+
+        // Atribuição automática de setor baseada no e-mail
+        if (emailLower.includes('duandys')) {
+          setSetorSelecionado(null); // Gestor escolhe
+        } else if (
+          emailLower.includes('gustavo') || 
+          emailLower.includes('stevan') || 
+          emailLower.includes('gilvan') || 
+          emailLower.includes('kessy') || 
+          emailLower.includes('joao') || 
+          emailLower.includes('lucas') || 
+          emailLower.includes('tolentino')
+        ) {
+          setSetorSelecionado('noc');
+        } else if (emailLower.includes('dhennifer')) {
+          setSetorSelecionado('nmr');
+        } else {
           setSetorSelecionado('niip');
         }
       } else {
@@ -556,9 +572,7 @@ function TelaLogin({ onLoginSucesso }) {
       return;
     }
     try {
-      // Faz login com a credencial atual para validar e obter o usuário
       const userCredential = await signInWithEmailAndPassword(auth, email, senha);
-      // Atualiza para a nova senha informada
       await updatePassword(userCredential.user, senhaNova);
       setMensagemSucesso("Senha alterada com sucesso! Você já pode entrar com a nova senha.");
       setSenha('');
