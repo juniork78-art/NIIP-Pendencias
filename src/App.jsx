@@ -738,6 +738,7 @@ function TelaLogin({ onLoginSucesso, darkMode, setDarkMode, theme }) {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [senhaNova, setSenhaNova] = useState('');
+  const [mostrarSenha, setMostrarSenha] = useState(false);
   const [erro, setErro] = useState('');
   const [mensagemSucesso, setMensagemSucesso] = useState('');
   const [alterarSenhaMode, setAlterarSenhaMode] = useState(false);
@@ -799,13 +800,29 @@ function TelaLogin({ onLoginSucesso, darkMode, setDarkMode, theme }) {
           <label style={{ display: 'block', fontSize: '12px', marginBottom: '5px', color: theme.textMuted }}>
             {alterarSenhaMode ? 'Senha Atual' : 'Senha'}
           </label>
-          <input type="password" value={senha} onChange={(e) => setSenha(e.target.value)} required style={{ width: '100%', padding: '10px', borderRadius: '4px', border: `1px solid ${theme.border}`, background: theme.inputBg, color: theme.inputText, boxSizing: 'border-box' }} />
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+            <input 
+              type={mostrarSenha ? 'text' : 'password'} 
+              value={senha} 
+              onChange={(e) => setSenha(e.target.value)} 
+              required 
+              style={{ width: '100%', padding: '10px', paddingRight: '40px', borderRadius: '4px', border: `1px solid ${theme.border}`, background: theme.inputBg, color: theme.inputText, boxSizing: 'border-box' }} 
+            />
+            <button 
+              type="button" 
+              onClick={() => setMostrarSenha(!mostrarSenha)} 
+              style={{ position: 'absolute', right: '10px', background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '16px', color: theme.textMuted }}
+              title={mostrarSenha ? "Ocultar senha" : "Mostrar senha"}
+            >
+              {mostrarSenha ? '👁️' : '🔒'}
+            </button>
+          </div>
         </div>
 
         {alterarSenhaMode && (
           <div style={{ marginBottom: '20px' }}>
             <label style={{ display: 'block', fontSize: '12px', marginBottom: '5px', color: theme.textMuted }}>Nova Senha</label>
-            <input type="password" value={senhaNova} onChange={(e) => setSenhaNova(e.target.value)} required style={{ width: '100%', padding: '10px', borderRadius: '4px', border: `1px solid ${theme.border}`, background: theme.inputBg, color: theme.inputText, boxSizing: 'border-box' }} />
+            <input type={mostrarSenha ? 'text' : 'password'} value={senhaNova} onChange={(e) => setSenhaNova(e.target.value)} required style={{ width: '100%', padding: '10px', borderRadius: '4px', border: `1px solid ${theme.border}`, background: theme.inputBg, color: theme.inputText, boxSizing: 'border-box' }} />
           </div>
         )}
 
