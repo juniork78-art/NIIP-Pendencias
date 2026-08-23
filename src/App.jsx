@@ -155,11 +155,12 @@ export default function App() {
   const [setorSelecionado, setSetorSelecionado] = useState(null);
   const [paginaAtual, setPaginaAtual] = useState('andamento'); 
   
+  // Leitura síncrona direta do localStorage para garantir o tema correto de imediato
   const [darkMode, setDarkMode] = useState(() => {
     try {
       const salvo = localStorage.getItem('darkMode_fibralink');
       if (salvo !== null) {
-        return JSON.parse(salvo);
+        return salvo === 'true';
       }
     } catch (e) {
       console.error("Erro ao ler localStorage", e);
@@ -171,7 +172,7 @@ export default function App() {
     const novoTema = !darkMode;
     setDarkMode(novoTema);
     try {
-      localStorage.setItem('darkMode_fibralink', JSON.stringify(novoTema));
+      localStorage.setItem('darkMode_fibralink', String(novoTema));
     } catch (e) {
       console.error("Erro ao salvar localStorage", e);
     }
