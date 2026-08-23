@@ -93,9 +93,7 @@ export default function App() {
   const [prazo, setPrazo] = useState('');
   const [prioridade, setPrioridade] = useState('Média');
   
-  const [filtroStatus, setFiltroStatus] = useState('todas'); 
   const [filtroResponsavel, setFiltroResponsavel] = useState('todos');
-  const [mostrarResolvidas, setMostrarResolvidas] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -168,14 +166,6 @@ export default function App() {
     }
   };
 
-  const reabrirTarefa = async (tarefa) => {
-    try {
-      await updateDoc(doc(db, `${setorSelecionado}_tarefas`, tarefa.id), { status: 'Pendente' });
-    } catch (err) {
-      alert("Erro ao reabrir tarefa: " + err.message);
-    }
-  };
-
   const excluirTarefa = async (id) => {
     if (window.confirm("Deseja realmente excluir esta tarefa do painel?")) {
       try {
@@ -184,6 +174,54 @@ export default function App() {
         alert("Erro ao excluir: " + err.message);
       }
     }
+  };
+
+  const abrirJanelaResolvidas = () => {
+    const tarefasResolvidas = tarefas.filter(t => t.status === 'Resolvida');
+    const setorAtualInfo = SETORES_DISPONIVEIS.find(s => s.id === setorSelecionado);
+
+    const novaJanela = window.open('', '_blank');
+    if (!novaJanela) {
+      alert("Permita pop-ups no seu navegador para abrir a nova janela.");
+      return;
+    }
+
+    const htmlConteudo = `
+      <!DOCTYPE html>
+      <html lang="pt-BR">
+      <head>
+        <meta charset="UTF-8">
+        <title>Tarefas Resolvidas - ${setorAtualInfo ? setorAtualInfo.nome : 'Setor'}</title>
+        <style>
+          body { background-color: #121212; color: #fff; font-family: sans-serif; padding: 30px; margin: 0; }
+          h2 { color: #28a745; border-bottom: 1px solid #333; padding-bottom: 10px; margin-top: 0; }
+          .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px; margin-top: 20px; }
+          .card { background: #1e1e1e; border: 1px solid #333; border-left: 4px solid #28a745; padding: 16px; border-radius: 6px; }
+          h4 { margin: 0 0 6px 0; font-size: 15px; text-decoration: line-through; color: #ccc; }
+          p { margin: 0 0 12px 0; font-size: 13px; color: #999; }
+          .footer { font-size: 12px; color: #aaa; border-top: 1px solid #2d2d2d; paddingTop: 10px; }
+          .empty { text-align: center; color: #777; margin-top: 50px; font-size: 15px; }
+        </style>
+      </head>
+      <body>
+        <h2>✅ Tarefas Resolvidas — ${setorAtualInfo ? setorAtualInfo.nome : ''}</h2>
+        ${tarefasResolvidas.length === 0 ? '<p class="empty">Nenhuma tarefa resolvida registrada neste setor.</p>' : `
+          <div class="grid">
+            ${tarefasResolvidas.map(t => `
+              <div class="card">
+                <h4>${t.titulo}</h4>
+                ${t.descricao ? `<p>${t.descricao}</p>` : ''}
+                <div class="footer">👤 Responsável: <strong>${t.responsavel}</strong></div>
+              </div>
+            `).join('')}
+          </div>
+        `}
+      </body>
+      </html>
+    `;
+
+    novaJanela.document.write(htmlConteudo);
+    novaJanela.document.close();
   };
 
   if (loadingAuth) {
@@ -246,10 +284,9 @@ export default function App() {
   }).length;
 
   const tarefasAndamento = tarefas.filter(t => t.status !== 'Resolvida');
-  const tarefasResolvidas = tarefas.filter(t => t.status === 'Resolvida');
+  const tarefasResolvidasCount = tarefas.filter(t => t.status === 'Resolvida').length;
 
   const tarefasFiltradas = tarefasAndamento.filter(t => {
-    if (filtroStatus === 'pendentes' && t.status !== 'Pendente') return false;
     if (filtroResponsavel !== 'todos' && t.responsavel !== filtroResponsavel) return false;
     return true;
   });
@@ -284,42 +321,15 @@ export default function App() {
           )}
           
           <button 
-            onClick={() => setMostrarResolvidas(!mostrarResolvidas)}
+            onClick={abrirJanelaResolvidas}
             style={{ background: '#2b2b2b', border: '1px solid #444', color: '#4dabf7', padding: '9px 16px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}
           >
-            📂 Tarefas Resolvidas ({tarefasResolvidas.length})
+            📂 Ver Resolvidas em Nova Janela ({tarefasResolvidasCount})
           </button>
 
           <button onClick={() => signOut(auth)} style={{ background: '#dc3545', border: 'none', color: '#fff', padding: '9px 16px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}>Sair</button>
         </div>
       </header>
-
-      {/* PAINEL DE TAREFAS RESOLVIDAS (MODAL / ABA LATERAL) */}
-      {mostrarResolvidas && (
-        <div style={{ background: '#181818', border: '1px solid #444', borderRadius: '8px', padding: '20px', marginBottom: '25px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', borderBottom: '1px solid #333', paddingBottom: '10px' }}>
-            <h3 style={{ margin: 0, color: '#28a745', fontSize: '16px' }}>✅ Histórico de Tarefas Resolvidas</h3>
-            <button onClick={() => setMostrarResolvidas(false)} style={{ background: 'transparent', border: 'none', color: '#aaa', cursor: 'pointer', fontSize: '16px', fontWeight: 'bold' }}>✕ Fechar</button>
-          </div>
-
-          {tarefasResolvidas.length === 0 ? (
-            <p style={{ color: '#777', fontSize: '13px', textAlign: 'center', padding: '20px 0' }}>Nenhuma tarefa resolvida neste setor ainda.</p>
-          ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '15px' }}>
-              {tarefasResolvidas.map((t) => (
-                <div key={t.id} style={{ background: '#222', padding: '14px', borderRadius: '6px', borderLeft: '4px solid #28a745', opacity: 0.85 }}>
-                  <h4 style={{ margin: '0 0 6px 0', fontSize: '14px', color: '#fff', textDecoration: 'line-through' }}>{t.titulo}</h4>
-                  {t.descricao && <p style={{ margin: '0 0 10px 0', fontSize: '12px', color: '#aaa' }}>{t.descricao}</p>}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', color: '#888', borderTop: '1px solid #333', paddingTop: '8px' }}>
-                    <span>👤 {t.responsavel}</span>
-                    <button onClick={() => reabrirTarefa(t)} style={{ background: '#333', border: '1px solid #555', color: '#ffc107', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '10px' }}>Reabrir</button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
 
       {/* GRID RESPONSIVO SEGURO */}
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(350px, 400px) 1fr', gap: '25px', alignItems: 'start', width: '100%', boxSizing: 'border-box' }}>
