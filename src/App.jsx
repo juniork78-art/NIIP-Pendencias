@@ -37,6 +37,12 @@ style.innerHTML = `
   input[type="date"] {
     color-scheme: light dark;
   }
+  
+  /* Garante que o ícone nativo fique visível no modo claro */
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(0.5);
+    cursor: pointer;
+  }
 
   .cards-container-grid {
     display: grid;
@@ -819,16 +825,16 @@ export default function App() {
                           Excluir
                         </button>
                       )}
-                    </div>
                   </div>
                 </div>
-              ))}
-          </div>
-          )}
+              </div>
+            ))}
         </div>
+        )}
       </div>
-    );
-  }
+    </div>
+  );
+}
 
   // TELA PRINCIPAL DE ANDAMENTO
   return (
@@ -1250,9 +1256,9 @@ function renderizarCardTarefa(t, theme, isGestor, nomeFormatadoGlobal, abrirModa
             Excluir
           </button>
         )}
-        </div>
       </div>
     </div>
+  </div>
   );
 }
 
@@ -1308,7 +1314,7 @@ function TelaLogin({ onLoginSucesso, darkMode, setDarkMode, theme }) {
       </button>
 
       <form onSubmit={alterarSenhaMode ? handleAlterarSenha : handleLogin} style={{ background: theme.cardBg, padding: '30px 20px', borderRadius: '8px', width: '100%', maxWidth: '380px', boxShadow: '0 4px 15px rgba(0,0,0,0.15)', border: `1px solid ${theme.border}`, boxSizing: 'border-box' }}>
-         
+        
         <div style={{ textAlign: 'center', marginBottom: '20px' }}>
           <img 
             src="/logo.png" 
@@ -1324,7 +1330,7 @@ function TelaLogin({ onLoginSucesso, darkMode, setDarkMode, theme }) {
 
         {erro && <p style={{ color: '#ff6b6b', fontSize: '12px', marginBottom: '15px', background: darkMode ? '#2d1a1a' : '#f8d7da', padding: '8px', borderRadius: '4px' }}>{erro}</p>}
         {mensagemSucesso && <p style={{ color: '#28a745', fontSize: '12px', marginBottom: '15px', background: darkMode ? '#1a2d1a' : '#d4edda', padding: '8px', borderRadius: '4px' }}>{mensagemSucesso}</p>}
-         
+        
         <div style={{ marginBottom: '15px' }}>
           <label style={{ display: 'block', fontSize: '12px', marginBottom: '5px', color: theme.textMuted }}>E-mail</label>
           <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="seu.email@fibralink.net.br" style={{ width: '100%', padding: '10px', borderRadius: '4px', border: `1px solid ${theme.border}`, background: theme.inputBg, color: theme.inputText, boxSizing: 'border-box' }} />
