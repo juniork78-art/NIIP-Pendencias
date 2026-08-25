@@ -33,6 +33,11 @@ style.innerHTML = `
     animation: piscar 2s infinite;
   }
 
+  /* Garante a visibilidade do ícone do calendário em ambos os temas (claro/escuro) */
+  input[type="date"] {
+    color-scheme: light dark;
+  }
+
   .cards-container-grid {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
