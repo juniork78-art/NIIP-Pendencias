@@ -155,7 +155,6 @@ export default function App() {
   const [setorSelecionado, setSetorSelecionado] = useState(null);
   const [paginaAtual, setPaginaAtual] = useState('andamento'); 
   
-  // Leitura síncrona direta do localStorage para garantir o tema correto de imediato
   const [darkMode, setDarkMode] = useState(() => {
     try {
       const salvo = localStorage.getItem('darkMode_fibralink');
@@ -429,9 +428,9 @@ export default function App() {
       if ((tarefaEditando.titulo || '') !== editTitulo.trim()) {
         alteracoesStr.push(`Título alterado de "${tarefaEditando.titulo}" para "${editTitulo.trim()}"`);
       }
-      // Verifica Descrição / Relato
+      // Verifica Descrição / Relato (Mostrando o conteúdo detalhado)
       if ((tarefaEditando.descricao || '') !== editDescricao.trim()) {
-        alteracoesStr.push(`Relato/Descrição alterado`);
+        alteracoesStr.push(`Relato alterado para: "${editDescricao.trim()}"`);
       }
       // Verifica Prazo / Data
       if (tarefaEditando.prazo !== editPrazo) {
@@ -625,7 +624,6 @@ export default function App() {
   const tarefasN3 = tarefasFiltradas.filter(t => classificarNivelResponsavel(t.responsavel) === 2);
   const tarefasN1 = tarefasFiltradas.filter(t => classificarNivelResponsavel(t.responsavel) === 3);
 
-  // TELA DE AUDITORIA
   if (paginaAtual === 'auditoria' && isGestor) {
     return (
       <div className="app-container" style={{ backgroundColor: theme.bg, color: theme.textMain, minHeight: '100vh', width: '100%', padding: '15px', fontFamily: 'sans-serif', boxSizing: 'border-box' }}>
@@ -712,7 +710,6 @@ export default function App() {
     );
   }
 
-  // TELA DE TAREFAS RESOLVIDAS
   if (paginaAtual === 'resolvidas') {
     return (
       <div className="app-container" style={{ backgroundColor: theme.bg, color: theme.textMain, minHeight: '100vh', width: '100%', padding: '15px', fontFamily: 'sans-serif', boxSizing: 'border-box' }}>
@@ -806,7 +803,6 @@ export default function App() {
     );
   }
 
-  // TELA PRINCIPAL DE ANDAMENTO
   return (
     <div className="app-container" style={{ backgroundColor: theme.bg, color: theme.textMain, minHeight: '100vh', width: '100%', padding: '15px', fontFamily: 'sans-serif', boxSizing: 'border-box', position: 'relative' }}>
       
@@ -895,7 +891,6 @@ export default function App() {
 
       <div className="main-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(320px, 380px) 1fr', gap: '20px', alignItems: 'start', width: '100%', boxSizing: 'border-box' }}>
         
-        {/* COLUNA ESQUERDA: CADASTRAR TAREFA */}
         <div style={{ background: theme.cardBg, padding: '20px', borderRadius: '8px', border: `1px solid ${theme.border}`, width: '100%', boxSizing: 'border-box' }}>
           <h3 style={{ margin: '0 0 20px 0', color: theme.textMain, fontSize: '16px', borderBottom: `1px solid ${theme.border}`, paddingBottom: '10px' }}>➕ Nova Tarefa de Longo Prazo</h3>
           
@@ -979,7 +974,6 @@ export default function App() {
           </form>
         </div>
 
-        {/* COLUNA DIREITA: LISTAGEM DE TAREFAS */}
         <div style={{ background: theme.cardBg, padding: '20px', borderRadius: '8px', border: `1px solid ${theme.border}`, width: '100%', boxSizing: 'border-box' }}>
           
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: `1px solid ${theme.border}`, paddingBottom: '10px', flexWrap: 'wrap', gap: '12px' }}>
@@ -1038,7 +1032,6 @@ export default function App() {
 
       </div>
 
-      {/* MODAL DE EDIÇÃO */}
       {tarefaEditando && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.8)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '15px', boxSizing: 'border-box' }}>
           <div style={{ background: theme.cardBg, padding: '25px', borderRadius: '8px', width: '100%', maxWidth: '450px', border: `1px solid ${theme.border}`, boxSizing: 'border-box' }}>
@@ -1112,7 +1105,6 @@ export default function App() {
       </div>
     )}
 
-    {/* MODAL DE RESOLUÇÃO */}
     {tarefaResolvendo && (
       <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.8)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '15px', boxSizing: 'border-box' }}>
         <div style={{ background: theme.cardBg, padding: '25px', borderRadius: '8px', width: '100%', maxWidth: '450px', border: `1px solid ${theme.border}`, boxSizing: 'border-box' }}>
