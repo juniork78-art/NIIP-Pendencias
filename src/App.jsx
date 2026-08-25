@@ -424,16 +424,24 @@ export default function App() {
 
     try {
       let alteracoesStr = [];
+
+      // Verifica Título
+      if ((tarefaEditando.titulo || '') !== editTitulo.trim()) {
+        alteracoesStr.push(`Título alterado de "${tarefaEditando.titulo}" para "${editTitulo.trim()}"`);
+      }
+      // Verifica Descrição / Relato
+      if ((tarefaEditando.descricao || '') !== editDescricao.trim()) {
+        alteracoesStr.push(`Relato/Descrição alterado`);
+      }
+      // Verifica Prazo / Data
       if (tarefaEditando.prazo !== editPrazo) {
         const antigoBr = formatarDataParaBr(tarefaEditando.prazo);
         const novoBr = formatarDataParaBr(editPrazo);
         alteracoesStr.push(`Prazo alterado de [${antigoBr}] para [${novoBr}]`);
       }
-      if (tarefaEditando.titulo !== editTitulo.trim()) {
-        alteracoesStr.push(`Título alterado para "${editTitulo.trim()}"`);
-      }
-      if (tarefaEditando.prioridade !== editPrioridade) {
-        alteracoesStr.push(`Prioridade alterada para ${editPrioridade}`);
+      // Verifica Prioridade
+      if ((tarefaEditando.prioridade || 'Média') !== editPrioridade) {
+        alteracoesStr.push(`Prioridade alterada de [${tarefaEditando.prioridade || 'Média'}] para [${editPrioridade}]`);
       }
 
       await updateDoc(doc(db, `${setorSelecionado}_tarefas`, tarefaEditando.id), {
@@ -652,7 +660,7 @@ export default function App() {
             <div>
               <h3 style={{ margin: '0 0 6px 0', color: '#ffc107', fontSize: '18px' }}>🔍 Histórico de Modificações e Prazos Alterados</h3>
               <p style={{ margin: 0, fontSize: '13px', color: theme.textMuted }}>
-                Aqui são registradas todas as ações, criações, edições, resoluções e alterações de datas feitas pelos usuários neste setor.
+                Aqui são registradas todas as ações, criações, edições, resoluções e alterações de dados feitas pelos usuários neste setor.
               </p>
             </div>
             {logsAuditoria.length > 0 && (
@@ -1098,55 +1106,55 @@ export default function App() {
                 >
                   Salvar Alterações
                 </button>
-              </div>
-            </form>
-          </div>
+            </div>
+          </form>
         </div>
-      )}
+      </div>
+    )}
 
-      {/* MODAL DE RESOLUÇÃO */}
-      {tarefaResolvendo && (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.8)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '15px', boxSizing: 'border-box' }}>
-          <div style={{ background: theme.cardBg, padding: '25px', borderRadius: '8px', width: '100%', maxWidth: '450px', border: `1px solid ${theme.border}`, boxSizing: 'border-box' }}>
-            <h3 style={{ margin: '0 0 10px 0', color: '#28a745', fontSize: '18px' }}>✔ Resolver Tarefa</h3>
-            <p style={{ fontSize: '13px', color: theme.textMuted, marginBottom: '20px' }}>
-              Informe o relato ou os detalhes de como a tarefa foi resolvida: <strong>{tarefaResolvendo.titulo}</strong>
-            </p>
-            
-            <form onSubmit={confirmarResolucaoTarefa}>
-              <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', fontSize: '12px', color: theme.textMuted, marginBottom: '5px' }}>Relato / Detalhes da Resolução *</label>
-                <textarea 
-                  rows="4"
-                  placeholder="Ex: Enlace estabilizado após substituição do SFP na ponta A."
-                  value={detalhesResolucaoInput} 
-                  onChange={(e) => setDetalhesResolucaoInput(e.target.value)} 
-                  required 
-                  style={{ width: '100%', padding: '10px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '4px', boxSizing: 'border-box', resize: 'vertical' }} 
-                />
-              </div>
+    {/* MODAL DE RESOLUÇÃO */}
+    {tarefaResolvendo && (
+      <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.8)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '15px', boxSizing: 'border-box' }}>
+        <div style={{ background: theme.cardBg, padding: '25px', borderRadius: '8px', width: '100%', maxWidth: '450px', border: `1px solid ${theme.border}`, boxSizing: 'border-box' }}>
+          <h3 style={{ margin: '0 0 10px 0', color: '#28a745', fontSize: '18px' }}>✔ Resolver Tarefa</h3>
+          <p style={{ fontSize: '13px', color: theme.textMuted, marginBottom: '20px' }}>
+            Informe o relato ou os detalhes de como a tarefa foi resolvida: <strong>{tarefaResolvendo.titulo}</strong>
+          </p>
+          
+          <form onSubmit={confirmarResolucaoTarefa}>
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', fontSize: '12px', color: theme.textMuted, marginBottom: '5px' }}>Relato / Detalhes da Resolução *</label>
+              <textarea 
+                rows="4"
+                placeholder="Ex: Enlace estabilizado após substituição do SFP na ponta A."
+                value={detalhesResolucaoInput} 
+                onChange={(e) => setDetalhesResolucaoInput(e.target.value)} 
+                required 
+                style={{ width: '100%', padding: '10px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '4px', boxSizing: 'border-box', resize: 'vertical' }} 
+              />
+            </div>
 
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <button 
-                  type="button" 
-                  onClick={() => setTarefaResolvendo(null)}
-                  style={{ flex: 1, padding: '10px', background: theme.cardInner, border: `1px solid ${theme.border}`, color: theme.textMain, borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
-                >
-                  Cancelar
-                </button>
-                <button 
-                  type="submit" 
-                  style={{ flex: 1, padding: '10px', background: '#28a745', border: 'none', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
-                >
-                  Confirmar Resolução
-                </button>
-              </div>
-            </form>
-          </div>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button 
+                type="button" 
+                onClick={() => setTarefaResolvendo(null)}
+                style={{ flex: 1, padding: '10px', background: theme.cardInner, border: `1px solid ${theme.border}`, color: theme.textMain, borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+              >
+                Cancelar
+              </button>
+              <button 
+                type="submit" 
+                style={{ flex: 1, padding: '10px', background: '#28a745', border: 'none', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+              >
+                Confirmar Resolução
+              </button>
+            </div>
+          </form>
         </div>
-      )}
+      </div>
+    )}
 
-    </div>
+  </div>
   );
 }
 
