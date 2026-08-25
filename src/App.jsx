@@ -1059,7 +1059,7 @@ export default function App() {
           {tarefasN1.length > 0 && (
             <div style={{ background: theme.cardInner, padding: '12px', borderRadius: '8px', border: `1px solid ${theme.border}`, width: '100%', boxSizing: 'border-box' }}>
               <h4 style={{ margin: '0 0 12px 0', fontSize: '13px', color: '#20c997', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '1px solid #20c997', paddingBottom: '6px' }}>
-                🟢 N1 ({tarefasN1.length})
+                🟢 NOC N1 ({tarefasN1.length})
               </h4>
               <div className="cards-container-grid">
                 {tarefasN1.map(t => renderizarCardTarefa(t, theme, isGestor, nomeFormatadoGlobal, abrirModalEdicao, abrirModalResolucao, excluirTarefa))}
