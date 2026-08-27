@@ -380,10 +380,17 @@ export default function App() {
   };
 
   const integrantesAtuais = obterIntegrantesSetor();
-  // Correção principal: busca na lista do setor quem corresponde ao usuário logado, evitando fixar em Gustavo
+  
+  // Mapeamento direto por e-mail ou nome para garantir que o usuário logado receba o nome correto automaticamente
+  const emailLowerGlobal = usuarioLogado ? usuarioLogado.toLowerCase() : '';
+  let nomeForcadoParaUsuario = null;
+  if (emailLowerGlobal.includes('joao') || emailLowerGlobal.includes('joão') || nomeFormatadoGlobal.includes('JOAO') || nomeFormatadoGlobal.includes('JOÃO')) {
+    nomeForcadoParaUsuario = 'João';
+  }
+
   const responsavelFinal = isGestor 
     ? responsavelSelecionadoGestor 
-    : (integrantesAtuais.find(n => nomeFormatadoGlobal.includes(n.toUpperCase())) || integrantesAtuais[0] || 'Gestor');
+    : nomeForcadoParaUsuario || (integrantesAtuais.find(n => nomeFormatadoGlobal.includes(n.toUpperCase())) || integrantesAtuais[0] || 'Gestor');
 
   const adicionarTarefa = async (e) => {
     e.preventDefault();
@@ -541,7 +548,7 @@ export default function App() {
   const isGustavo = nomeFormatadoGlobal.includes('GUSTAVO');
   const isDhennifer = nomeFormatadoGlobal.includes('DHENNIFER');
   const isEspecialista = nomeFormatadoGlobal.includes('GILVAN') || nomeFormatadoGlobal.includes('STEVAN');
-  const isNocN1 = nomeFormatadoGlobal.includes('TOLENTINO') || nomeFormatadoGlobal.includes('KESSY') || nomeFormatadoGlobal.includes('JOAO') || nomeFormatadoGlobal.includes('LUCAS');
+  const isNocN1 = nomeFormatadoGlobal.includes('TOLENTINO') || nomeFormatadoGlobal.includes('KESSY') || nomeFormatadoGlobal.includes('JOAO') || nomeFormatadoGlobal.includes('JOÃO') || nomeFormatadoGlobal.includes('LUCAS') || emailLowerGlobal.includes('joao');
   const isTecnicoN1 = nomeFormatadoGlobal.includes('FRANCISCO') || nomeFormatadoGlobal.includes('GABRIEL') || nomeFormatadoGlobal.includes('WALGNEY');
   
   const tipoCargo = isGestor 
