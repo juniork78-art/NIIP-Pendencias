@@ -380,7 +380,10 @@ export default function App() {
   };
 
   const integrantesAtuais = obterIntegrantesSetor();
-  const responsavelFinal = isGestor ? responsavelSelecionadoGestor : (integrantesAtuais.find(n => nomeFormatadoGlobal.includes(n.toUpperCase())) || integrantesAtuais[0] || 'Gestor');
+  // Correção principal: busca na lista do setor quem corresponde ao usuário logado, evitando fixar em Gustavo
+  const responsavelFinal = isGestor 
+    ? responsavelSelecionadoGestor 
+    : (integrantesAtuais.find(n => nomeFormatadoGlobal.includes(n.toUpperCase())) || integrantesAtuais[0] || 'Gestor');
 
   const adicionarTarefa = async (e) => {
     e.preventDefault();
@@ -825,16 +828,16 @@ export default function App() {
                           Excluir
                         </button>
                       )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
+          )}
         </div>
-        )}
       </div>
-    </div>
-  );
-}
+    );
+  }
 
   return (
     <div className="app-container" style={{ backgroundColor: theme.bg, color: theme.textMain, minHeight: '100vh', width: '100%', padding: '15px', fontFamily: 'sans-serif', boxSizing: 'border-box', position: 'relative' }}>
@@ -1109,7 +1112,7 @@ export default function App() {
                 onChange={(e) => setEditPrazo(e.target.value)} 
                 required 
                 style={{ width: '100%', padding: '10px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '4px', boxSizing: 'border-box' }} 
-            />
+              />
             </div>
             <div style={{ flex: '1 1 120px' }}>
               <label style={{ display: 'block', fontSize: '12px', color: theme.textMuted, marginBottom: '5px' }}>Prioridade</label>
@@ -1117,12 +1120,12 @@ export default function App() {
                 value={editPrioridade} 
                 onChange={(e) => setEditPrioridade(e.target.value)} 
                 style={{ width: '100%', padding: '10px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '4px', boxSizing: 'border-box' }}
-            >
-              <option value="Baixa">Baixa</option>
-              <option value="Média">Média</option>
-              <option value="Alta">Alta</option>
-              <option value="Crítica">Crítica</option>
-            </select>
+              >
+                <option value="Baixa">Baixa</option>
+                <option value="Média">Média</option>
+                <option value="Alta">Alta</option>
+                <option value="Crítica">Crítica</option>
+              </select>
             </div>
           </div>
 
@@ -1132,60 +1135,60 @@ export default function App() {
               onClick={() => setTarefaEditando(null)}
               style={{ flex: 1, padding: '10px', background: theme.cardInner, border: `1px solid ${theme.border}`, color: theme.textMain, borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
         >
-            Cancelar
-          </button>
-          <button 
-            type="submit" 
-            style={{ flex: 1, padding: '10px', background: '#007bff', border: 'none', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+          Cancelar
+        </button>
+        <button 
+          type="submit" 
+          style={{ flex: 1, padding: '10px', background: '#007bff', border: 'none', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
         >
-            Salvar Alterações
-          </button>
-        </div>
-      </form>
-    </div>
+          Salvar Alterações
+        </button>
+      </div>
+    </form>
   </div>
-  )}
+</div>
+)}
 
-  {tarefaResolvendo && (
-    <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.8)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '15px', boxSizing: 'border-box' }}>
-      <div style={{ background: theme.cardBg, padding: '25px', borderRadius: '8px', width: '100%', maxWidth: '450px', border: `1px solid ${theme.border}`, boxSizing: 'border-box' }}>
-        <h3 style={{ margin: '0 0 10px 0', color: '#28a745', fontSize: '18px' }}>✔ Resolver Tarefa</h3>
-        <p style={{ fontSize: '13px', color: theme.textMuted, marginBottom: '20px' }}>
-          Informe o relato ou os detalhes de como a tarefa foi resolvida: <strong>{tarefaResolvendo.titulo}</strong>
-        </p>
-         
-        <form onSubmit={confirmarResolucaoTarefa}>
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', fontSize: '12px', color: theme.textMuted, marginBottom: '5px' }}>Relato / Detalhes da Resolução *</label>
-            <textarea 
-              rows="4"
-              placeholder="Ex: Enlace estabilizado após substituição do SFP na ponta A."
-              value={detalhesResolucaoInput} 
-              onChange={(e) => setDetalhesResolucaoInput(e.target.value)} 
-              required 
-              style={{ width: '100%', padding: '10px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '4px', boxSizing: 'border-box', resize: 'vertical' }} 
-            />
-          </div>
-
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <button 
-              type="button" 
-              onClick={() => setTarefaResolvendo(null)}
-              style={{ flex: 1, padding: '10px', background: theme.cardInner, border: `1px solid ${theme.border}`, color: theme.textMain, borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
-        >
-            Cancelar
-          </button>
-          <button 
-            type="submit" 
-            style={{ flex: 1, padding: '10px', background: '#28a745', border: 'none', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
-        >
-            Confirmar Resolução
-          </button>
+{tarefaResolvendo && (
+  <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.8)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '15px', boxSizing: 'border-box' }}>
+    <div style={{ background: theme.cardBg, padding: '25px', borderRadius: '8px', width: '100%', maxWidth: '450px', border: `1px solid ${theme.border}`, boxSizing: 'border-box' }}>
+      <h3 style={{ margin: '0 0 10px 0', color: '#28a745', fontSize: '18px' }}>✔ Resolver Tarefa</h3>
+      <p style={{ fontSize: '13px', color: theme.textMuted, marginBottom: '20px' }}>
+        Informe o relato ou os detalhes de como a tarefa foi resolvida: <strong>{tarefaResolvendo.titulo}</strong>
+      </p>
+       
+      <form onSubmit={confirmarResolucaoTarefa}>
+        <div style={{ marginBottom: '20px' }}>
+          <label style={{ display: 'block', fontSize: '12px', color: theme.textMuted, marginBottom: '5px' }}>Relato / Detalhes da Resolução *</label>
+          <textarea 
+            rows="4"
+            placeholder="Ex: Enlace estabilizado após substituição do SFP na ponta A."
+            value={detalhesResolucaoInput} 
+            onChange={(e) => setDetalhesResolucaoInput(e.target.value)} 
+            required 
+            style={{ width: '100%', padding: '10px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '4px', boxSizing: 'border-box', resize: 'vertical' }} 
+          />
         </div>
-      </form>
-    </div>
+
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button 
+            type="button" 
+            onClick={() => setTarefaResolvendo(null)}
+            style={{ flex: 1, padding: '10px', background: theme.cardInner, border: `1px solid ${theme.border}`, color: theme.textMain, borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+        >
+          Cancelar
+        </button>
+        <button 
+          type="submit" 
+          style={{ flex: 1, padding: '10px', background: '#28a745', border: 'none', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+        >
+          Confirmar Resolução
+        </button>
+      </div>
+    </form>
   </div>
-  )}
+</div>
+)}
 
 </div>
   );
@@ -1234,27 +1237,27 @@ function renderizarCardTarefa(t, theme, isGestor, nomeFormatadoGlobal, abrirModa
               onClick={() => abrirModalEdicao(t)}
               style={{ background: theme.cardInner, border: `1px solid ${theme.border}`, color: '#4dabf7', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}
         >
-            ✏️ Editar
-          </button>
-        )}
+          ✏️ Editar
+        </button>
+      )}
 
           {podeAgerir && (
             <button 
               onClick={() => abrirModalResolucao(t)}
               style={{ background: '#28a745', border: 'none', color: '#fff', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}
         >
-            ✔ Resolver
-          </button>
-        )}
-           
+          ✔ Resolver
+        </button>
+      )}
+         
           {isGestor && (
             <button 
               onClick={() => excluirTarefa(t.id, t.titulo)}
               style={{ background: theme.cardInner, border: `1px solid ${theme.border}`, color: '#ff6b6b', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px' }}
         >
-            Excluir
-          </button>
-        )}
+          Excluir
+        </button>
+      )}
       </div>
     </div>
   </div>
@@ -1346,7 +1349,7 @@ function TelaLogin({ onLoginSucesso, darkMode, setDarkMode, theme }) {
               onChange={(e) => setSenha(e.target.value)} 
               required 
               style={{ width: '100%', padding: '10px', paddingRight: '40px', borderRadius: '4px', border: `1px solid ${theme.border}`, background: theme.inputBg, color: theme.inputText, boxSizing: 'border-box' }} 
-          />
+            />
             <button 
               type="button" 
               onClick={() => setMostrarSenha(!mostrarSenha)} 
