@@ -328,7 +328,7 @@ export default function App() {
     const integrantes = 
       setorSelecionado === 'noc' ? INTEGRANTES_NOC :
       setorSelecionado === 'nmr' ? INTEGRANTES_NMR : INTEGRANTES_NIIP;
-    
+     
     if (integrantes.length > 0) {
       setResponsavelSelecionadoGestor(integrantes[0]);
     }
@@ -380,8 +380,7 @@ export default function App() {
   };
 
   const integrantesAtuais = obterIntegrantesSetor();
-  
-  // Mapeamento direto por e-mail ou nome para garantir que o usuário logado receba o nome correto automaticamente
+   
   const emailLowerGlobal = usuarioLogado ? usuarioLogado.toLowerCase() : '';
   let nomeForcadoParaUsuario = null;
   if (emailLowerGlobal.includes('joao') || emailLowerGlobal.includes('joão') || nomeFormatadoGlobal.includes('JOAO') || nomeFormatadoGlobal.includes('JOÃO')) {
@@ -550,7 +549,7 @@ export default function App() {
   const isEspecialista = nomeFormatadoGlobal.includes('GILVAN') || nomeFormatadoGlobal.includes('STEVAN');
   const isNocN1 = nomeFormatadoGlobal.includes('TOLENTINO') || nomeFormatadoGlobal.includes('KESSY') || nomeFormatadoGlobal.includes('JOAO') || nomeFormatadoGlobal.includes('JOÃO') || nomeFormatadoGlobal.includes('LUCAS') || emailLowerGlobal.includes('joao');
   const isTecnicoN1 = nomeFormatadoGlobal.includes('FRANCISCO') || nomeFormatadoGlobal.includes('GABRIEL') || nomeFormatadoGlobal.includes('WALGNEY');
-  
+   
   const tipoCargo = isGestor 
     ? 'Gestor' 
     : isGustavo 
@@ -590,7 +589,7 @@ export default function App() {
           </div>
           <h1 style={{ fontSize: '26px', color: '#4dabf7', marginBottom: '8px' }}>Selecione o Setor</h1>
           <p style={{ color: theme.textMuted, fontSize: '14px', marginBottom: '30px' }}>Painel do Gestor - Escolha qual núcleo deseja administrar:</p>
-          
+           
           <div style={{ display: 'grid', gap: '15px' }}>
             {SETORES_DISPONIVEIS.map(setor => (
               <div 
@@ -724,7 +723,7 @@ export default function App() {
                       📝 Detalhes: {corrigirDatasNoTexto(log.detalhes)}
                     </div>
                   </div>
-                  
+                   
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'space-between', height: '100%', gap: '10px' }}>
                     <div style={{ fontSize: '11px', color: theme.textMuted, whiteSpace: 'nowrap' }}>
                       🕒 {log.dataHoraFormatada}
@@ -848,7 +847,7 @@ export default function App() {
 
   return (
     <div className="app-container" style={{ backgroundColor: theme.bg, color: theme.textMain, minHeight: '100vh', width: '100%', padding: '15px', fontFamily: 'sans-serif', boxSizing: 'border-box', position: 'relative' }}>
-      
+       
       {mostrarPopupAlerta && tarefasUrgentesUsuario.length > 0 && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.85)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, padding: '15px', boxSizing: 'border-box' }}>
           <div style={{ background: theme.cardBg, padding: '25px', borderRadius: '10px', width: '100%', maxWidth: '520px', border: '2px solid #ff4d4d', boxShadow: '0 8px 30px rgba(255, 77, 77, 0.3)', boxSizing: 'border-box', textAlign: 'center' }}>
@@ -905,7 +904,7 @@ export default function App() {
           </p>
       </div>
     </div>
-    
+     
     <div style={{ display: 'flex', alignItems: 'center', gap: '15px', flexWrap: 'wrap' }}>
       {isGestor && (
         <button 
@@ -921,7 +920,7 @@ export default function App() {
           ⚠️ {pendenciasUrgentesCount} Tarefa(s) Vencida(s) ou Próximas do Vencimento!
         </div>
       )}
-      
+       
       <button 
         onClick={() => mudarPagina('resolvidas')}
         style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, color: '#28a745', padding: '9px 16px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}
@@ -941,10 +940,10 @@ export default function App() {
   </header>
 
   <div className="main-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(320px, 380px) 1fr', gap: '20px', alignItems: 'start', width: '100%', boxSizing: 'border-box' }}>
-    
+     
     <div style={{ background: theme.cardBg, padding: '20px', borderRadius: '8px', border: `1px solid ${theme.border}`, width: '100%', boxSizing: 'border-box' }}>
       <h3 style={{ margin: '0 0 20px 0', color: theme.textMain, fontSize: '16px', borderBottom: `1px solid ${theme.border}`, paddingBottom: '10px' }}>➕ Nova Tarefa de Longo Prazo</h3>
-      
+       
       <form onSubmit={adicionarTarefa}>
         <div style={{ marginBottom: '15px' }}>
           <label style={{ display: 'block', fontSize: '12px', color: theme.textMuted, marginBottom: '5px' }}>Título da Tarefa *</label>
@@ -1026,10 +1025,10 @@ export default function App() {
     </div>
 
     <div style={{ background: theme.cardBg, padding: '20px', borderRadius: '8px', border: `1px solid ${theme.border}`, width: '100%', boxSizing: 'border-box' }}>
-      
+       
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: `1px solid ${theme.border}`, paddingBottom: '10px', flexWrap: 'wrap', gap: '12px' }}>
         <h3 style={{ margin: 0, color: theme.textMain, fontSize: '16px' }}>📋 Tarefas e Pendências em Andamento</h3>
-        
+         
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
           <select value={filtroResponsavel} onChange={(e) => setFiltroResponsavel(e.target.value)} style={{ padding: '8px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '4px', fontSize: '12px' }}>
             <option value="todos">Responsável: Todos</option>
@@ -1042,7 +1041,7 @@ export default function App() {
         <p style={{ color: theme.textMuted, fontSize: '14px', textAlign: 'center', padding: '60px 0' }}>Nenhuma tarefa em andamento encontrada.</p>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%', boxSizing: 'border-box' }}>
-          
+           
           {tarefasEspecialistas.length > 0 && (
             <div style={{ background: theme.cardInner, padding: '12px', borderRadius: '8px', border: `1px solid ${theme.border}`, width: '100%', boxSizing: 'border-box' }}>
               <h4 style={{ margin: '0 0 12px 0', fontSize: '13px', color: '#ffc107', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '1px solid #ffc107', paddingBottom: '6px' }}>
@@ -1163,7 +1162,7 @@ export default function App() {
       <p style={{ fontSize: '13px', color: theme.textMuted, marginBottom: '20px' }}>
         Informe o relato ou os detalhes de como a tarefa foi resolvida: <strong>{tarefaResolvendo.titulo}</strong>
       </p>
-       
+        
       <form onSubmit={confirmarResolucaoTarefa}>
         <div style={{ marginBottom: '20px' }}>
           <label style={{ display: 'block', fontSize: '12px', color: theme.textMuted, marginBottom: '5px' }}>Relato / Detalhes da Resolução *</label>
@@ -1203,7 +1202,11 @@ export default function App() {
 
 function renderizarCardTarefa(t, theme, isGestor, nomeFormatadoGlobal, abrirModalEdicao, abrirModalResolucao, excluirTarefa) {
   const infoPrazo = calcularStatusPrazo(t.prazo);
-  const isResponsavelPelaTarefa = nomeFormatadoGlobal.includes(t.responsavel.toUpperCase());
+  
+  // Normalização para ignorar acentos e maiúsculas/minúsculas nas comparações
+  const normalizarTexto = (str) => (str || '').normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+  const isResponsavelPelaTarefa = normalizarTexto(nomeFormatadoGlobal).includes(normalizarTexto(t.responsavel));
+  
   const podeAgerir = isGestor || isResponsavelPelaTarefa;
   const isUrgente = infoPrazo.status === 'vencido' || infoPrazo.status === 'hoje' || infoPrazo.status === 'um_dia';
 
@@ -1256,7 +1259,7 @@ function renderizarCardTarefa(t, theme, isGestor, nomeFormatadoGlobal, abrirModa
           ✔ Resolver
         </button>
       )}
-         
+          
           {isGestor && (
             <button 
               onClick={() => excluirTarefa(t.id, t.titulo)}
@@ -1323,7 +1326,7 @@ function TelaLogin({ onLoginSucesso, darkMode, setDarkMode, theme }) {
       </button>
 
       <form onSubmit={alterarSenhaMode ? handleAlterarSenha : handleLogin} style={{ background: theme.cardBg, padding: '30px 20px', borderRadius: '8px', width: '100%', maxWidth: '380px', boxShadow: '0 4px 15px rgba(0,0,0,0.15)', border: `1px solid ${theme.border}`, boxSizing: 'border-box' }}>
-        
+         
         <div style={{ textAlign: 'center', marginBottom: '20px' }}>
           <img 
             src="/logo.png" 
@@ -1339,7 +1342,7 @@ function TelaLogin({ onLoginSucesso, darkMode, setDarkMode, theme }) {
 
         {erro && <p style={{ color: '#ff6b6b', fontSize: '12px', marginBottom: '15px', background: darkMode ? '#2d1a1a' : '#f8d7da', padding: '8px', borderRadius: '4px' }}>{erro}</p>}
         {mensagemSucesso && <p style={{ color: '#28a745', fontSize: '12px', marginBottom: '15px', background: darkMode ? '#1a2d1a' : '#d4edda', padding: '8px', borderRadius: '4px' }}>{mensagemSucesso}</p>}
-        
+         
         <div style={{ marginBottom: '15px' }}>
           <label style={{ display: 'block', fontSize: '12px', marginBottom: '5px', color: theme.textMuted }}>E-mail</label>
           <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="seu.email@fibralink.net.br" style={{ width: '100%', padding: '10px', borderRadius: '4px', border: `1px solid ${theme.border}`, background: theme.inputBg, color: theme.inputText, boxSizing: 'border-box' }} />
