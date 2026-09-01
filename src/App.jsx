@@ -265,6 +265,7 @@ function MainApp() {
       prioridade: tarefaPai.prioridade,
       concluida: Boolean(sub.concluida),
       arquivada: Boolean(sub.arquivada),
+      excluido: Boolean(sub.excluido),
       _colecao: tarefaPai._colecao
     };
     setPaginaLateral(subObj);
@@ -294,11 +295,6 @@ function MainApp() {
         try {
           if (user && user.email) {
             setUsuarioLogado(user.email);
-            const userUpper = user.email.split('@')[0].replace('.', ' ').toUpperCase();
-            const match = TODOS_INTEGRANTES.find(n => userUpper.includes(n.toUpperCase()));
-            if (match) {
-              setResponsavelSelecionadoGestor(match);
-            }
           } else {
             setUsuarioLogado(null);
           }
@@ -421,6 +417,23 @@ function MainApp() {
     });
   };
 
+  const trashNodeInTree = (lista, ids) => {
+    if (!ids || ids.length === 0) return lista;
+    return (lista || []).map(item => {
+      if (item.id === ids[0]) {
+        if (ids.length === 1) {
+          return { ...item, excluido: !Boolean(item.excluido) };
+        } else {
+          return {
+            ...item,
+            subTarefas: trashNodeInTree(item.subTarefas || [], ids.slice(1))
+          };
+        }
+      }
+      return item;
+    });
+  };
+
   const updateTextNodeInTree = (lista, ids, newText, newDesc) => {
     if (!ids || ids.length === 0) return lista;
     return (lista || []).map(item => {
@@ -438,11 +451,10 @@ function MainApp() {
     });
   };
 
-  // Função auxiliar para validar se todas as subtarefas e filhas estão concluídas
   const todasSubTarefasConcluidas = (subLista) => {
     if (!subLista || subLista.length === 0) return true;
     for (const sub of subLista) {
-      if (!sub.concluida) return false;
+      if (!sub.concluida && !sub.excluido) return false;
       if (sub.subTarefas && sub.subTarefas.length > 0) {
         if (!todasSubTarefasConcluidas(sub.subTarefas)) return false;
       }
@@ -462,6 +474,7 @@ function MainApp() {
       texto: subTexto.trim(),
       concluida: false,
       arquivada: false,
+      excluido: false,
       subTarefas: []
     };
 
@@ -508,6 +521,18 @@ function MainApp() {
     } catch (e) {}
   };
 
+  const enviarParaLixeiraTarefaPai = async (tarefa) => {
+    if (!window.confirm("Deseja mover esta página para a Lixeira?")) return;
+    try {
+      const novoExcluido = !Boolean(tarefa.excluido);
+      const colecaoAlvo = tarefa._colecao || 'tarefas_gerais';
+      await updateDoc(doc(db, colecaoAlvo, tarefa.id), {
+        excluido: novoExcluido
+      });
+      if (paginaLateral && paginaLateral.id === tarefa.id) fecharPainelLateral();
+    } catch (e) {}
+  };
+
   const alternarStatusRecursivo = async (tarefaRaiz, caminhoIds) => {
     try {
       const novaSubTarefas = toggleNodeInTree(tarefaRaiz.subTarefas || [], caminhoIds);
@@ -531,6 +556,27 @@ function MainApp() {
     } catch (e) {}
   };
 
+  const enviarParaLixeiraSubRecursivo = async (tarefaRaiz, caminhoIds) => {
+    if (!window.confirm("Deseja mover esta subtarefa para a Lixeira?")) return;
+    try {
+      const novaSubTarefas = trashNodeInTree(tarefaRaiz.subTarefas || [], caminhoIds);
+      const colecaoAlvo = tarefaRaiz._colecao || 'tarefas_gerais';
+
+      await updateDoc(doc(db, colecaoAlvo, tarefaRaiz.id), {
+        subTarefas: novaSubTarefas
+      });
+    } catch (e) {}
+  };
+
+  const excluirTarefaDefinitivo = async (id, colecaoAlvo) => {
+    if (window.confirm("ATENÇÃO: Deseja excluir DEFINTIVAMENTE este item da lixeira?")) {
+      try {
+        await deleteDoc(doc(db, colecaoAlvo || 'tarefas_gerais', id));
+        if (paginaLateral && paginaLateral.id === id) fecharPainelLateral();
+      } catch (err) {}
+    }
+  };
+
   const salvarEdicaoInlineTarefa = async (tarefaId, colecaoAlvo, novoTitulo) => {
     if (!novoTitulo.trim()) return;
     try {
@@ -539,39 +585,6 @@ function MainApp() {
       });
       setEditandoId(null);
     } catch (e) {}
-  };
-
-  const abrirModalEdicao = (tarefa) => {
-    setTarefaEditando(tarefa);
-    setEditTitulo(tarefa.titulo || '');
-    setEditDescricao(tarefa.descricao || '');
-    setEditPrazo(tarefa.prazo || '');
-    setEditPrioridade(tarefa.prioridade || 'Média');
-  };
-
-  const salvarEdicaoTarefa = async (e) => {
-    e.preventDefault();
-    if (!editTitulo.trim() || !editPrazo) return;
-
-    try {
-      const colecaoAlvo = tarefaEditando._colecao || 'tarefas_gerais';
-      await updateDoc(doc(db, colecaoAlvo, tarefaEditando.id), {
-        titulo: editTitulo.trim(),
-        descricao: editDescricao.trim(),
-        prazo: editPrazo,
-        prioridade: editPrioridade
-      });
-      setTarefaEditando(null);
-    } catch (err) {}
-  };
-
-  const excluirTarefaDefinitivo = async (id, colecaoAlvo, tituloTarefa) => {
-    if (window.confirm("Deseja realmente excluir DEFINTIVAMENTE esta página?")) {
-      try {
-        await deleteDoc(doc(db, colecaoAlvo || 'tarefas_gerais', id));
-        if (paginaLateral && paginaLateral.id === id) fecharPainelLateral();
-      } catch (err) {}
-    }
   };
 
   const salvarAlteracoesPaginaLateral = async () => {
@@ -627,9 +640,11 @@ function MainApp() {
           const paddingLeftPx = nivel * 24 + 16;
           const isConcluida = Boolean(sub.concluida);
           const isArquivada = Boolean(sub.arquivada);
+          const isExcluido = Boolean(sub.excluido);
 
-          if (paginaAtual === 'andamento' && isArquivada) return null;
-          if (paginaAtual === 'arquivados' && !tarefaRaizObj.arquivada && !isArquivada) return null;
+          if (paginaAtual === 'andamento' && (isArquivada || isExcluido)) return null;
+          if (paginaAtual === 'arquivados' && (isExcluido || !isArquivada)) return null;
+          if (paginaAtual === 'lixeira' && !isExcluido) return null;
 
           return (
             <React.Fragment key={sub.id}>
@@ -651,7 +666,9 @@ function MainApp() {
                   <span onClick={() => alternarExpandido(sub.id)} style={{ cursor: 'pointer', fontSize: '10px', color: theme.textMuted, userSelect: 'none', padding: '2px', width: '12px', textAlign: 'center' }}>
                     {temFilhos ? (isExpandidoSub ? '▼' : '▶') : ''}
                   </span>
-                  <input type="checkbox" checked={isConcluida} onChange={() => alternarStatusRecursivo(tarefaRaizObj, caminhoAtual)} style={{ accentColor: '#27ae60', cursor: 'pointer' }} />
+                  {paginaAtual !== 'lixeira' && (
+                    <input type="checkbox" checked={isConcluida} onChange={() => alternarStatusRecursivo(tarefaRaizObj, caminhoAtual)} style={{ accentColor: '#27ae60', cursor: 'pointer' }} />
+                  )}
                   <span>📄</span>
                   <span 
                     onClick={() => abrirPainelLateralSub(sub, tarefaRaizObj.id, caminhoAtual, tarefaRaizObj)}
@@ -662,7 +679,7 @@ function MainApp() {
                 </div>
 
                 <div style={{ color: isConcluida ? '#27ae60' : theme.textMuted, fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {tarefaRaizObj.responsavel || ' Junior Gonçalves'}
+                  {tarefaRaizObj.responsavel || 'Junior Gonçalves'}
                 </div>
 
                 <div style={{ color: isConcluida ? '#27ae60' : theme.textMuted, fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -683,9 +700,16 @@ function MainApp() {
                     </button>
                   ) : <div></div>}
 
-                  <button onClick={() => arquivarSubRecursivo(tarefaRaizObj, caminhoAtual)} style={{ background: 'transparent', border: 'none', color: '#d97706', cursor: 'pointer', fontSize: '11px', fontWeight: '500' }}>
-                    {isArquivada ? 'Desarquivar' : 'Arquivar'}
-                  </button>
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    {paginaAtual !== 'lixeira' && (
+                      <button onClick={() => arquivarSubRecursivo(tarefaRaizObj, caminhoAtual)} style={{ background: 'transparent', border: 'none', color: '#d97706', cursor: 'pointer', fontSize: '11px', fontWeight: '500' }}>
+                        {isArquivada ? 'Desarquivar' : 'Arquivar'}
+                      </button>
+                    )}
+                    <button onClick={() => enviarParaLixeiraSubRecursivo(tarefaRaizObj, caminhoAtual)} style={{ background: 'transparent', border: 'none', color: '#eb5757', cursor: 'pointer', fontSize: '11px', fontWeight: '500' }}>
+                      {isExcluido ? 'Restaurar' : 'Excluir'}
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -693,7 +717,7 @@ function MainApp() {
                 <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
                   {renderizarSubTarefasRecursivas(sub.subTarefas, tarefaRaizObj, caminhoAtual, nivel + 1)}
                   
-                  {paginaAtual === 'andamento' && (
+                  {paginaAtual === 'andamento' && !isExcluido && (
                     <div 
                       onClick={() => promptAdicionarSub(tarefaRaizObj.id, caminhoAtual)}
                       style={{ 
@@ -737,13 +761,17 @@ function MainApp() {
     return <TelaLogin onLoginSucesso={(email) => setUsuarioLogado(email)} darkMode={darkMode} setDarkMode={alternarTema} theme={theme} />;
   }
 
-  const tarefasResolvidas = tarefas.filter(t => t.status === 'Resolvida' && !t.arquivada);
-  const tarefasArquivadas = tarefas.filter(t => t.arquivada);
+  const tarefasResolvidas = tarefas.filter(t => t.status === 'Resolvida' && !t.arquivada && !t.excluido);
+  const tarefasArquivadas = tarefas.filter(t => t.arquivada && !t.excluido);
+  const tarefasLixeira = tarefas.filter(t => t.excluido);
 
   const tarefasFiltradas = tarefas.filter(t => {
     const isArquivada = Boolean(t.arquivada);
-    if (paginaAtual === 'arquivados' && !isArquivada) return false;
-    if (paginaAtual === 'andamento' && isArquivada) return false;
+    const isExcluido = Boolean(t.excluido);
+
+    if (paginaAtual === 'lixeira' && !isExcluido) return false;
+    if (paginaAtual === 'arquivados' && (!isArquivada || isExcluido)) return false;
+    if (paginaAtual === 'andamento' && (isArquivada || isExcluido)) return false;
     if (filtroResponsavel !== 'todos' && t.responsavel !== filtroResponsavel) return false;
     return true;
   });
@@ -751,7 +779,7 @@ function MainApp() {
   return (
     <div className="workspace-layout" style={{ display: 'flex', minHeight: '100vh', backgroundColor: theme.bg, color: theme.textMain, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif', boxSizing: 'border-box' }}>
       
-      {/* SIDEBAR ESQUERDA NOTION */}
+      {/* SIDEBAR ESQUERDA NOTION - LIXEIRA APENAS PARA DUANDYS */}
       <div className="sidebar-notion" style={{ width: '240px', background: theme.sidebarBg, borderRight: `1px solid ${theme.border}`, display: 'flex', flexDirection: 'column', padding: '12px 8px', boxSizing: 'border-box', flexShrink: '0' }}>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 8px', borderRadius: '4px', marginBottom: '16px', background: theme.cardBg, border: `1px solid ${theme.border}` }}>
@@ -771,13 +799,20 @@ function MainApp() {
           <div onClick={() => mudarPagina('arquivados')} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 8px', borderRadius: '4px', cursor: 'pointer', background: paginaAtual === 'arquivados' ? theme.cardInner : 'transparent' }}>
             <span>📁</span> <span>Arquivados ({tarefasArquivadas.length})</span>
           </div>
+          
+          {/* LIXEIRA RESTRITA APENAS AO DUANDYS (GESTOR) */}
+          {isGestor && (
+            <div onClick={() => mudarPagina('lixeira')} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 8px', borderRadius: '4px', cursor: 'pointer', background: paginaAtual === 'lixeira' ? theme.cardInner : 'transparent' }}>
+              <span>🗑️</span> <span>Lixeira ({tarefasLixeira.length})</span>
+            </div>
+          )}
         </div>
 
         <div style={{ fontSize: '11px', fontWeight: '600', color: theme.textMuted, padding: '0 8px', marginBottom: '6px', textTransform: 'uppercase' }}>
           Páginas Recentes
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontSize: '12px', overflowY: 'auto', maxHeight: '40vh', marginBottom: '20px' }}>
-          {tarefas.filter(t => !t.arquivada).map(t => (
+          {tarefas.filter(t => !t.arquivada && !t.excluido).map(t => (
             <div 
               key={t.id} 
               onClick={() => abrirPainelLateral(t)}
@@ -804,7 +839,7 @@ function MainApp() {
           {/* CABEÇALHO E BOTÃO NOVA PÁGINA */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
             <h1 style={{ margin: 0, fontSize: '28px', fontWeight: '700', color: theme.textMain }}>
-              {paginaAtual === 'arquivados' ? '📁 Arquivados' : 'Biblioteca'}
+              {paginaAtual === 'arquivados' ? '📁 Arquivados' : paginaAtual === 'lixeira' ? '🗑️ Lixeira' : 'Biblioteca'}
             </h1>
 
             <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
@@ -828,6 +863,7 @@ function MainApp() {
                           prioridade: 'Média',
                           status: 'Pendente',
                           arquivada: false,
+                          excluido: false,
                           criadoPor: nomeFormatadoGlobal,
                           criadoEm: Date.now(),
                           subTarefas: []
@@ -848,6 +884,9 @@ function MainApp() {
             <div style={{ display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap', color: theme.textMuted }}>
               <span onClick={() => mudarPagina('andamento')} style={{ fontWeight: paginaAtual === 'andamento' ? '600' : '400', color: paginaAtual === 'andamento' ? theme.textMain : theme.textMuted, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>🕒 Recentes</span>
               <span onClick={() => mudarPagina('arquivados')} style={{ fontWeight: paginaAtual === 'arquivados' ? '600' : '400', color: paginaAtual === 'arquivados' ? theme.textMain : theme.textMuted, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>📁 Arquivados</span>
+              {isGestor && (
+                <span onClick={() => mudarPagina('lixeira')} style={{ fontWeight: paginaAtual === 'lixeira' ? '600' : '400', color: paginaAtual === 'lixeira' ? theme.textMain : theme.textMuted, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>🗑️ Lixeira</span>
+              )}
             </div>
 
             <div style={{ display: 'flex', gap: '12px', alignItems: 'center', color: theme.textMuted }}>
@@ -879,6 +918,7 @@ function MainApp() {
                   const isExpandido = verificarExpandido(t.id, temFilhos);
                   const isConcluida = t.status === 'Resolvida';
                   const isArquivada = Boolean(t.arquivada);
+                  const isExcluido = Boolean(t.excluido);
 
                   return (
                     <React.Fragment key={t.id}>
@@ -947,11 +987,16 @@ function MainApp() {
                           ) : <div></div>}
 
                           <div style={{ display: 'flex', gap: '6px' }}>
-                            <button onClick={() => arquivarTarefaPai(t)} title="Arquivar / Desarquivar" style={{ background: 'transparent', border: 'none', color: '#d97706', cursor: 'pointer', fontSize: '11px', fontWeight: '500' }}>
-                              {isArquivada ? 'Desarquivar' : 'Arquivar'}
+                            {paginaAtual !== 'lixeira' && (
+                              <button onClick={() => arquivarTarefaPai(t)} title="Arquivar / Desarquivar" style={{ background: 'transparent', border: 'none', color: '#d97706', cursor: 'pointer', fontSize: '11px', fontWeight: '500' }}>
+                                {isArquivada ? 'Desarquivar' : 'Arquivar'}
+                              </button>
+                            )}
+                            <button onClick={() => enviarParaLixeiraTarefaPai(t)} title="Lixeira" style={{ background: 'transparent', border: 'none', color: '#eb5757', cursor: 'pointer', fontSize: '11px', fontWeight: '500' }}>
+                              {isExcluido ? 'Restaurar' : 'Excluir'}
                             </button>
-                            {isGestor && (
-                              <button onClick={() => excluirTarefaDefinitivo(t.id, t._colecao, t.titulo)} title="Excluir Definitivo" style={{ background: 'transparent', border: 'none', color: '#eb5757', cursor: 'pointer', fontSize: '11px' }}>Excluir</button>
+                            {isGestor && paginaAtual === 'lixeira' && (
+                              <button onClick={() => excluirTarefaDefinitivo(t.id, t._colecao)} title="Excluir Definitivo" style={{ background: 'transparent', border: 'none', color: '#dc2626', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}>Destruir</button>
                             )}
                           </div>
                         </div>
@@ -962,7 +1007,7 @@ function MainApp() {
                       {isExpandido && (
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                           {renderizarSubTarefasRecursivas(subTarefas, t, [], 1)}
-                          {paginaAtual === 'andamento' && (
+                          {paginaAtual === 'andamento' && !isExcluido && (
                             <div 
                               onClick={() => promptAdicionarSub(t.id, [])}
                               style={{ 
