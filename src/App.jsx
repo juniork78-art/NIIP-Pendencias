@@ -201,17 +201,12 @@ function MainApp() {
   
   const [filtroResponsavel, setFiltroResponsavel] = useState('todos');
 
-  // Controle do painel lateral (Split-View)
   const [paginaLateral, setPaginaLateral] = useState(null); 
   const [editTituloLateral, setEditTituloLateral] = useState('');
   const [editDescricaoLateral, setEditDescricaoLateral] = useState('');
 
-  // Estados para Edição Inline (Duplo Clique estilo Notion)
   const [editandoId, setEditandoId] = useState(null);
   const [textoEditando, setTextoEditando] = useState('');
-
-  const [editandoSubId, setEditandoSubId] = useState(null);
-  const [textoSubEditando, setTextoSubEditando] = useState('');
 
   const [tarefaEditando, setTarefaEditando] = useState(null);
   const [editTitulo, setEditTitulo] = useState('');
@@ -458,10 +453,7 @@ function MainApp() {
   };
 
   const integrantesAtuais = obterIntegrantesSetor();
-
-  const responsavelFinal = isGestor 
-    ? responsavelSelecionadoGestor 
-    : nomeForcadoParaUsuario || (integrantesAtuais.find(n => nomeFormatadoGlobal.includes(n.toUpperCase())) || integrantesAtuais[0] || 'Gestor');
+  const responsavelFinal = isGestor ? responsavelSelecionadoGestor : nomeForcadoParaUsuario || (integrantesAtuais.find(n => nomeFormatadoGlobal.includes(n.toUpperCase())) || integrantesAtuais[0] || 'Gestor');
 
   const adicionarTarefa = async (e) => {
     e.preventDefault();
@@ -480,7 +472,8 @@ function MainApp() {
       .map(textoSub => ({
         id: Date.now().toString() + "_" + Math.random().toString(36).substring(2, 5),
         texto: textoSub,
-        concluida: false
+        concluida: false,
+        subTarefas: []
       }));
 
     const tarefaObj = {
@@ -507,29 +500,108 @@ function MainApp() {
     }
   };
 
-  const adicionarSubPendenciaRapida = async (tarefaId) => {
-    const subTexto = prompt("Digite o título da nova sub-tarefa:");
-    if (!subTexto || !subTexto.trim()) return;
-
+  // Função recursiva para adicionar subtarefa em qualquer nível (tarefa pai ou subtarefa filha)
+  const adicionarSubPendenciaRecursiva = async (tarefaRaizId, caminhoAlvoIds, novoTexto) => {
     try {
+      const tarefaRaiz = tarefas.find(t => t.id === tarefaRaizId);
+      if (!tarefaRaiz) return;
+
       const novaSub = {
         id: Date.now().toString() + "_" + Math.random().toString(36).substring(2, 5),
-        texto: subTexto.trim(),
-        concluida: false
+        texto: novoTexto.trim(),
+        concluida: false,
+        subTarefas: []
       };
-      
-      const tarefaAtual = tarefas.find(t => t.id === tarefaId);
-      const listaSub = tarefaAtual?.subTarefas || [];
-      const novaLista = [...listaSub, novaSub];
 
-      await updateDoc(doc(db, `${setorSelecionado}_tarefas`, tarefaId), {
-        subTarefas: novaLista
+      const inserirNaArvore = (lista) => {
+        return lista.map(item => {
+          if (item.id === caminhoAlvoIds[0]) {
+            if (caminhoAlvoIds.length === 1) {
+              return { ...item, subTarefas: [...(item.subTarefas || []), novaSub] };
+            } else {
+              return { ...item, subTarefas: inserirNaArvore(item.subTarefas || [], caminhoAlvoIds.slice(1)) };
+            }
+          }
+          return item;
+        });
+      };
+
+      // Se o caminho for apenas o ID raiz
+      let novaListaSub;
+      if (caminhoAlvoIds.length === 1) {
+        novaListaSub = [...(tarefaRaiz.subTarefas || []), novaSub];
+      } else {
+        novaListaSub = inserirNaArvore(tarefaRaiz.subTarefas || [], caminhoAlvoIds.slice(1));
+      }
+
+      await updateDoc(doc(db, `${setorSelecionado}_tarefas`, tarefaRaizId), {
+        subTarefas: caminhoAlvoIds.length === 1 ? [...(tarefaRaiz.subTarefas || []), novaSub] : inserirNaArvore(tarefaRaiz.subTarefas, caminhoAlvoIds)
       });
 
-      setExpandidoIds(prev => ({ ...prev, [tarefaId]: true }));
+      setExpandidoIds(prev => ({ ...prev, [caminhoAlvoIds[caminhoAlvoIds.length - 1]]: true }));
     } catch (e) {
-      alert("Erro ao adicionar sub-tarefa: " + e.message);
+      alert("Erro ao adicionar subtarefa: " + e.message);
     }
+  };
+
+  const promptAdicionarSub = (tarefaRaizId, caminhoIds) => {
+    const subTexto = prompt("Digite o título da nova subtarefa:");
+    if (!subTexto || !subTexto.trim()) return;
+    adicionarSubPendenciaRecursiva(tarefaRaizId, caminhoIds, subTexto.trim());
+  };
+
+  // Função recursiva para alternar status de conclusão
+  const alternarStatusRecursivo = async (tarefaRaizId, caminhoIds) => {
+    try {
+      const tarefaRaiz = tarefas.find(t => t.id === tarefaRaizId);
+      if (!tarefaRaiz) return;
+
+      const atualizarArvore = (lista, ids) => {
+        return lista.map(item => {
+          if (item.id === ids[0]) {
+            if (ids.length === 1) {
+              return { ...item, concluida: !item.concluida };
+            } else {
+              return { ...item, subTarefas: atualizarArvore(item.subTarefas || [], ids.slice(1)) };
+            }
+          }
+          return item;
+        });
+      };
+
+      const novaSubTarefas = atualizarArvore(tarefaRaiz.subTarefas || [], caminhoIds);
+
+      await updateDoc(doc(db, `${setorSelecionado}_tarefas`, tarefaRaizId), {
+        subTarefas: novaSubTarefas
+      });
+    } catch (e) {}
+  };
+
+  // Função recursiva para excluir subtarefa
+  const excluirSubRecursivo = async (tarefaRaizId, caminhoIds) => {
+    if (!window.confirm("Deseja realmente excluir esta subtarefa?")) return;
+    try {
+      const tarefaRaiz = tarefas.find(t => t.id === tarefaRaizId);
+      if (!tarefaRaiz) return;
+
+      const excluirDaArvore = (lista, ids) => {
+        if (ids.length === 1) {
+          return lista.filter(item => item.id !== ids[0]);
+        }
+        return lista.map(item => {
+          if (item.id === ids[0]) {
+            return { ...item, subTarefas: excluirDaArvore(item.subTarefas || [], ids.slice(1)) };
+          }
+          return item;
+        });
+      };
+
+      const novaSubTarefas = excluirDaArvore(tarefaRaiz.subTarefas || [], caminhoIds);
+
+      await updateDoc(doc(db, `${setorSelecionado}_tarefas`, tarefaRaizId), {
+        subTarefas: novaSubTarefas
+      });
+    } catch (e) {}
   };
 
   const salvarEdicaoInlineTarefa = async (tarefaId, novoTitulo) => {
@@ -539,57 +611,6 @@ function MainApp() {
         titulo: novoTitulo.trim()
       });
       setEditandoId(null);
-    } catch (e) {}
-  };
-
-  const salvarEdicaoInlineSub = async (tarefaId, subId, novoTexto) => {
-    if (!novoTexto.trim()) return;
-    try {
-      const tarefaAtual = tarefas.find(t => t.id === tarefaId);
-      if (!tarefaAtual || !tarefaAtual.subTarefas) return;
-
-      const novaLista = tarefaAtual.subTarefas.map(sub => {
-        if (sub.id === subId) {
-          return { ...sub, texto: novoTexto.trim() };
-        }
-        return sub;
-      });
-
-      await updateDoc(doc(db, `${setorSelecionado}_tarefas`, tarefaId), {
-        subTarefas: novaLista
-      });
-      setEditandoSubId(null);
-    } catch (e) {}
-  };
-
-  const alternarStatusSubPendencia = async (tarefaId, subId) => {
-    try {
-      const tarefaAtual = tarefas.find(t => t.id === tarefaId);
-      if (!tarefaAtual || !tarefaAtual.subTarefas) return;
-
-      const novaLista = tarefaAtual.subTarefas.map(sub => {
-        if (sub.id === subId) {
-          return { ...sub, concluida: !sub.concluida };
-        }
-        return sub;
-      });
-
-      await updateDoc(doc(db, `${setorSelecionado}_tarefas`, tarefaId), {
-        subTarefas: novaLista
-      });
-    } catch (e) {}
-  };
-
-  const excluirSubPendencia = async (tarefaId, subId) => {
-    try {
-      const tarefaAtual = tarefas.find(t => t.id === tarefaId);
-      if (!tarefaAtual || !tarefaAtual.subTarefas) return;
-
-      const novaLista = tarefaAtual.subTarefas.filter(sub => sub.id !== subId);
-
-      await updateDoc(doc(db, `${setorSelecionado}_tarefas`, tarefaId), {
-        subTarefas: novaLista
-      });
     } catch (e) {}
   };
 
@@ -681,6 +702,57 @@ function MainApp() {
     inputText: darkMode ? '#dbdbd7' : '#37352f',
     primary: '#2eaadc',
     treeLine: darkMode ? '#444440' : '#d3d3ce'
+  };
+
+  // Componente recursivo para renderizar subtarefas em qualquer nível com seta e botão adicionar nova
+  const renderizarSubTarefasRecursivas = (subLista, tarefaRaizId, caminhoPai, nivel = 1) => {
+    if (!subLista || subLista.length === 0) return null;
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', background: theme.cardInner, borderTop: `1px solid ${theme.border}` }}>
+        {subLista.map((sub) => {
+          const caminhoAtual = [...caminhoPai, sub.id];
+          const isExpandidoSub = expandidoIds[sub.id];
+          const temFilhos = sub.subTarefas && sub.subTarefas.length > 0;
+          const paddingLeftPx = nivel * 24 + 6;
+
+          return (
+            <React.Fragment key={sub.id}>
+              <div style={{ display: 'grid', gridTemplateColumns: '2.5fr 1.5fr 1.5fr 1fr 1fr', padding: `8px 0 8px ${paddingLeftPx}px`, alignItems: 'center', fontSize: '13px', borderTop: `1px solid ${theme.border}` }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden' }}>
+                  <span onClick={() => alternarExpandido(sub.id)} style={{ cursor: 'pointer', fontSize: '10px', color: theme.textMuted, userSelect: 'none', padding: '2px', width: '12px', textAlign: 'center' }}>
+                    {temFilhos ? (isExpandidoSub ? '▼' : '▶') : ''}
+                  </span>
+                  <input type="checkbox" checked={sub.concluida} onChange={() => alternarStatusRecursivo(tarefaRaizId, caminhoAtual)} style={{ accentColor: '#2eaadc', cursor: 'pointer' }} />
+                  <span>📄</span>
+                  <span style={{ color: sub.concluida ? theme.textMuted : theme.textMain, textDecoration: sub.concluida ? 'line-through' : 'none', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sub.texto}</span>
+                </div>
+                <div style={{ color: theme.textMuted, fontSize: '13px' }}>{tarefas.find(t => t.id === tarefaRaizId)?.responsavel}</div>
+                <div style={{ color: theme.textMuted, fontSize: '13px' }}>📄 Sub-tarefa</div>
+                <div style={{ color: theme.textMuted, fontSize: '13px' }}>Agora há pouco</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: theme.textMuted, fontSize: '13px', paddingRight: '10px' }}>
+                  <span>Agora há pouco</span>
+                  <button onClick={() => excluirSubRecursivo(tarefaRaizId, caminhoAtual)} style={{ background: 'transparent', border: 'none', color: '#eb5757', cursor: 'pointer', fontSize: '11px' }}>Excluir</button>
+                </div>
+              </div>
+
+              {/* Se expandido, renderiza os filhos recursivamente e o botão adicionar nova */}
+              {isExpandidoSub && (
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  {renderizarSubTarefasRecursivas(sub.subTarefas, tarefaRaizId, caminhoAtual, nivel + 1)}
+                  <div 
+                    onClick={() => promptAdicionarSub(tarefaRaizId, caminhoAtual)}
+                    style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: theme.textMuted, cursor: 'pointer', padding: `8px 0 8px ${paddingLeftPx + 30}px`, borderTop: `1px solid ${theme.border}`, fontWeight: '500' }}
+                  >
+                    <span>+</span> <span>Adicionar nova</span>
+                  </div>
+                </div>
+              )}
+            </React.Fragment>
+          );
+        })}
+      </div>
+    );
   };
 
   if (loadingAuth) {
@@ -923,7 +995,7 @@ function MainApp() {
             </div>
           </div>
 
-          {/* TABELA DE DADOS ESTILO NOTION COM EDIÇÃO INLINE (DUPLO CLIQUE) */}
+          {/* TABELA DE DADOS ESTILO NOTION */}
           <div style={{ width: '100%', boxSizing: 'border-box' }}>
             
             <div style={{ display: 'grid', gridTemplateColumns: '2.5fr 1.5fr 1.5fr 1fr 1fr', padding: '8px 0', borderBottom: `1px solid ${theme.border}`, fontSize: '12px', fontWeight: '500', color: theme.textMuted, minWidth: '700px' }}>
@@ -957,7 +1029,6 @@ function MainApp() {
                             {isExpandido ? '▼' : '▶'}
                           </span>
                           <span>📄</span>
-                          
                           {editandoId === t.id ? (
                             <input 
                               type="text" 
@@ -1004,45 +1075,13 @@ function MainApp() {
 
                       </div>
 
-                      {/* SUB-PÁGINAS E BOTÃO "+ Adicionar nova" */}
+                      {/* SUB-PÁGINAS RECURSIVAS E BOTÃO "+ Adicionar nova" */}
                       {isExpandido && (
-                        <div style={{ display: 'flex', flexDirection: 'column', background: theme.cardInner, borderBottom: `1px solid ${theme.border}` }}>
-                          {subTarefas.map((sub) => (
-                            <div 
-                              key={sub.id} 
-                              onDoubleClick={() => { setEditandoSubId(sub.id); setTextoSubEditando(sub.texto); }}
-                              style={{ display: 'grid', gridTemplateColumns: '2.5fr 1.5fr 1.5fr 1fr 1fr', padding: '8px 0 8px 30px', alignItems: 'center', fontSize: '13px', borderTop: `1px solid ${theme.border}` }}
-                            >
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
-                                <input type="checkbox" checked={sub.concluida} onChange={() => alternarStatusSubPendencia(t.id, sub.id)} style={{ accentColor: '#2eaadc', cursor: 'pointer' }} />
-                                <span>📄</span>
-                                {editandoSubId === sub.id ? (
-                                  <input 
-                                    type="text" 
-                                    value={textoSubEditando}
-                                    autoFocus
-                                    onChange={(e) => setTextoSubEditando(e.target.value)}
-                                    onBlur={() => salvarEdicaoInlineSub(t.id, sub.id, textoSubEditando)}
-                                    onKeyDown={(e) => { if (e.key === 'Enter') salvarEdicaoInlineSub(t.id, sub.id, textoSubEditando); }}
-                                    style={{ background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, padding: '2px 6px', fontSize: '13px', borderRadius: '3px', width: '80%' }}
-                                  />
-                                ) : (
-                                  <span style={{ color: sub.concluida ? theme.textMuted : theme.textMain, textDecoration: sub.concluida ? 'line-through' : 'none', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sub.texto}</span>
-                                )}
-                              </div>
-                              <div style={{ color: theme.textMuted, fontSize: '13px' }}>{t.responsavel}</div>
-                              <div style={{ color: theme.textMuted, fontSize: '13px' }}>📄 {t.titulo}</div>
-                              <div style={{ color: theme.textMuted, fontSize: '13px' }}>Agora há pouco</div>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', color: theme.textMuted, fontSize: '13px', paddingRight: '10px' }}>
-                                <span>Agora há pouco</span>
-                                <button onClick={() => excluirSubPendencia(t.id, sub.id)} style={{ background: 'transparent', border: 'none', color: '#eb5757', cursor: 'pointer', fontSize: '11px' }}>Excluir</button>
-                              </div>
-                            </div>
-                          ))}
-
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                          {renderizarSubTarefasRecursivas(subTarefas, t.id, [t.id], 1)}
                           <div 
-                            onClick={() => adicionarSubPendenciaRapida(t.id)}
-                            style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: theme.textMuted, cursor: 'pointer', padding: '10px 0 10px 30px', borderTop: `1px solid ${theme.border}`, fontWeight: '500' }}
+                            onClick={() => promptAdicionarSub(t.id, [t.id])}
+                            style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: theme.textMuted, cursor: 'pointer', padding: '10px 0 10px 30px', borderTop: `1px solid ${theme.border}`, fontWeight: '500', background: theme.cardInner }}
                           >
                             <span>+</span> <span>Adicionar nova</span>
                           </div>
