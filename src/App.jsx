@@ -3,8 +3,7 @@ import { auth, db } from './firebase';
 import { 
   signInWithEmailAndPassword, 
   signOut, 
-  onAuthStateChanged,
-  updatePassword
+  onAuthStateChanged 
 } from 'firebase/auth';
 import { 
   collection, 
@@ -16,7 +15,7 @@ import {
   getDocs
 } from 'firebase/firestore';
 
-// Inserção dinâmica do Favicon (Letra "P" em negrito)
+// Inserção dinâmica do Favicon
 (() => {
   try {
     const faviconSvg = `
@@ -29,9 +28,7 @@ import {
     link.type = 'image/svg+xml';
     link.href = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(faviconSvg);
     document.head.appendChild(link);
-  } catch (e) {
-    // Evita falhas de DOM
-  }
+  } catch (e) {}
 })();
 
 const style = document.createElement('style');
@@ -50,16 +47,13 @@ style.innerHTML = `
     background-color: rgba(235, 87, 87, 0.08) !important;
     animation: piscarNotion 2s infinite;
   }
-
   input[type="date"] {
     color-scheme: light dark;
   }
-  
   input[type="date"]::-webkit-calendar-picker-indicator {
     filter: invert(0.5);
     cursor: pointer;
   }
-
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
@@ -71,7 +65,6 @@ style.innerHTML = `
     background: rgba(120, 119, 116, 0.3);
     border-radius: 3px;
   }
-
   @media (max-width: 768px) {
     .workspace-layout {
       flex-direction: column !important;
@@ -118,7 +111,6 @@ const calcularStatusPrazo = (dataStr) => {
 
       const diffTime = dataPrazo - hoje;
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
       const dataFormatada = `${String(day).padStart(2, '0')}/${String(month + 1).padStart(2, '0')}/${year}`;
 
       if (diffDays < 0) return { status: 'vencido', texto: `Vencido há ${Math.abs(diffDays)} dia(s) (${dataFormatada})`, diasAtraso: Math.abs(diffDays) };
@@ -138,21 +130,9 @@ const INTEGRANTES_NOC = ["Gustavo", "Stevan", "Gilvan", "Kessy", "João", "Lucas
 const INTEGRANTES_NMR = ["Dhennifer"];
 
 const SETORES_DISPONIVEIS = [
-  { 
-    id: 'noc', 
-    nome: 'NOC - Network Operations Center', 
-    descricao: 'Monitoramento de rede, incidentes e controle de enlaces.'
-  },
-  { 
-    id: 'nmr', 
-    nome: 'NMR - Núcleo de Monitoramento', 
-    descricao: 'Acompanhamento de alertas, métricas e supervisão contínua.'
-  },
-  { 
-    id: 'niip', 
-    nome: 'NIIP - Núcleo de Informática e Inspeção de POPs', 
-    descricao: 'Gestão de tarefas, prazos e manutenções da infraestrutura de POPs.'
-  }
+  { id: 'noc', nome: 'NOC - Network Operations Center', descricao: 'Monitoramento de rede, incidentes e controle de enlaces.' },
+  { id: 'nmr', nome: 'NMR - Núcleo de Monitoramento', descricao: 'Acompanhamento de alertas, métricas e supervisão contínua.' },
+  { id: 'niip', nome: 'NIIP - Núcleo de Informática e Inspeção de POPs', descricao: 'Gestão de tarefas, prazos e manutenções da infraestrutura de POPs.' }
 ];
 
 export default function App() {
@@ -164,12 +144,8 @@ export default function App() {
   const [darkMode, setDarkMode] = useState(() => {
     try {
       const salvo = localStorage.getItem('darkMode_fibralink');
-      if (salvo !== null) {
-        return salvo === 'true';
-      }
-    } catch (e) {
-      console.error("Erro ao ler localStorage", e);
-    }
+      if (salvo !== null) return salvo === 'true';
+    } catch (e) {}
     return true;
   });
 
@@ -178,9 +154,7 @@ export default function App() {
     setDarkMode(novoTema);
     try {
       localStorage.setItem('darkMode_fibralink', String(novoTema));
-    } catch (e) {
-      console.error("Erro ao salvar localStorage", e);
-    }
+    } catch (e) {}
   };
   
   const [tarefas, setTarefas] = useState([]);
@@ -335,9 +309,7 @@ export default function App() {
         timestamp: Date.now(),
         dataHoraFormatada: new Date().toLocaleString('pt-BR')
       });
-    } catch (e) {
-      console.error("Erro ao registrar log de auditoria", e);
-    }
+    } catch (e) {}
   };
 
   const excluirLogIndividual = async (logId) => {
@@ -465,9 +437,7 @@ export default function App() {
       await updateDoc(doc(db, `${setorSelecionado}_tarefas`, tarefaId), {
         subTarefas: novaLista
       });
-    } catch (e) {
-      alert("Erro ao atualizar sub-tarefa: " + e.message);
-    }
+    } catch (e) {}
   };
 
   const excluirSubPendencia = async (tarefaId, subId) => {
@@ -480,9 +450,7 @@ export default function App() {
       await updateDoc(doc(db, `${setorSelecionado}_tarefas`, tarefaId), {
         subTarefas: novaLista
       });
-    } catch (e) {
-      alert("Erro ao excluir sub-tarefa: " + e.message);
-    }
+    } catch (e) {}
   };
 
   const abrirModalEdicao = (tarefa) => {
@@ -495,10 +463,7 @@ export default function App() {
 
   const salvarEdicaoTarefa = async (e) => {
     e.preventDefault();
-    if (!editTitulo.trim() || !editPrazo) {
-      alert("Preencha o título e a data limite!");
-      return;
-    }
+    if (!editTitulo.trim() || !editPrazo) return;
 
     try {
       await updateDoc(doc(db, `${setorSelecionado}_tarefas`, tarefaEditando.id), {
@@ -510,9 +475,7 @@ export default function App() {
 
       await registrarLogAuditoria("EDIÇÃO", `Atualizou a página "${editTitulo.trim()}"`, editTitulo.trim());
       setTarefaEditando(null);
-    } catch (err) {
-      alert("Erro ao atualizar: " + err.message);
-    }
+    } catch (err) {}
   };
 
   const abrirModalResolucao = (tarefa) => {
@@ -522,22 +485,17 @@ export default function App() {
 
   const confirmarResolucaoTarefa = async (e) => {
     e.preventDefault();
-    if (!detalhesResolucaoInput.trim()) {
-      alert("Informe os detalhes da conclusão.");
-      return;
-    }
+    if (!detalhesResolucaoInput.trim()) return;
 
     try {
       await updateDoc(doc(db, `${setorSelecionado}_tarefas`, tarefaResolvendo.id), { 
         status: 'Resolvida',
         detalhesResolucao: detalhesResolucaoInput.trim()
       });
-      await registrarLogAuditoria("RESOLUÇÃO", `Concluiu a página. Relato: "${detalhesResolucaoInput.trim()}"`, tarefaResolvendo.titulo);
+      await registrarLogAuditoria("RESOLUÇÃO", `Concluiu a página`, tarefaResolvendo.titulo);
       setTarefaResolvendo(null);
       if (paginaAberta && paginaAberta.id === tarefaResolvendo.id) setPaginaAberta(null);
-    } catch (err) {
-      alert("Erro ao concluir: " + err.message);
-    }
+    } catch (err) {}
   };
 
   const reabrirTarefa = async (tarefa) => {
@@ -547,9 +505,7 @@ export default function App() {
         detalhesResolucao: null 
       });
       await registrarLogAuditoria("REABERTURA", `Reabriu a página`, tarefa.titulo);
-    } catch (err) {
-      alert("Erro ao reabrir: " + err.message);
-    }
+    } catch (err) {}
   };
 
   const excluirTarefa = async (id, tituloTarefa) => {
@@ -558,9 +514,7 @@ export default function App() {
         await deleteDoc(doc(db, `${setorSelecionado}_tarefas`, id));
         await registrarLogAuditoria("EXCLUSÃO", `Excluiu a página`, tituloTarefa || 'Sem título');
         if (paginaAberta && paginaAberta.id === id) setPaginaAberta(null);
-      } catch (err) {
-        alert("Erro ao excluir: " + err.message);
-      }
+      } catch (err) {}
     }
   };
 
@@ -572,9 +526,7 @@ export default function App() {
         descricao: editDescricaoPagina.trim()
       });
       setPaginaAberta(prev => ({ ...prev, titulo: editTituloPagina.trim(), descricao: editDescricaoPagina.trim() }));
-    } catch (e) {
-      console.error("Erro ao salvar página", e);
-    }
+    } catch (e) {}
   };
 
   const theme = {
@@ -592,7 +544,7 @@ export default function App() {
   };
 
   if (loadingAuth) {
-    return <div style={{ color: theme.textMain, backgroundColor: theme.bg, textAlign: 'center', marginTop: '20vh', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif', minHeight: '100vh' }}>Carregando workspace...</div>;
+    return <div style={{ color: '#fff', backgroundColor: '#191919', textAlign: 'center', marginTop: '20vh', fontFamily: 'sans-serif', minHeight: '100vh', padding: '20px' }}>Carregando workspace...</div>;
   }
 
   if (!usuarioLogado) {
