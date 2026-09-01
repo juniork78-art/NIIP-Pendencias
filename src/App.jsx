@@ -42,8 +42,8 @@ style.innerHTML = `
     animation: piscarNotion 2s infinite;
     font-weight: 500;
   }
-  .item-lista-piscando-notion {
-    border-left: 3px solid #eb5757 !important;
+  .linha-tabela-piscando {
+    background-color: rgba(235, 87, 87, 0.08) !important;
     animation: piscarNotion 2s infinite;
   }
 
@@ -56,23 +56,26 @@ style.innerHTML = `
     cursor: pointer;
   }
 
+  /* Custom Scrollbar Notion Style */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(120, 119, 116, 0.3);
+    border-radius: 3px;
+  }
+
   @media (max-width: 768px) {
-    * {
-      box-sizing: border-box;
+    .workspace-layout {
+      flex-direction: column !important;
     }
-    body {
-      margin: 0;
-      padding: 0;
-      overflow-x: hidden;
-    }
-    .app-container {
-      padding: 12px !important;
+    .sidebar-notion {
       width: 100% !important;
-    }
-    .main-grid {
-      grid-template-columns: 1fr !important;
-      width: 100% !important;
-      gap: 20px !important;
+      height: auto !important;
     }
   }
 `;
@@ -202,41 +205,20 @@ export default function App() {
   const [popupJaExibido, setPopupJaExibido] = useState(false);
 
   const [textoNovaSub, setTextoNovaSub] = useState({});
+  const [expandidoIds, setExpandidoIds] = useState({});
+
+  const alternarExpandido = (id) => {
+    setExpandidoIds(prev => ({ ...prev, [id]: !prev[id] }));
+  };
 
   const mudarPagina = (novaPagina) => {
-    window.history.pushState({ pagina: novaPagina, setor: setorSelecionado }, '');
     setPaginaAtual(novaPagina);
   };
 
   const mudarSetor = (novoSetor) => {
-    window.history.pushState({ pagina: 'andamento', setor: novoSetor }, '');
     setSetorSelecionado(novoSetor);
     setPaginaAtual('andamento');
   };
-
-  useEffect(() => {
-    if (usuarioLogado) {
-      window.history.replaceState({ pagina: paginaAtual, setor: setorSelecionado }, '');
-    }
-  }, [usuarioLogado, setorSelecionado]);
-
-  useEffect(() => {
-    const handlePopState = (event) => {
-      if (event.state) {
-        if (event.state.pagina) {
-          setPaginaAtual(event.state.pagina);
-        }
-        if (event.state.setor !== undefined) {
-          setSetorSelecionado(event.state.setor);
-        }
-      } else {
-        setPaginaAtual('andamento');
-      }
-    };
-
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -355,7 +337,7 @@ export default function App() {
   };
 
   const apagarTodoHistoricoAuditoria = async () => {
-    if (window.confirm("ATENÇÃO: Deseja realmente apagar TODO o histórico de auditoria deste setor? Esta ação não pode ser desfeita.")) {
+    if (window.confirm("ATENÇÃO: Deseja realmente apagar TODO o histórico de auditoria deste setor?")) {
       try {
         const querySnapshot = await getDocs(collection(db, `${setorSelecionado}_auditoria`));
         const promessas = querySnapshot.docs.map((d) => deleteDoc(d.ref));
@@ -588,9 +570,10 @@ export default function App() {
     }
   };
 
-  // Cores Estilo Notion (Clean & Soft)
+  // Cores Estilo Notion Exatas
   const theme = {
     bg: darkMode ? '#191919' : '#fbfbfa',
+    sidebarBg: darkMode ? '#202020' : '#f7f6f3',
     cardBg: darkMode ? '#202020' : '#ffffff',
     cardInner: darkMode ? '#262626' : '#f7f6f3',
     textMain: darkMode ? '#dbdbd7' : '#37352f',
@@ -598,7 +581,8 @@ export default function App() {
     border: darkMode ? '#2f2f2f' : '#e9e9e7',
     inputBg: darkMode ? '#262626' : '#ffffff',
     inputText: darkMode ? '#dbdbd7' : '#37352f',
-    primary: '#2eaadc'
+    primary: '#2eaadc',
+    treeLine: darkMode ? '#444440' : '#d3d3ce'
   };
 
   if (loadingAuth) {
@@ -721,12 +705,6 @@ export default function App() {
       <div className="app-container" style={{ backgroundColor: theme.bg, color: theme.textMain, minHeight: '100vh', width: '100%', padding: '20px', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif', boxSizing: 'border-box' }}>
         <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `1px solid ${theme.border}`, paddingBottom: '16px', marginBottom: '24px', flexWrap: 'wrap', gap: '16px', width: '100%', boxSizing: 'border-box' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
-            <img 
-              src="/logo.png" 
-              alt="Logo Fibralink" 
-              style={{ maxWidth: '120px', maxHeight: '42px', height: 'auto', objectFit: 'contain', display: 'block' }} 
-              onError={(e) => { e.target.style.display = 'none'; }}
-            />
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '2px' }}>
                 <button 
@@ -737,9 +715,6 @@ export default function App() {
                 </button>
                 <span style={{ fontSize: '12px', color: '#d97706', fontWeight: '500' }}>Auditoria do Workspace</span>
               </div>
-              <p style={{ margin: 0, fontSize: '12px', color: theme.textMuted }}>
-                Gestor: <strong>{nomeFormatadoGlobal}</strong> ({setorAtualInfo.nome})
-              </p>
             </div>
           </div>
           <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
@@ -815,12 +790,6 @@ export default function App() {
       <div className="app-container" style={{ backgroundColor: theme.bg, color: theme.textMain, minHeight: '100vh', width: '100%', padding: '20px', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif', boxSizing: 'border-box' }}>
         <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `1px solid ${theme.border}`, paddingBottom: '16px', marginBottom: '24px', flexWrap: 'wrap', gap: '16px', width: '100%', boxSizing: 'border-box' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
-            <img 
-              src="/logo.png" 
-              alt="Logo Fibralink" 
-              style={{ maxWidth: '120px', maxHeight: '42px', height: 'auto', objectFit: 'contain', display: 'block' }} 
-              onError={(e) => { e.target.style.display = 'none'; }}
-            />
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '2px' }}>
                 <button 
@@ -831,9 +800,6 @@ export default function App() {
                 </button>
                 <span style={{ fontSize: '12px', color: '#27ae60', fontWeight: '500' }}>{setorAtualInfo.nome} — Resolvidas</span>
               </div>
-              <p style={{ margin: 0, fontSize: '12px', color: theme.textMuted }}>
-                Usuário: <strong>{nomeFormatadoGlobal}</strong> ({tipoCargo})
-              </p>
             </div>
           </div>
           <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
@@ -912,499 +878,397 @@ export default function App() {
   }
 
   return (
-    <div className="app-container" style={{ backgroundColor: theme.bg, color: theme.textMain, minHeight: '100vh', width: '100%', padding: '20px', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif', boxSizing: 'border-box', position: 'relative' }}>
-        
-      {mostrarPopupAlerta && tarefasUrgentesUsuario.length > 0 && (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, padding: '15px', boxSizing: 'border-box' }}>
-          <div style={{ background: theme.cardBg, padding: '24px', borderRadius: '6px', width: '100%', maxWidth: '480px', border: `1px solid ${theme.border}`, boxShadow: '0 8px 24px rgba(0,0,0,0.2)', boxSizing: 'border-box', textAlign: 'center' }}>
-            <div style={{ fontSize: '28px', marginBottom: '8px' }}>🚨</div>
-            <h2 style={{ margin: '0 0 8px 0', color: '#eb5757', fontSize: '18px', fontWeight: '600' }}>Atenção, {nomeFormatadoGlobal}!</h2>
-            <p style={{ fontSize: '13px', color: theme.textMuted, marginBottom: '20px', lineHeight: '1.4' }}>
-              Você possui <strong>{tarefasUrgentesUsuario.length}</strong> tarefa(s) sob sua responsabilidade com prazo crítico ou vencidas:
-            </p>
-
-          <div style={{ maxHeight: '220px', overflowY: 'auto', marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '8px', textAlign: 'left' }}>
-            {tarefasUrgentesUsuario.map(t => {
-              const st = calcularStatusPrazo(t.prazo);
-              return (
-                <div key={t.id} style={{ background: theme.cardInner, padding: '10px 12px', borderRadius: '4px', borderLeft: '3px solid #eb5757', border: `1px solid ${theme.border}`, borderLeftWidth: '3px' }}>
-                  <div style={{ fontWeight: '600', fontSize: '13px', color: theme.textMain, marginBottom: '2px' }}>{t.titulo}</div>
-                  <div style={{ fontSize: '11px', color: '#eb5757', fontWeight: '500' }}>📅 {st.texto}</div>
-                </div>
-              );
-            })}
-        </div>
-
-        <button 
-          onClick={() => setMostrarPopupAlerta(false)}
-          style={{ width: '100%', padding: '10px', background: '#37352f', color: '#fff', fontWeight: '500', borderRadius: '4px', cursor: 'pointer', fontSize: '13px', border: 'none' }}
-        >
-          Entendido
-        </button>
-      </div>
-    </div>
-    )}
-
-    <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `1px solid ${theme.border}`, paddingBottom: '16px', marginBottom: '24px', flexWrap: 'wrap', gap: '16px', width: '100%', boxSizing: 'border-box' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
-        <img 
-          src="/logo.png" 
-          alt="Logo Fibralink" 
-          style={{ maxWidth: '120px', maxHeight: '42px', height: 'auto', objectFit: 'contain', display: 'block' }} 
-          onError={(e) => { e.target.style.display = 'none'; }}
-        />
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '2px' }}>
-            {isGestor && (
-              <button 
-                onClick={() => mudarSetor(null)} 
-                style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, color: theme.textMain, padding: '3px 8px', borderRadius: '3px', cursor: 'pointer', fontSize: '11px', fontWeight: '500' }}
-              >
-                ← Trocar Workspace
-              </button>
-            )}
-            <span style={{ fontSize: '12px', color: theme.textMain, fontWeight: '600' }}>{setorAtualInfo.nome}</span>
-          </div>
-          <p style={{ margin: 0, fontSize: '12px', color: theme.textMuted }}>
-            Usuário: <strong>{nomeFormatadoGlobal}</strong> ({tipoCargo})
-          </p>
-      </div>
-    </div>
+    <div className="workspace-layout" style={{ display: 'flex', minHeight: '100vh', backgroundColor: theme.bg, color: theme.textMain, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif', boxSizing: 'border-box' }}>
       
-    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-      {isGestor && (
-        <button 
-          onClick={() => mudarPagina('auditoria')}
-          style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, color: '#d97706', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontWeight: '500', fontSize: '12px' }}
-        >
-          Auditoria
-        </button>
-      )}
-
-      {pendenciasUrgentesCount > 0 && (
-        <div style={{ background: darkMode ? '#3b1c1c' : '#fde8e8', color: '#eb5757', padding: '5px 10px', borderRadius: '4px', fontSize: '11px', fontWeight: '600', border: '1px solid #eb5757' }}>
-          ⚠️ {pendenciasUrgentesCount} Urgente(s)
-        </div>
-      )}
+      {/* SIDEBAR ESQUERDA ESTILO NOTION */}
+      <div className="sidebar-notion" style={{ width: '260px', background: theme.sidebarBg, borderRight: `1px solid ${theme.border}`, display: 'flex', flexDirection: 'column', padding: '12px 8px', boxSizing: 'border-box', flexShrink: '0' }}>
         
-      <button 
-        onClick={() => mudarPagina('resolvidas')}
-        style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, color: '#27ae60', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontWeight: '500', fontSize: '12px' }}
-      >
-        Resolvidas ({tarefasResolvidas.length})
-      </button>
-
-      <button 
-        onClick={alternarTema}
-        style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, color: theme.textMain, padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: '500' }}
-      >
-        {darkMode ? '☀️ Claro' : '🌙 Escuro'}
-      </button>
-
-      <button onClick={() => signOut(auth)} style={{ background: '#eb5757', border: 'none', color: '#fff', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontWeight: '500', fontSize: '12px' }}>Sair</button>
-    </div>
-  </header>
-
-  <div className="main-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 340px) 1fr', gap: '24px', alignItems: 'start', width: '100%', boxSizing: 'border-box' }}>
-      
-    <div style={{ background: theme.cardBg, padding: '20px', borderRadius: '6px', border: `1px solid ${theme.border}`, width: '100%', boxSizing: 'border-box' }}>
-      <h3 style={{ margin: '0 0 16px 0', color: theme.textMain, fontSize: '15px', fontWeight: '600', borderBottom: `1px solid ${theme.border}`, paddingBottom: '10px' }}>➕ Nova Tarefa</h3>
-        
-      <form onSubmit={adicionarTarefa}>
-        <div style={{ marginBottom: '14px' }}>
-          <label style={{ display: 'block', fontSize: '11px', fontWeight: '500', color: theme.textMuted, marginBottom: '4px' }}>Título *</label>
-          <input 
-            type="text" 
-            placeholder="Ex: Atualização geral de switches" 
-            value={titulo} 
-            onChange={(e) => setTitulo(e.target.value)} 
-            required 
-            style={{ width: '100%', padding: '8px 10px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '4px', boxSizing: 'border-box', fontSize: '13px' }} 
-          />
-        </div>
-
-        <div style={{ marginBottom: '14px' }}>
-          <label style={{ display: 'block', fontSize: '11px', fontWeight: '500', color: theme.textMuted, marginBottom: '4px' }}>Descrição</label>
-          <textarea 
-            placeholder="Contexto ou observações..." 
-            rows="2"
-            value={descricao} 
-            onChange={(e) => setDescription(e.target.value)} 
-            style={{ width: '100%', padding: '8px 10px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '4px', boxSizing: 'border-box', resize: 'vertical', fontSize: '13px' }} 
-          />
-        </div>
-
-        <div style={{ marginBottom: '14px' }}>
-          <label style={{ display: 'block', fontSize: '11px', fontWeight: '500', color: theme.textMuted, marginBottom: '4px' }}>Sub-pendências (uma por linha)</label>
-          <textarea 
-            placeholder="Verificar portas&#10;Backup de configs" 
-            rows="2"
-            value={subPendenciasInput} 
-            onChange={(e) => setSubPendenciasInput(e.target.value)} 
-            style={{ width: '100%', padding: '8px 10px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '4px', boxSizing: 'border-box', resize: 'vertical', fontSize: '13px' }} 
-          />
-        </div>
-
-        <div style={{ marginBottom: '14px' }}>
-          <label style={{ display: 'block', fontSize: '11px', fontWeight: '500', color: theme.textMuted, marginBottom: '4px' }}>
-            {isGestor ? 'Responsável' : 'Responsável (Automático)'}
-          </label>
-          {isGestor ? (
-            <select 
-              value={responsavelSelecionadoGestor} 
-              onChange={(e) => setResponsavelSelecionadoGestor(e.target.value)} 
-              style={{ width: '100%', padding: '8px 10px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '4px', boxSizing: 'border-box', fontWeight: '500', fontSize: '13px' }}
-            >
-              {integrantesAtuais.map(nome => (
-                <option key={nome} value={nome}>{nome}</option>
-              ))}
-            </select>
-          ) : (
-            <input 
-              type="text" 
-              value={responsavelFinal} 
-              disabled 
-              style={{ width: '100%', padding: '8px 10px', background: darkMode ? '#181818' : '#f0f0ef', border: `1px solid ${theme.border}`, color: theme.textMain, borderRadius: '4px', boxSizing: 'border-box', fontWeight: '500', cursor: 'not-allowed', fontSize: '13px' }} 
-            />
-          )}
-        </div>
-
-        <div style={{ display: 'flex', gap: '10px', marginBottom: '16px', flexWrap: 'wrap' }}>
-          <div style={{ flex: '1 1 130px' }}>
-            <label style={{ display: 'block', fontSize: '11px', fontWeight: '500', color: theme.textMuted, marginBottom: '4px' }}>Prazo *</label>
-            <input 
-              type="date" 
-              value={prazo} 
-              onChange={(e) => setPrazo(e.target.value)} 
-              required 
-              style={{ width: '100%', padding: '8px 10px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '4px', boxSizing: 'border-box', fontSize: '13px' }} 
-            />
-          </div>
-          <div style={{ flex: '1 1 100px' }}>
-            <label style={{ display: 'block', fontSize: '11px', fontWeight: '500', color: theme.textMuted, marginBottom: '4px' }}>Prioridade</label>
-            <select 
-              value={prioridade} 
-              onChange={(e) => setPrioridade(e.target.value)} 
-              style={{ width: '100%', padding: '8px 10px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '4px', boxSizing: 'border-box', fontSize: '13px' }}
-            >
-              <option value="Baixa">Baixa</option>
-              <option value="Média">Média</option>
-              <option value="Alta">Alta</option>
-              <option value="Crítica">Crítica</option>
-            </select>
-          </div>
-        </div>
-
-        <button type="submit" style={{ width: '100%', padding: '10px', background: '#37352f', border: 'none', color: '#fff', fontWeight: '500', borderRadius: '4px', cursor: 'pointer', fontSize: '13px' }}>
-          Salvar Tarefa
-        </button>
-      </form>
-    </div>
-
-    <div style={{ background: theme.cardBg, padding: '20px', borderRadius: '6px', border: `1px solid ${theme.border}`, width: '100%', boxSizing: 'border-box' }}>
-        
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: `1px solid ${theme.border}`, paddingBottom: '12px', flexWrap: 'wrap', gap: '12px' }}>
-        <h3 style={{ margin: 0, color: theme.textMain, fontSize: '15px', fontWeight: '600' }}>📋 Tarefas em Andamento</h3>
-          
-        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-          <select value={filtroResponsavel} onChange={(e) => setFiltroResponsavel(e.target.value)} style={{ padding: '6px 10px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '4px', fontSize: '12px' }}>
-            <option value="todos">Responsável: Todos</option>
-            {integrantesAtuais.map(n => <option key={n} value={n}>{n}</option>)}
-          </select>
-        </div>
-      </div>
-
-      {tarefasFiltradas.length === 0 ? (
-        <p style={{ color: theme.textMuted, fontSize: '13px', textAlign: 'center', padding: '50px 0' }}>Nenhuma tarefa em andamento.</p>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%', boxSizing: 'border-box' }}>
-            
-          {tarefasEspecialistas.length > 0 && (
-            <div style={{ background: theme.cardInner, padding: '12px', borderRadius: '6px', border: `1px solid ${theme.border}`, width: '100%', boxSizing: 'border-box' }}>
-              <h4 style={{ margin: '0 0 10px 0', fontSize: '12px', color: '#d97706', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: `1px solid ${theme.border}`, paddingBottom: '6px', fontWeight: '600' }}>
-                ⭐ Especialistas ({tarefasEspecialistas.length})
-              </h4>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {tarefasEspecialistas.map(t => renderizarItemListaNotion(t, theme, isGestor, nomeFormatadoGlobal, abrirModalEdicao, abrirModalResolucao, excluirTarefa, adicionarSubPendencia, alternarStatusSubPendencia, excluirSubPendencia, textoNovaSub, setTextoNovaSub))}
-              </div>
+        {/* Topo do Usuário na Sidebar */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 8px', borderRadius: '4px', marginBottom: '16px', cursor: 'pointer', background: theme.cardBg, border: `1px solid ${theme.border}` }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
+            <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: '#2eaadc', color: '#fff', fontSize: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
+              {nomeFormatadoGlobal.charAt(0) || 'J'}
             </div>
-          )}
-
-          {tarefasN3.length > 0 && (
-            <div style={{ background: theme.cardInner, padding: '12px', borderRadius: '6px', border: `1px solid ${theme.border}`, width: '100%', boxSizing: 'border-box' }}>
-              <h4 style={{ margin: '0 0 10px 0', fontSize: '12px', color: '#2eaadc', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: `1px solid ${theme.border}`, paddingBottom: '6px', fontWeight: '600' }}>
-                🔷 NOC N3 ({tarefasN3.length})
-              </h4>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {tarefasN3.map(t => renderizarItemListaNotion(t, theme, isGestor, nomeFormatadoGlobal, abrirModalEdicao, abrirModalResolucao, excluirTarefa, adicionarSubPendencia, alternarStatusSubPendencia, excluirSubPendencia, textoNovaSub, setTextoNovaSub))}
-              </div>
-            </div>
-          )}
-
-          {tarefasN1.length > 0 && (
-            <div style={{ background: theme.cardInner, padding: '12px', borderRadius: '6px', border: `1px solid ${theme.border}`, width: '100%', boxSizing: 'border-box' }}>
-              <h4 style={{ margin: '0 0 10px 0', fontSize: '12px', color: '#27ae60', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: `1px solid ${theme.border}`, paddingBottom: '6px', fontWeight: '600' }}>
-                🟢 N1 ({tarefasN1.length})
-              </h4>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {tarefasN1.map(t => renderizarItemListaNotion(t, theme, isGestor, nomeFormatadoGlobal, abrirModalEdicao, abrirModalResolucao, excluirTarefa, adicionarSubPendencia, alternarStatusSubPendencia, excluirSubPendencia, textoNovaSub, setTextoNovaSub))}
-              </div>
-            </div>
-          )}
-
-        </div>
-      )}
-
-    </div>
-
-  </div>
-
-  {tarefaEditando && (
-    <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '15px', boxSizing: 'border-box' }}>
-      <div style={{ background: theme.cardBg, padding: '24px', borderRadius: '6px', width: '100%', maxWidth: '420px', border: `1px solid ${theme.border}`, boxSizing: 'border-box' }}>
-        <h3 style={{ margin: '0 0 16px 0', color: theme.textMain, fontSize: '16px', fontWeight: '600', borderBottom: `1px solid ${theme.border}`, paddingBottom: '10px' }}>✏️ Editar Tarefa</h3>
-          
-        <form onSubmit={salvarEdicaoTarefa}>
-          <div style={{ marginBottom: '14px' }}>
-            <label style={{ display: 'block', fontSize: '11px', fontWeight: '500', color: theme.textMuted, marginBottom: '4px' }}>Título *</label>
-            <input 
-              type="text" 
-              value={editTitulo} 
-              onChange={(e) => setEditTitulo(e.target.value)} 
-              required 
-              style={{ width: '100%', padding: '8px 10px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '4px', boxSizing: 'border-box', fontSize: '13px' }} 
-            />
+            <span style={{ fontSize: '13px', fontWeight: '500', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Espaço de {nomeFormatadoGlobal || 'Usuário'}</span>
           </div>
+        </div>
 
-          <div style={{ marginBottom: '14px' }}>
-            <label style={{ display: 'block', fontSize: '11px', fontWeight: '500', color: theme.textMuted, marginBottom: '4px' }}>Descrição</label>
-            <textarea 
-              rows="3"
-              value={editDescricao} 
-              onChange={(e) => setEditDescricao(e.target.value)} 
-              style={{ width: '100%', padding: '8px 10px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '4px', boxSizing: 'border-box', resize: 'vertical', fontSize: '13px' }} 
-            />
+        {/* Menu Principal Sidebar */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontSize: '13px', color: theme.textMuted, marginBottom: '20px' }}>
+          <div onClick={() => mudarPagina('andamento')} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 8px', borderRadius: '4px', cursor: 'pointer', color: paginaAtual === 'andamento' ? theme.textMain : theme.textMuted, background: paginaAtual === 'andamento' ? theme.cardInner : 'transparent' }}>
+            <span>🏠</span> <span>Página inicial</span>
           </div>
-
-          <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
-            <div style={{ flex: '1 1 130px' }}>
-              <label style={{ display: 'block', fontSize: '11px', fontWeight: '500', color: theme.textMuted, marginBottom: '4px' }}>Prazo *</label>
-              <input 
-                type="date" 
-                value={editPrazo} 
-                onChange={(e) => setEditPrazo(e.target.value)} 
-                required 
-                style={{ width: '100%', padding: '8px 10px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '4px', boxSizing: 'border-box', fontSize: '13px' }} 
-              />
-            </div>
-            <div style={{ flex: '1 1 100px' }}>
-              <label style={{ display: 'block', fontSize: '11px', fontWeight: '500', color: theme.textMuted, marginBottom: '4px' }}>Prioridade</label>
-              <select 
-                value={editPrioridade} 
-                onChange={(e) => setEditPrioridade(e.target.value)} 
-                style={{ width: '100%', padding: '8px 10px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '4px', boxSizing: 'border-box', fontSize: '13px' }}
-              >
-                <option value="Baixa">Baixa</option>
-                <option value="Média">Média</option>
-                <option value="Alta">Alta</option>
-                <option value="Crítica">Crítica</option>
-              </select>
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <button 
-              type="button" 
-              onClick={() => setTarefaEditando(null)}
-              style={{ flex: 1, padding: '8px', background: theme.cardInner, border: `1px solid ${theme.border}`, color: theme.textMain, borderRadius: '4px', cursor: 'pointer', fontWeight: '500', fontSize: '13px' }}
-          >
-            Cancelar
-          </button>
-          <button 
-            type="submit" 
-            style={{ flex: 1, padding: '8px', background: '#37352f', border: 'none', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontWeight: '500', fontSize: '13px' }}
-          >
-            Salvar
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-)}
-
-{tarefaResolvendo && (
-  <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '15px', boxSizing: 'border-box' }}>
-    <div style={{ background: theme.cardBg, padding: '24px', borderRadius: '6px', width: '100%', maxWidth: '420px', border: `1px solid ${theme.border}`, boxSizing: 'border-box' }}>
-      <h3 style={{ margin: '0 0 8px 0', color: '#27ae60', fontSize: '16px', fontWeight: '600' }}>✔ Resolver Tarefa</h3>
-      <p style={{ fontSize: '12px', color: theme.textMuted, marginBottom: '16px', lineHeight: '1.4' }}>
-        Relato de conclusão para: <strong>{tarefaResolvendo.titulo}</strong>
-      </p>
-         
-      <form onSubmit={confirmarResolucaoTarefa}>
-        <div style={{ marginBottom: '16px' }}>
-          <label style={{ display: 'block', fontSize: '11px', fontWeight: '500', color: theme.textMuted, marginBottom: '4px' }}>Detalhes da Resolução *</label>
-          <textarea 
-            rows="3"
-            placeholder="Ex: Enlace estabilizado com sucesso."
-            value={detalhesResolucaoInput} 
-            onChange={(e) => setDetalhesResolucaoInput(e.target.value)} 
-            required 
-            style={{ width: '100%', padding: '8px 10px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '4px', boxSizing: 'border-box', resize: 'vertical', fontSize: '13px' }} 
-          />
-        </div>
-
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <button 
-            type="button" 
-            onClick={() => setTarefaResolvendo(null)}
-            style={{ flex: 1, padding: '8px', background: theme.cardInner, border: `1px solid ${theme.border}`, color: theme.textMain, borderRadius: '4px', cursor: 'pointer', fontWeight: '500', fontSize: '13px' }}
-          >
-            Cancelar
-          </button>
-          <button 
-            type="submit" 
-            style={{ flex: 1, padding: '8px', background: '#27ae60', border: 'none', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontWeight: '500', fontSize: '13px' }}
-          >
-            Confirmar
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-)}
-
-</div>
-  );
-}
-
-function renderizarItemListaNotion(t, theme, isGestor, nomeFormatadoGlobal, abrirModalEdicao, abrirModalResolucao, excluirTarefa, adicionarSubPendencia, alternarStatusSubPendencia, excluirSubPendencia, textoNovaSub, setTextoNovaSub) {
-  const infoPrazo = calcularStatusPrazo(t.prazo);
-  
-  const normalizarTexto = (str) => (str || '').normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
-  const isResponsavelPelaTarefa = normalizarTexto(nomeFormatadoGlobal).includes(normalizarTexto(t.responsavel));
-  
-  const podeAgerir = isGestor || isResponsavelPelaTarefa;
-  const isUrgente = infoPrazo.status === 'vencido' || infoPrazo.status === 'hoje' || infoPrazo.status === 'um_dia';
-
-  const subTarefas = t.subTarefas || [];
-  const subConcluidas = subTarefas.filter(s => s.concluida).length;
-
-  return (
-    <div key={t.id} className={`item-lista-tarefa ${isUrgente ? 'item-lista-piscando-notion' : ''}`} style={{ background: theme.cardBg, padding: '14px', borderRadius: '4px', border: `1px solid ${theme.border}`, borderLeft: isUrgente ? undefined : `3px solid #2eaadc`, display: 'flex', flexDirection: 'column', gap: '10px', boxSizing: 'border-box', width: '100%', boxShadow: '0 1px 2px rgba(0,0,0,0.01)' }}>
-      
-      {/* Cabeçalho */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px', flexWrap: 'wrap' }}>
-        <div style={{ flex: 1 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '3px', flexWrap: 'wrap' }}>
-            <h4 style={{ margin: 0, fontSize: '14px', color: theme.textMain, fontWeight: '600', wordBreak: 'break-word' }}>
-              {t.titulo}
-            </h4>
-            <span style={{ fontSize: '9px', padding: '2px 6px', borderRadius: '3px', background: t.prioridade === 'Crítica' ? '#eb5757' : t.prioridade === 'Alta' ? '#f2994a' : theme.cardInner, color: t.prioridade === 'Crítica' || t.prioridade === 'Alta' ? '#fff' : theme.textMuted, fontWeight: '600', border: `1px solid ${theme.border}` }}>
-              {t.prioridade}
-            </span>
-          </div>
-          {t.descricao && (
-            <p style={{ margin: '0 0 6px 0', fontSize: '12px', color: theme.textMuted, lineHeight: '1.4', wordBreak: 'break-word' }}>
-              {t.descricao}
-            </p>
-          )}
-        </div>
-
-        {/* Botões de Ação */}
-        <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-          {podeAgerir && (
-            <button 
-              onClick={() => abrirModalEdicao(t)}
-              style={{ background: 'transparent', border: `1px solid ${theme.border}`, color: theme.textMain, padding: '3px 8px', borderRadius: '3px', cursor: 'pointer', fontSize: '11px', fontWeight: '500' }}
-            >
-              Editar
-            </button>
-          )}
-          {podeAgerir && (
-            <button 
-              onClick={() => abrirModalResolucao(t)}
-              style={{ background: '#27ae60', border: 'none', color: '#fff', padding: '3px 8px', borderRadius: '3px', cursor: 'pointer', fontSize: '11px', fontWeight: '500' }}
-            >
-              Resolver
-            </button>
-          )}
           {isGestor && (
-            <button 
-              onClick={() => excluirTarefa(t.id, t.titulo)}
-              style={{ background: 'transparent', border: `1px solid ${theme.border}`, color: '#eb5757', padding: '3px 8px', borderRadius: '3px', cursor: 'pointer', fontSize: '11px', fontWeight: '500' }}
+            <div onClick={() => mudarPagina('auditoria')} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 8px', borderRadius: '4px', cursor: 'pointer', color: theme.textMuted }}>
+              <span>🛡️</span> <span>Auditoria</span>
+            </div>
+          )}
+          <div onClick={() => mudarPagina('resolvidas')} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 8px', borderRadius: '4px', cursor: 'pointer', color: theme.textMuted }}>
+            <span>✅</span> <span>Resolvidas ({tarefasResolvidas.length})</span>
+          </div>
+        </div>
+
+        {/* Seção Workspaces / Núcleos */}
+        <div style={{ fontSize: '11px', fontWeight: '600', color: theme.textMuted, padding: '0 8px', marginBottom: '6px', textTransform: 'uppercase' }}>
+          Núcleo / Workspace
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontSize: '13px', marginBottom: '20px' }}>
+          {SETORES_DISPONIVEIS.map(s => (
+            <div 
+              key={s.id} 
+              onClick={() => mudarSetor(s.id)}
+              style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 8px', borderRadius: '4px', cursor: 'pointer', background: setorSelecionado === s.id ? theme.cardInner : 'transparent', color: setorSelecionado === s.id ? theme.textMain : theme.textMuted, fontWeight: setorSelecionado === s.id ? '600' : '400' }}
             >
-              Excluir
+              <span>📁</span> <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.nome.split(' - ')[0]}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Rodapé da Sidebar */}
+        <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', borderTop: `1px solid ${theme.border}`, paddingTop: '12px' }}>
+          {isGestor && (
+            <button onClick={() => mudarSetor(null)} style={{ background: 'transparent', border: `1px solid ${theme.border}`, color: theme.textMain, padding: '6px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', textAlign: 'left' }}>
+              🔄 Trocar Workspace Principal
             </button>
           )}
+          <button onClick={() => signOut(auth)} style={{ background: 'transparent', border: '1px solid #eb5757', color: '#eb5757', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', textAlign: 'left' }}>
+            Sair do Sistema
+          </button>
         </div>
       </div>
 
-      {/* Bloco de Sub-pendências (Checklist Notion style) */}
-      <div style={{ background: theme.cardInner, padding: '8px 10px', borderRadius: '4px', border: `1px solid ${theme.border}` }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-          <span style={{ fontSize: '11px', fontWeight: '600', color: theme.textMuted }}>
-            Sub-tarefas ({subConcluidas}/{subTarefas.length})
-          </span>
+      {/* ÁREA PRINCIPAL ESTILO BIBLIOTECA NOTION */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '24px 32px', boxSizing: 'border-box', overflowY: 'auto' }}>
+        
+        {mostrarPopupAlerta && tarefasUrgentesUsuario.length > 0 && (
+          <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, padding: '15px', boxSizing: 'border-box' }}>
+            <div style={{ background: theme.cardBg, padding: '24px', borderRadius: '6px', width: '100%', maxWidth: '480px', border: `1px solid ${theme.border}`, boxShadow: '0 8px 24px rgba(0,0,0,0.2)', textAlign: 'center' }}>
+              <div style={{ fontSize: '28px', marginBottom: '8px' }}>🚨</div>
+              <h2 style={{ margin: '0 0 8px 0', color: '#eb5757', fontSize: '18px', fontWeight: '600' }}>Atenção, {nomeFormatadoGlobal}!</h2>
+              <p style={{ fontSize: '13px', color: theme.textMuted, marginBottom: '20px' }}>Você possui <strong>{tarefasUrgentesUsuario.length}</strong> tarefa(s) crítica(s) ou vencida(s):</p>
+              <div style={{ maxHeight: '200px', overflowY: 'auto', marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '8px', textAlign: 'left' }}>
+                {tarefasUrgentesUsuario.map(t => (
+                  <div key={t.id} style={{ background: theme.cardInner, padding: '8px 10px', borderRadius: '4px', borderLeft: '3px solid #eb5757' }}>
+                    <div style={{ fontWeight: '600', fontSize: '12px' }}>{t.titulo}</div>
+                  </div>
+                ))}
+              </div>
+              <button onClick={() => setMostrarPopupAlerta(false)} style={{ width: '100%', padding: '10px', background: '#37352f', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: '500', cursor: 'pointer' }}>Entendido</button>
+            </div>
+          </div>
+        )}
+
+        {/* Cabeçalho Superior da Página */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+          <div>
+            <h1 style={{ margin: '0 0 4px 0', fontSize: '28px', fontWeight: '700', color: theme.textMain }}>Biblioteca</h1>
+            <p style={{ margin: 0, fontSize: '12px', color: theme.textMuted }}>{setorAtualInfo.nome} • Usuário: <strong>{nomeFormatadoGlobal}</strong> ({tipoCargo})</p>
+          </div>
+
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+            {pendenciasUrgentesCount > 0 && (
+              <div style={{ background: darkMode ? '#3b1c1c' : '#fde8e8', color: '#eb5757', padding: '4px 10px', borderRadius: '4px', fontSize: '11px', fontWeight: '600', border: '1px solid #eb5757' }}>
+                ⚠️ {pendenciasUrgentesCount} Urgentes
+              </div>
+            )}
+            <button onClick={alternarTema} style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, color: theme.textMain, padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: '500' }}>
+              {darkMode ? '☀️ Claro' : '🌙 Escuro'}
+            </button>
+          </div>
         </div>
 
-        {subTarefas.length > 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginBottom: '6px' }}>
-            {subTarefas.map(sub => (
-              <div key={sub.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', fontSize: '12px' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', flex: 1, wordBreak: 'break-word', color: sub.concluida ? theme.textMuted : theme.textMain, textDecoration: sub.concluida ? 'line-through' : 'none' }}>
-                  <input 
-                    type="checkbox" 
-                    checked={sub.concluida} 
-                    onChange={() => alternarStatusSubPendencia(t.id, sub.id)}
-                    style={{ cursor: 'pointer', accentColor: '#2eaadc' }}
-                  />
-                  <span>{sub.texto}</span>
+        {/* Abas Superiores Estilo Notion (Recentes, Favoritos, Particular, etc) */}
+        <div style={{ display: 'flex', gap: '16px', borderBottom: `1px solid ${theme.border}`, paddingBottom: '8px', marginBottom: '20px', fontSize: '13px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <span style={{ fontWeight: '600', color: theme.textMain, borderBottom: `2px solid ${theme.textMain}`, paddingBottom: '8px', marginBottom: '-9px', display: 'flex', alignItems: 'center', gap: '4px' }}>🕒 Recentes</span>
+          <span style={{ color: theme.textMuted, cursor: 'pointer' }}>⭐ Favoritos</span>
+          <span style={{ color: theme.textMuted, cursor: 'pointer' }}>🔒 Particular</span>
+          
+          <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <select value={filtroResponsavel} onChange={(e) => setFiltroResponsavel(e.target.value)} style={{ padding: '4px 8px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '4px', fontSize: '12px' }}>
+              <option value="todos">Responsável: Todos</option>
+              {integrantesAtuais.map(n => <option key={n} value={n}>{n}</option>)}
+            </select>
+          </div>
+        </div>
+
+        {/* LAYOUT GRID PRINCIPAL: FORMULÁRIO DE NOVA TAREFA + TABELA NOTION DE TAREFAS */}
+        <div className="main-grid" style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: '24px', alignItems: 'start', width: '100%' }}>
+          
+          {/* PAINEL ESQUERDO: CRIAR NOVA TAREFA */}
+          <div style={{ background: theme.cardBg, padding: '16px', borderRadius: '6px', border: `1px solid ${theme.border}`, boxSizing: 'border-box' }}>
+            <h3 style={{ margin: '0 0 14px 0', color: theme.textMain, fontSize: '14px', fontWeight: '600', borderBottom: `1px solid ${theme.border}`, paddingBottom: '8px' }}>➕ Nova Página / Tarefa</h3>
+            
+            <form onSubmit={adicionarTarefa}>
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: '500', color: theme.textMuted, marginBottom: '4px' }}>Nome da Página *</label>
+                <input 
+                  type="text" 
+                  placeholder="Ex: Configurar switch POP" 
+                  value={titulo} 
+                  onChange={(e) => setTitulo(e.target.value)} 
+                  required 
+                  style={{ width: '100%', padding: '6px 8px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '4px', boxSizing: 'border-box', fontSize: '12px' }} 
+                />
+              </div>
+
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: '500', color: theme.textMuted, marginBottom: '4px' }}>Fonte / Descrição</label>
+                <input 
+                  type="text" 
+                  placeholder="Ex: pop camera" 
+                  value={descricao} 
+                  onChange={(e) => setDescription(e.target.value)} 
+                  style={{ width: '100%', padding: '6px 8px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '4px', boxSizing: 'border-box', fontSize: '12px' }} 
+                />
+              </div>
+
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: '500', color: theme.textMuted, marginBottom: '4px' }}>Sub-pendências (uma por linha)</label>
+                <textarea 
+                  placeholder="Sub-item 1&#10;Sub-item 2" 
+                  rows="2"
+                  value={subPendenciasInput} 
+                  onChange={(e) => setSubPendenciasInput(e.target.value)} 
+                  style={{ width: '100%', padding: '6px 8px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '4px', boxSizing: 'border-box', resize: 'vertical', fontSize: '12px' }} 
+                />
+              </div>
+
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: '500', color: theme.textMuted, marginBottom: '4px' }}>
+                  {isGestor ? 'Responsável' : 'Responsável (Automático)'}
                 </label>
-                {podeAgerir && (
-                  <button 
-                    onClick={() => excluirSubPendencia(t.id, sub.id)}
-                    style={{ background: 'transparent', border: 'none', color: theme.textMuted, cursor: 'pointer', fontSize: '10px', padding: '2px' }}
-                    title="Remover"
+                {isGestor ? (
+                  <select 
+                    value={responsavelSelecionadoGestor} 
+                    onChange={(e) => setResponsavelSelecionadoGestor(e.target.value)} 
+                    style={{ width: '100%', padding: '6px 8px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '4px', boxSizing: 'border-box', fontWeight: '500', fontSize: '12px' }}
                   >
-                    ✕
-                  </button>
+                    {integrantesAtuais.map(nome => (
+                      <option key={nome} value={nome}>{nome}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <input 
+                    type="text" 
+                    value={responsavelFinal} 
+                    disabled 
+                    style={{ width: '100%', padding: '6px 8px', background: darkMode ? '#181818' : '#f0f0ef', border: `1px solid ${theme.border}`, color: theme.textMain, borderRadius: '4px', boxSizing: 'border-box', fontWeight: '500', cursor: 'not-allowed', fontSize: '12px' }} 
+                  />
                 )}
               </div>
-            ))}
-          </div>
-        )}
 
-        {/* Input Notion inline para nova sub-pendência */}
-        {podeAgerir && (
-          <div style={{ display: 'flex', gap: '6px', marginTop: '4px' }}>
-            <input 
-              type="text" 
-              placeholder="+ Adicionar item..." 
-              value={textoNovaSub[t.id] || ''}
-              onChange={(e) => setTextoNovaSub(prev => ({ ...prev, [t.id]: e.target.value }))}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  adicionarSubPendencia(t.id, textoNovaSub[t.id]);
-                }
-              }}
-              style={{ flex: 1, padding: '4px 6px', fontSize: '11px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '3px' }}
-            />
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '14px', flexWrap: 'wrap' }}>
+                <div style={{ flex: '1 1 110px' }}>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: '500', color: theme.textMuted, marginBottom: '4px' }}>Prazo *</label>
+                  <input 
+                    type="date" 
+                    value={prazo} 
+                    onChange={(e) => setPrazo(e.target.value)} 
+                    required 
+                    style={{ width: '100%', padding: '6px 8px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '4px', boxSizing: 'border-box', fontSize: '12px' }} 
+                  />
+                </div>
+                <div style={{ flex: '1 1 90px' }}>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: '500', color: theme.textMuted, marginBottom: '4px' }}>Prioridade</label>
+                  <select 
+                    value={prioridade} 
+                    onChange={(e) => setPrioridade(e.target.value)} 
+                    style={{ width: '100%', padding: '6px 8px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '4px', boxSizing: 'border-box', fontSize: '12px' }}
+                  >
+                    <option value="Baixa">Baixa</option>
+                    <option value="Média">Média</option>
+                    <option value="Alta">Alta</option>
+                    <option value="Crítica">Crítica</option>
+                  </select>
+                </div>
+              </div>
+
+              <button type="submit" style={{ width: '100%', padding: '8px', background: '#37352f', border: 'none', color: '#fff', fontWeight: '500', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>
+                Criar Página
+              </button>
+            </form>
           </div>
-        )}
+
+          {/* PAINEL DIREITO: TABELA NOTION DE PENDÊNCIAS EM ANDAMENTO */}
+          <div style={{ background: theme.cardBg, borderRadius: '6px', border: `1px solid ${theme.border}`, overflowX: 'auto', width: '100%', boxSizing: 'border-box' }}>
+            
+            {/* Cabeçalho da Tabela Notion */}
+            <div style={{ display: 'grid', gridTemplateColumns: '2.2fr 1fr 1fr 1fr 1fr', padding: '10px 16px', borderBottom: `1px solid ${theme.border}`, fontSize: '12px', fontWeight: '600', color: theme.textMuted, background: theme.cardInner, minWidth: '650px' }}>
+              <div>Nome da página</div>
+              <div>Criado por</div>
+              <div>Fonte</div>
+              <div>Última edição</div>
+              <div>Prazo / Status</div>
+            </div>
+
+            {tarefasFiltradas.length === 0 ? (
+              <div style={{ padding: '40px', textAlign: 'center', color: theme.textMuted, fontSize: '13px' }}>Nenhuma página encontrada na biblioteca.</div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', minWidth: '650px' }}>
+                {tarefasFiltradas.map(t => {
+                  const infoPrazo = calcularStatusPrazo(t.prazo);
+                  const isUrgente = infoPrazo.status === 'vencido' || infoPrazo.status === 'hoje' || infoPrazo.status === 'um_dia';
+                  const subTarefas = t.subTarefas || [];
+                  const isExpandido = expandidoIds[t.id];
+
+                  return (
+                    <React.Fragment key={t.id}>
+                      {/* Linha Principal da Tabela */}
+                      <div className={isUrgente ? 'linha-tabela-piscando' : ''} style={{ display: 'grid', gridTemplateColumns: '2.2fr 1fr 1fr 1fr 1fr', padding: '10px 16px', borderBottom: `1px solid ${theme.border}`, alignItems: 'center', fontSize: '13px', transition: 'background 0.1s' }} onMouseEnter={(e) => e.currentTarget.style.background = theme.cardInner} onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
+                        
+                        {/* Nome da Página + Expansão */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden' }}>
+                          {subTarefas.length > 0 ? (
+                            <span onClick={() => alternarExpandido(t.id)} style={{ cursor: 'pointer', fontSize: '11px', color: theme.textMuted, userSelect: 'none' }}>
+                              {isExpandido ? '▼' : '▶'}
+                            </span>
+                          ) : (
+                            <span style={{ width: '11px' }}></span>
+                          )}
+                          <span>📄</span>
+                          <span style={{ fontWeight: '500', color: theme.textMain, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.titulo}</span>
+                          <span style={{ fontSize: '9px', padding: '1px 5px', borderRadius: '3px', background: t.prioridade === 'Crítica' ? '#eb5757' : t.prioridade === 'Alta' ? '#f2994a' : theme.cardInner, color: t.prioridade === 'Crítica' || t.prioridade === 'Alta' ? '#fff' : theme.textMuted, fontWeight: '600', border: `1px solid ${theme.border}` }}>
+                            {t.prioridade}
+                          </span>
+                        </div>
+
+                        {/* Criado por */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: theme.textMuted, fontSize: '12px' }}>
+                          <span style={{ width: '16px', height: '16px', borderRadius: '50%', background: '#2eaadc', color: '#fff', fontSize: '9px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>J</span>
+                          <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.responsavel}</span>
+                        </div>
+
+                        {/* Fonte */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: theme.textMuted, fontSize: '12px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          <span>📑</span> <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.descricao || 'particular'}</span>
+                        </div>
+
+                        {/* Última edição */}
+                        <div style={{ color: theme.textMuted, fontSize: '12px' }}>
+                          {new Date(t.criadoEm).toLocaleDateString('pt-BR')}
+                        </div>
+
+                        {/* Prazo / Status + Ações Rápidas */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
+                          <span className={isUrgente ? 'alerta-vencido-notion' : ''} style={{ fontSize: '11px', color: infoPrazo.status === 'normal' ? theme.textMuted : undefined, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            📅 {infoPrazo.texto || t.prazo}
+                          </span>
+                          <div style={{ display: 'flex', gap: '4px' }}>
+                            <button onClick={() => abrirModalEdicao(t)} title="Editar" style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '12px' }}>✏️</button>
+                            <button onClick={() => abrirModalResolucao(t)} title="Resolver" style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '12px' }}>✔</button>
+                            {isGestor && (
+                              <button onClick={() => excluirTarefa(t.id, t.titulo)} title="Excluir" style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '12px' }}>🗑️</button>
+                            )}
+                          </div>
+                        </div>
+
+                      </div>
+
+                      {/* SUB- TAREFAS / RAMIFICAÇÕES ESTILO NOTION */}
+                      {isExpandido && subTarefas.length > 0 && (
+                        <div style={{ background: theme.cardInner, padding: '6px 16px 10px 40px', borderBottom: `1px solid ${theme.border}`, display: 'flex', flexDirection: 'column', gap: '6px', position: 'relative' }}>
+                          <div style={{ position: 'absolute', left: '26px', top: '0', bottom: '10px', width: '2px', background: theme.treeLine }}></div>
+                          
+                          {subTarefas.map((sub, sIdx) => (
+                            <div key={sub.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12px', position: 'relative' }}>
+                              <div style={{ position: 'absolute', left: '-14px', top: '50%', width: '12px', height: '2px', background: theme.treeLine }}></div>
+                              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', color: sub.concluida ? theme.textMuted : theme.textMain, textDecoration: sub.concluida ? 'line-through' : 'none' }}>
+                                <input type="checkbox" checked={sub.concluida} onChange={() => alternarStatusSubPendencia(t.id, sub.id)} style={{ accentColor: '#2eaadc', cursor: 'pointer' }} />
+                                <span>📄 {sub.texto}</span>
+                              </label>
+                              <button onClick={() => excluirSubPendencia(t.id, sub.id)} style={{ background: 'transparent', border: 'none', color: theme.textMuted, cursor: 'pointer', fontSize: '10px' }}>✕</button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                    </React.Fragment>
+                  );
+                })}
+
+                {/* Botão + Adicionar Nova Linha estilo Notion */}
+                <div style={{ padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: theme.textMuted, cursor: 'pointer', borderTop: `1px solid ${theme.border}` }} onClick={() => {
+                  const tituloNovo = prompt("Nome da nova página:");
+                  if (tituloNovo) {
+                    setTitulo(tituloNovo);
+                    setPrazo(new Date().toISOString().split('T')[0]);
+                  }
+                }}>
+                  <span>+</span> <span>Adicionar nova página</span>
+                </div>
+
+              </div>
+            )}
+
+          </div>
+
+        </div>
+
       </div>
 
-      {/* Rodapé: Responsável e Prazo */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', color: theme.textMuted, borderTop: `1px solid ${theme.border}`, paddingTop: '6px', flexWrap: 'wrap', gap: '6px' }}>
-        <div>
-          👤 <strong style={{ color: theme.textMain }}>{t.responsavel}</strong>
+      {/* MODAL DE EDIÇÃO */}
+      {tarefaEditando && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '15px', boxSizing: 'border-box' }}>
+          <div style={{ background: theme.cardBg, padding: '24px', borderRadius: '6px', width: '100%', maxWidth: '420px', border: `1px solid ${theme.border}`, boxSizing: 'border-box' }}>
+            <h3 style={{ margin: '0 0 16px 0', color: theme.textMain, fontSize: '16px', fontWeight: '600', borderBottom: `1px solid ${theme.border}`, paddingBottom: '10px' }}>✏️ Editar Página</h3>
+              
+            <form onSubmit={salvarEdicaoTarefa}>
+              <div style={{ marginBottom: '14px' }}>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: '500', color: theme.textMuted, marginBottom: '4px' }}>Título *</label>
+                <input type="text" value={editTitulo} onChange={(e) => setEditTitulo(e.target.value)} required style={{ width: '100%', padding: '8px 10px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '4px', boxSizing: 'border-box', fontSize: '13px' }} />
+              </div>
+
+              <div style={{ marginBottom: '14px' }}>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: '500', color: theme.textMuted, marginBottom: '4px' }}>Fonte / Descrição</label>
+                <textarea rows="3" value={editDescricao} onChange={(e) => setEditDescricao(e.target.value)} style={{ width: '100%', padding: '8px 10px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '4px', boxSizing: 'border-box', resize: 'vertical', fontSize: '13px' }} />
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
+                <div style={{ flex: '1 1 130px' }}>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: '500', color: theme.textMuted, marginBottom: '4px' }}>Prazo *</label>
+                  <input type="date" value={editPrazo} onChange={(e) => setEditPrazo(e.target.value)} required style={{ width: '100%', padding: '8px 10px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '4px', boxSizing: 'border-box', fontSize: '13px' }} />
+                </div>
+                <div style={{ flex: '1 1 100px' }}>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: '500', color: theme.textMuted, marginBottom: '4px' }}>Prioridade</label>
+                  <select value={editPrioridade} onChange={(e) => setEditPrioridade(e.target.value)} style={{ width: '100%', padding: '8px 10px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '4px', boxSizing: 'border-box', fontSize: '13px' }}>
+                    <option value="Baixa">Baixa</option>
+                    <option value="Média">Média</option>
+                    <option value="Alta">Alta</option>
+                    <option value="Crítica">Crítica</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button type="button" onClick={() => setTarefaEditando(null)} style={{ flex: 1, padding: '8px', background: theme.cardInner, border: `1px solid ${theme.border}`, color: theme.textMain, borderRadius: '4px', cursor: 'pointer', fontWeight: '500', fontSize: '13px' }}>Cancelar</button>
+                <button type="submit" style={{ flex: 1, padding: '8px', background: '#37352f', border: 'none', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontWeight: '500', fontSize: '13px' }}>Salvar</button>
+              </div>
+            </form>
+          </div>
         </div>
-        <div>
-          <span className={isUrgente ? 'alerta-vencido-notion' : ''} style={{ color: infoPrazo.status === 'normal' ? theme.textMuted : undefined }}>
-            📅 {infoPrazo.texto}
-          </span>
+      )}
+
+      {/* MODAL DE RESOLUÇÃO */}
+      {tarefaResolvendo && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '15px', boxSizing: 'border-box' }}>
+          <div style={{ background: theme.cardBg, padding: '24px', borderRadius: '6px', width: '100%', maxWidth: '420px', border: `1px solid ${theme.border}`, boxSizing: 'border-box' }}>
+            <h3 style={{ margin: '0 0 8px 0', color: '#27ae60', fontSize: '16px', fontWeight: '600' }}>✔ Concluir Página</h3>
+            <p style={{ fontSize: '12px', color: theme.textMuted, marginBottom: '16px' }}>Relato para: <strong>{tarefaResolvendo.titulo}</strong></p>
+               
+            <form onSubmit={confirmarResolucaoTarefa}>
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: '500', color: theme.textMuted, marginBottom: '4px' }}>Detalhes da Conclusão *</label>
+                <textarea rows="3" placeholder="Ex: Tarefa executada com sucesso." value={detalhesResolucaoInput} onChange={(e) => setDetalhesResolucaoInput(e.target.value)} required style={{ width: '100%', padding: '8px 10px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '4px', boxSizing: 'border-box', resize: 'vertical', fontSize: '13px' }} />
+              </div>
+
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button type="button" onClick={() => setTarefaResolvendo(null)} style={{ flex: 1, padding: '8px', background: theme.cardInner, border: `1px solid ${theme.border}`, color: theme.textMain, borderRadius: '4px', cursor: 'pointer', fontWeight: '500', fontSize: '13px' }}>Cancelar</button>
+                <button type="submit" style={{ flex: 1, padding: '8px', background: '#27ae60', border: 'none', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontWeight: '500', fontSize: '13px' }}>Confirmar</button>
+              </div>
+            </form>
+          </div>
         </div>
-      </div>
+      )}
 
     </div>
   );
