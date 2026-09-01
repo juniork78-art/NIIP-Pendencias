@@ -742,7 +742,7 @@ function MainApp() {
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden', paddingLeft: `${paddingLeftPx}px`, paddingRight: '10px' }}>
                   <span onClick={() => alternarExpandido(sub.id)} style={{ cursor: 'pointer', fontSize: '10px', color: theme.textMuted, userSelect: 'none', padding: '2px', width: '12px', textAlign: 'center' }}>
-                    {isExpandidoSub ? '▼' : '▶'}
+                    {temFilhos ? (isExpandidoSub ? '▼' : '▶') : ''}
                   </span>
                   {paginaAtual !== 'lixeira' && (
                     <input type="checkbox" checked={isConcluida} onChange={() => alternarStatusRecursivo(tarefaRaizObj, caminhoAtual)} style={{ accentColor: '#27ae60', cursor: 'pointer' }} />
@@ -1017,7 +1017,7 @@ function MainApp() {
                         
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden', paddingRight: '10px' }}>
                           <span onClick={() => alternarExpandido(t.id)} style={{ cursor: 'pointer', fontSize: '10px', color: theme.textMuted, userSelect: 'none', padding: '2px', width: '12px', textAlign: 'center' }}>
-                            {isExpandido ? '▼' : '▶'}
+                            {temFilhos ? (isExpandido ? '▼' : '▶') : ''}
                           </span>
                           <span>📄</span>
                           {editandoId === t.id ? (
@@ -1215,7 +1215,7 @@ function TelaLogin({ onLoginSucesso, darkMode, setDarkMode, theme }) {
 
       <form onSubmit={handleLogin} style={{ background: theme.cardBg, padding: '32px 24px', borderRadius: '6px', width: '100%', maxWidth: '360px', border: `1px solid ${theme.border}`, boxSizing: 'border-box' }}>
         <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-          <span style={{ fontSize: '14px', color: theme.textMain, fontWeight: 'bold', display: 'block' >Sistema Integrado</span>
+          <span style={{ fontSize: '14px', color: theme.textMain, fontWeight: 'bold', display: 'block' }}>Sistema Integrado</span>
           <span style={{ fontSize: '11px', color: theme.textMuted, fontWeight: '500', display: 'block' }}>Central de Tarefas</span>
         </div>
 
