@@ -842,7 +842,6 @@ function MainApp() {
                     if (nome) {
                       setTitulo(nome);
                       setPrazo(new Date().toISOString().split('T')[0]);
-                      // Cria direto
                       setTimeout(() => {
                         const novaId = Date.now().toString();
                         setDoc(doc(db, `${setorSelecionado || 'niip'}_tarefas`, novaId), {
@@ -866,7 +865,7 @@ function MainApp() {
               </div>
             </div>
 
-            {/* ABAS SUPERIORES DA BIBLIOTECA (Recentes, Favoritos, Compartilhado, Particular, Anotações IA, Habilidades) + ÍCONES DE BUSCA */}
+            {/* ABAS SUPERIORES DA BIBLIOTECA */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `1px solid ${theme.border}`, paddingBottom: '10px', marginBottom: '20px', fontSize: '13px', flexWrap: 'wrap', gap: '12px' }}>
               <div style={{ display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap', color: theme.textMuted }}>
                 <span style={{ fontWeight: '500', color: theme.textMain, display: 'flex', alignItems: 'center', gap: '6px' }}>🕒 Recentes</span>
@@ -888,7 +887,7 @@ function MainApp() {
               </div>
             </div>
 
-            {/* TABELA DE DADOS ESTILO NOTION EXATA DA IMAGEM */}
+            {/* TABELA DE DADOS ESTILO NOTION */}
             <div style={{ width: '100%', boxSizing: 'border-box' }}>
               
               {/* CABEÇALHO DA TABELA */}
@@ -910,18 +909,14 @@ function MainApp() {
 
                     return (
                       <React.Fragment key={t.id}>
-                        {/* LINHA PRINCIPAL DA PÁGINA PAI */}
+                        {/* LINHA PRINCIPAL DA PÁGINA PAI COM SETA EM TODAS */}
                         <div style={{ display: 'grid', gridTemplateColumns: '2.5fr 1.5fr 1.5fr 1fr 1fr', padding: '10px 0', borderBottom: `1px solid ${theme.border}`, alignItems: 'center', fontSize: '13px', transition: 'background 0.1s' }} onMouseEnter={(e) => e.currentTarget.style.background = theme.cardInner} onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
                           
-                          {/* Nome da Página + Seta ▼ / ▶ */}
+                          {/* Nome da Página + Seta ▼ / ▶ em todas as tarefas */}
                           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden', paddingRight: '10px' }}>
-                            {subTarefas.length > 0 ? (
-                              <span onClick={() => alternarExpandido(t.id)} style={{ cursor: 'pointer', fontSize: '10px', color: theme.textMuted, userSelect: 'none', padding: '2px' }}>
-                                {isExpandido ? '▼' : '▶'}
-                              </span>
-                            ) : (
-                              <span style={{ width: '10px' }}></span>
-                            )}
+                            <span onClick={() => alternarExpandido(t.id)} style={{ cursor: 'pointer', fontSize: '10px', color: theme.textMuted, userSelect: 'none', padding: '2px', width: '12px', textAlign: 'center' }}>
+                              {isExpandido ? '▼' : '▶'}
+                            </span>
                             <span>📄</span>
                             <span 
                               onClick={() => { setPaginaAberta(t); setEditTituloPagina(t.titulo); setEditDescricaoPagina(t.descricao || ''); }}
@@ -981,7 +976,7 @@ function MainApp() {
                               </div>
                             ))}
 
-                            {/* BOTÃO "+ Adicionar nova" EXATO DA SUA IMAGEM */}
+                            {/* BOTÃO "+ Adicionar nova" */}
                             <div 
                               onClick={() => adicionarSubPendenciaRapida(t.id)}
                               style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: theme.textMuted, cursor: 'pointer', padding: '10px 0 10px 30px', borderTop: `1px solid ${theme.border}`, fontWeight: '500' }}
