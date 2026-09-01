@@ -203,6 +203,9 @@ function MainApp() {
   const [editPrazo, setEditPrazo] = useState('');
   const [editPrioridade, setEditPrioridade] = useState('');
 
+  // Estado para o Pop-up de Confirmação de Exclusão
+  const [modalExclusao, setModalExclusao] = useState({ isOpen: false, tipo: null, tarefa: null, caminhoIds: null });
+
   const [expandidoIds, setExpandidoIds] = useState(() => {
     try {
       const salvo = localStorage.getItem('expandidoIds_fibralink');
@@ -497,7 +500,7 @@ function MainApp() {
       concluida: false,
       arquivada: false,
       excluido: false,
-      criadoPor: nomeFormatadoGlobal || 'Usuário', // Atribui corretamente o autor atual
+      criadoPor: nomeFormatadoGlobal || 'Usuário',
       subTarefas: []
     };
 
@@ -546,47 +549,46 @@ function MainApp() {
     } catch (e) {}
   };
 
-  const enviarParaLixeiraTarefaPai = async (tarefa) => {
-    if (!window.confirm("Deseja mover esta página para a Lixeira?")) return;
+  // Dispara o pop-up de confirmação de exclusão
+  const solicitarExclusaoTarefaPai = (tarefa) => {
+    setModalExclusao({ isOpen: true, tipo: 'pai', tarefa, caminhoIds: null });
+  };
+
+  const solicitarExclusaoSub = (tarefaRaiz, caminhoIds) => {
+    setModalExclusao({ isOpen: true, tipo: 'sub', tarefa: tarefaRaiz, caminhoIds });
+  };
+
+  const executarExclusaoConfirmada = async () => {
     try {
-      const novoExcluido = !Boolean(tarefa.excluido);
-      const novasSubs = setTrashRecursiveProp(tarefa.subTarefas, novoExcluido);
-      const colecaoAlvo = tarefa._colecao || 'tarefas_gerais';
-      await updateDoc(doc(db, colecaoAlvo, tarefa.id), {
-        excluido: novoExcluido,
-        subTarefas: novasSubs
-      });
-      if (paginaLateral && paginaLateral.id === tarefa.id) fecharPainelLateral();
-    } catch (e) {}
+      if (modalExclusao.tipo === 'pai') {
+        const tarefa = modalExclusao.tarefa;
+        const novoExcluido = !Boolean(tarefa.excluido);
+        const novasSubs = setTrashRecursiveProp(tarefa.subTarefas, novoExcluido);
+        const colecaoAlvo = tarefa._colecao || 'tarefas_gerais';
+        await updateDoc(doc(db, colecaoAlvo, tarefa.id), {
+          excluido: novoExcluido,
+          subTarefas: novasSubs
+        });
+        if (paginaLateral && paginaLateral.id === tarefa.id) fecharPainelLateral();
+      } else if (modalExclusao.tipo === 'sub') {
+        const tarefaRaiz = modalExclusao.tarefa;
+        const caminhoIds = modalExclusao.caminhoIds;
+        const novaSubTarefas = trashNodeInTree(tarefaRaiz.subTarefas || [], caminhoIds);
+        const colecaoAlvo = tarefaRaiz._colecao || 'tarefas_gerais';
+        await updateDoc(doc(db, colecaoAlvo, tarefaRaiz.id), {
+          subTarefas: novaSubTarefas
+        });
+      }
+    } catch (e) {
+      alert("Erro ao executar ação: " + e.message);
+    } finally {
+      setModalExclusao({ isOpen: false, tipo: null, tarefa: null, caminhoIds: null });
+    }
   };
 
   const alternarStatusRecursivo = async (tarefaRaiz, caminhoIds) => {
     try {
       const novaSubTarefas = toggleNodeInTree(tarefaRaiz.subTarefas || [], caminhoIds);
-      const colecaoAlvo = tarefaRaiz._colecao || 'tarefas_gerais';
-
-      await updateDoc(doc(db, colecaoAlvo, tarefaRaiz.id), {
-        subTarefas: novaSubTarefas
-      });
-    } catch (e) {}
-  };
-
-  const arquivarSubRecursivo = async (tarefaRaiz, caminhoIds) => {
-    if (!window.confirm("Deseja realmente alterar o status de arquivamento desta subtarefa?")) return;
-    try {
-      const novaSubTarefas = archiveNodeInTree(tarefaRaiz.subTarefas || [], caminhoIds);
-      const colecaoAlvo = tarefaRaiz._colecao || 'tarefas_gerais';
-
-      await updateDoc(doc(db, colecaoAlvo, tarefaRaiz.id), {
-        subTarefas: novaSubTarefas
-      });
-    } catch (e) {}
-  };
-
-  const enviarParaLixeiraSubRecursivo = async (tarefaRaiz, caminhoIds) => {
-    if (!window.confirm("Deseja mover esta subtarefa para a Lixeira?")) return;
-    try {
-      const novaSubTarefas = trashNodeInTree(tarefaRaiz.subTarefas || [], caminhoIds);
       const colecaoAlvo = tarefaRaiz._colecao || 'tarefas_gerais';
 
       await updateDoc(doc(db, colecaoAlvo, tarefaRaiz.id), {
@@ -730,7 +732,7 @@ function MainApp() {
                 </div>
 
                 <div style={{ color: isConcluida ? '#27ae60' : theme.textMuted, fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {sub.criadoPor || tarefaRaizObj.responsavel || 'Usuário'}
+                  {sub.criadoPor || 'Usuário'}
                 </div>
 
                 <div style={{ color: isConcluida ? '#27ae60' : theme.textMuted, fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -751,13 +753,9 @@ function MainApp() {
                     </button>
                   ) : <div></div>}
 
+                  {/* REMOVIDO BOTÃO DE ARQUIVAR DAS TAREFAS FILHAS - MANTIDO APENAS EXCLUIR */}
                   <div style={{ display: 'flex', gap: '6px' }}>
-                    {paginaAtual !== 'lixeira' && (
-                      <button onClick={() => arquivarSubRecursivo(tarefaRaizObj, caminhoAtual)} style={{ background: 'transparent', border: 'none', color: '#d97706', cursor: 'pointer', fontSize: '11px', fontWeight: '500' }}>
-                        {isArquivada ? 'Desarquivar' : 'Arquivar'}
-                      </button>
-                    )}
-                    <button onClick={() => enviarParaLixeiraSubRecursivo(tarefaRaizObj, caminhoAtual)} style={{ background: 'transparent', border: 'none', color: '#eb5757', cursor: 'pointer', fontSize: '11px', fontWeight: '500' }}>
+                    <button onClick={() => solicitarExclusaoSub(tarefaRaizObj, caminhoAtual)} style={{ background: 'transparent', border: 'none', color: '#eb5757', cursor: 'pointer', fontSize: '11px', fontWeight: '500' }}>
                       {isExcluido ? 'Restaurar' : 'Excluir'}
                     </button>
                   </div>
@@ -1042,7 +1040,7 @@ function MainApp() {
                                 {isArquivada ? 'Desarquivar' : 'Arquivar'}
                               </button>
                             )}
-                            <button onClick={() => enviarParaLixeiraTarefaPai(t)} title="Lixeira" style={{ background: 'transparent', border: 'none', color: '#eb5757', cursor: 'pointer', fontSize: '11px', fontWeight: '500' }}>
+                            <button onClick={() => solicitarExclusaoTarefaPai(t)} title="Lixeira" style={{ background: 'transparent', border: 'none', color: '#eb5757', cursor: 'pointer', fontSize: '11px', fontWeight: '500' }}>
                               {isExcluido ? 'Restaurar' : 'Excluir'}
                             </button>
                             {isGestor && paginaAtual === 'lixeira' && (
@@ -1093,6 +1091,21 @@ function MainApp() {
           </div>
 
         </div>
+
+        {/* POP-UP DE CONFIRMAÇÃO DE EXCLUSÃO */}
+        {modalExclusao.isOpen && (
+          <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, padding: '15px', boxSizing: 'border-box' }}>
+            <div style={{ background: theme.cardBg, padding: '24px', borderRadius: '6px', width: '100%', maxWidth: '400px', border: `1px solid ${theme.border}`, boxShadow: '0 8px 24px rgba(0,0,0,0.2)', textAlign: 'center' }}>
+              <div style={{ fontSize: '28px', marginBottom: '8px' }}>⚠️</div>
+              <h3 style={{ margin: '0 0 10px 0', color: theme.textMain, fontSize: '16px', fontWeight: '600' }}>Confirmação de Exclusão</h3>
+              <p style={{ fontSize: '13px', color: theme.textMuted, marginBottom: '20px' }}>Tem certeza de que deseja excluir este item?</p>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button onClick={() => setModalExclusao({ isOpen: false, tipo: null, tarefa: null, caminhoIds: null })} style={{ flex: 1, padding: '10px', background: theme.cardInner, color: theme.textMain, border: `1px solid ${theme.border}`, borderRadius: '4px', fontWeight: '500', cursor: 'pointer' }}>Cancelar</button>
+                <button onClick={executarExclusaoConfirmada} style={{ flex: 1, padding: '10px', background: '#eb5757', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: '500', cursor: 'pointer' }}>Sim, excluir</button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* PAINEL LATERAL DIREITO (SPLIT-VIEW) */}
         {paginaLateral && (
