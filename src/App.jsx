@@ -484,51 +484,48 @@ function MainApp() {
     }
   };
 
-  const adicionarSubPendenciaRecursiva = async (tarefaRaizId, caminhoAlvoIds, novoTexto) => {
-    try {
-      const tarefaRaiz = tarefas.find(t => t.id === tarefaRaizId);
-      if (!tarefaRaiz) return;
-
-      const novaSub = {
-        id: Date.now().toString() + "_" + Math.random().toString(36).substring(2, 5),
-        texto: novoTexto.trim(),
-        concluida: false,
-        subTarefas: []
-      };
-
-      const inserirNaArvore = (lista, ids) => {
-        return lista.map(item => {
-          if (item.id === ids[0]) {
-            if (ids.length === 1) {
-              return { ...item, subTarefas: [...(item.subTarefas || []), novaSub] };
-            } else {
-              return { ...item, subTarefas: inserirNaArvore(item.subTarefas || [], ids.slice(1)) };
-            }
-          }
-          return item;
-        });
-      };
-
-      const novaSubTarefas = inserirNaArvore(tarefaRaiz.subTarefas || [], caminhoAlvoIds);
-
-      await updateDoc(doc(db, `${setorSelecionado}_tarefas`, tarefaRaizId), {
-        subTarefas: novaSubTarefas
-      });
-
-      setExpandidoIds(prev => {
-        const novo = { ...prev, [caminhoAlvoIds[caminhoAlvoIds.length - 1]]: true };
-        try { localStorage.setItem('expandidoIds_fibralink', JSON.stringify(novo)); } catch(e){}
-        return novo;
-      });
-    } catch (e) {
-      alert("Erro ao adicionar subtarefa: " + e.message);
+  const adicionarSubNaArvore = (lista, ids, novaSub) => {
+    if (ids.length === 0) {
+      return [...lista, novaSub];
     }
+    return lista.map(item => {
+      if (item.id === ids[0]) {
+        if (ids.length === 1) {
+          return { ...item, subTarefas: [...(item.subTarefas || []), novaSub] };
+        } else {
+          return { ...item, subTarefas: adicionarSubNaArvore(item.subTarefas || [], ids.slice(1), novaSub) };
+        }
+      }
+      return item;
+    });
   };
 
   const promptAdicionarSub = (tarefaRaizId, caminhoIds) => {
     const subTexto = prompt("Digite o título da nova subtarefa:");
     if (!subTexto || !subTexto.trim()) return;
-    adicionarSubPendenciaRecursiva(tarefaRaizId, caminhoIds, subTexto.trim());
+
+    const tarefaRaiz = tarefas.find(t => t.id === tarefaRaizId);
+    if (!tarefaRaiz) return;
+
+    const novaSub = {
+      id: Date.now().toString() + "_" + Math.random().toString(36).substring(2, 5),
+      texto: subTexto.trim(),
+      concluida: false,
+      subTarefas: []
+    };
+
+    const novaSubTarefas = adicionarSubNaArvore(tarefaRaiz.subTarefas || [], caminhoIds, novaSub);
+
+    updateDoc(doc(db, `${setorSelecionado}_tarefas`, tarefaRaizId), {
+      subTarefas: novaSubTarefas
+    }).then(() => {
+      setExpandidoIds(prev => {
+        const targetId = caminhoIds.length > 0 ? caminhoIds[caminhoIds.length - 1] : tarefaRaizId;
+        const novo = { ...prev, [targetId]: true };
+        try { localStorage.setItem('expandidoIds_fibralink', JSON.stringify(novo)); } catch(e){}
+        return novo;
+      });
+    }).catch(e => alert("Erro ao adicionar subtarefa: " + e.message));
   };
 
   const alternarStatusTarefaPai = async (tarefaId) => {
@@ -542,25 +539,25 @@ function MainApp() {
     } catch (e) {}
   };
 
+  const alternarNaArvore = (lista, ids) => {
+    return lista.map(item => {
+      if (item.id === ids[0]) {
+        if (ids.length === 1) {
+          return { ...item, concluida: !Boolean(item.concluida) };
+        } else {
+          return { ...item, subTarefas: alternarNaArvore(item.subTarefas || [], ids.slice(1)) };
+        }
+      }
+      return item;
+    });
+  };
+
   const alternarStatusRecursivo = async (tarefaRaizId, caminhoIds) => {
     try {
       const tarefaRaiz = tarefas.find(t => t.id === tarefaRaizId);
       if (!tarefaRaiz) return;
 
-      const atualizarArvore = (lista, ids) => {
-        return lista.map(item => {
-          if (item.id === ids[0]) {
-            if (ids.length === 1) {
-              return { ...item, concluida: !Boolean(item.concluida) };
-            } else {
-              return { ...item, subTarefas: atualizarArvore(item.subTarefas || [], ids.slice(1)) };
-            }
-          }
-          return item;
-        });
-      };
-
-      const novaSubTarefas = atualizarArvore(tarefaRaiz.subTarefas || [], caminhoIds);
+      const novaSubTarefas = alternarNaArvore(tarefaRaiz.subTarefas || [], caminhoIds);
 
       await updateDoc(doc(db, `${setorSelecionado}_tarefas`, tarefaRaizId), {
         subTarefas: novaSubTarefas
@@ -568,23 +565,23 @@ function MainApp() {
     } catch (e) {}
   };
 
+  const excluirDaArvore = (lista, ids) => {
+    if (ids.length === 1) {
+      return lista.filter(item => item.id !== ids[0]);
+    }
+    return lista.map(item => {
+      if (item.id === ids[0]) {
+        return { ...item, subTarefas: excluirDaArvore(item.subTarefas || [], ids.slice(1)) };
+      }
+      return item;
+    });
+  };
+
   const excluirSubRecursivo = async (tarefaRaizId, caminhoIds) => {
     if (!window.confirm("Deseja realmente excluir esta subtarefa?")) return;
     try {
       const tarefaRaiz = tarefas.find(t => t.id === tarefaRaizId);
       if (!tarefaRaiz) return;
-
-      const excluirDaArvore = (lista, ids) => {
-        if (ids.length === 1) {
-          return lista.filter(item => item.id !== ids[0]);
-        }
-        return lista.map(item => {
-          if (item.id === ids[0]) {
-            return { ...item, subTarefas: excluirDaArvore(item.subTarefas || [], ids.slice(1)) };
-          }
-          return item;
-        });
-      };
 
       const novaSubTarefas = excluirDaArvore(tarefaRaiz.subTarefas || [], caminhoIds);
 
@@ -645,20 +642,20 @@ function MainApp() {
         const tarefaRaiz = tarefas.find(t => t.id === paginaLateral.raizId);
         if (!tarefaRaiz) return;
 
-        const atualizarArvore = (lista, ids) => {
+        const atualizarTextoArvore = (lista, ids) => {
           return lista.map(item => {
             if (item.id === ids[0]) {
               if (ids.length === 1) {
                 return { ...item, texto: editTituloLateral.trim(), descricao: editDescricaoLateral.trim() };
               } else {
-                return { ...item, subTarefas: atualizarArvore(item.subTarefas || [], ids.slice(1)) };
+                return { ...item, subTarefas: atualizarTextoArvore(item.subTarefas || [], ids.slice(1)) };
               }
             }
             return item;
           });
         };
 
-        const novaSubTarefas = atualizarArvore(tarefaRaiz.subTarefas || [], paginaLateral.caminhoIds);
+        const novaSubTarefas = atualizarTextoArvore(tarefaRaiz.subTarefas || [], paginaLateral.caminhoIds);
         await updateDoc(doc(db, `${setorSelecionado}_tarefas`, paginaLateral.raizId), {
           subTarefas: novaSubTarefas
         });
@@ -723,7 +720,6 @@ function MainApp() {
                   <span onClick={() => alternarExpandido(sub.id)} style={{ cursor: 'pointer', fontSize: '10px', color: theme.textMuted, userSelect: 'none', padding: '2px', width: '12px', textAlign: 'center' }}>
                     {isExpandidoSub ? '▼' : '▶'}
                   </span>
-                  <input type="checkbox" checked={isConcluida} onChange={() => alternarStatusRecursivo(tarefaRaizId, caminhoAtual)} style={{ accentColor: '#27ae60', cursor: 'pointer' }} />
                   <span>📄</span>
                   <span 
                     onClick={() => abrirPainelLateralSub(sub, tarefaRaizId, caminhoAtual, tarefaPaiObj)}
