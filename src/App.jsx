@@ -15,6 +15,35 @@ import {
   getDocs
 } from 'firebase/firestore';
 
+// Componente de Proteção contra Tela Preta (ErrorBoundary)
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error, errorInfo) {
+    console.error("Erro crítico capturado:", error, errorInfo);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ padding: '40px', background: '#191919', color: '#eb5757', fontFamily: 'sans-serif', minHeight: '100vh', boxSizing: 'border-box' }}>
+          <h2>Ocorreu um erro ao carregar a aplicação.</h2>
+          <p>Detalhes técnicos:</p>
+          <pre style={{ background: '#262626', padding: '15px', borderRadius: '5px', overflowX: 'auto', color: '#dbdbd7' }}>
+            {this.state.error && this.state.error.toString()}
+          </pre>
+          <p style={{ color: '#9b9b95', marginTop: '20px' }}>Verifique se o seu arquivo <strong>firebase.js</strong> está configurado corretamente com as chaves do projeto.</p>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 // Inserção dinâmica segura do Favicon
 try {
   const faviconSvg = `
@@ -133,7 +162,15 @@ const SETORES_DISPONIVEIS = [
   { id: 'niip', nome: 'NIIP - Núcleo de Informática e Inspeção de POPs', descricao: 'Gestão de tarefas, prazos e manutenções da infraestrutura de POPs.' }
 ];
 
-export default function App() {
+export default function AppWrapper() {
+  return (
+    <ErrorBoundary>
+      <MainApp />
+    </ErrorBoundary>
+  );
+}
+
+function MainApp() {
   const [usuarioLogado, setUsuarioLogado] = useState(null);
   const [loadingAuth, setLoadingAuth] = useState(true);
   const [setorSelecionado, setSetorSelecionado] = useState(null);
