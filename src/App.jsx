@@ -269,6 +269,8 @@ function MainApp() {
       concluida: Boolean(sub.concluida),
       arquivada: Boolean(sub.arquivada),
       excluido: Boolean(sub.excluido),
+      criadoPor: sub.criadoPor || tarefaPai.criadoPor,
+      editadoPor: sub.editadoPor,
       _colecao: tarefaPai._colecao
     };
     setPaginaLateral(subObj);
@@ -368,7 +370,7 @@ function MainApp() {
 
   const responsavelFinal = isGestor ? responsavelSelecionadoGestor : nomeForcadoParaUsuario || (TODOS_INTEGRANTES.find(n => nomeFormatadoGlobal.includes(n.toUpperCase())) || TODOS_INTEGRANTES[0]);
 
-  // Funções Auxiliares de Propagação Recursiva para Lixeira e Arquivamento
+  // Funções Auxiliares de Propagação Recursiva
   const setTrashRecursiveProp = (lista, val) => {
     return (lista || []).map(item => ({
       ...item,
@@ -459,16 +461,23 @@ function MainApp() {
     });
   };
 
-  const updateTextNodeInTree = (lista, ids, newText, newDesc) => {
+  const updateTextNodeInTree = (lista, ids, newText, newDesc, editorName) => {
     if (!ids || ids.length === 0) return lista;
     return (lista || []).map(item => {
       if (item.id === ids[0]) {
         if (ids.length === 1) {
-          return { ...item, texto: newText, ...(newDesc !== undefined && { descricao: newDesc }) };
+          const creator = item.criadoPor || '';
+          const needsEditor = creator && creator.toUpperCase() !== editorName.toUpperCase();
+          return { 
+            ...item, 
+            texto: newText, 
+            ...(newDesc !== undefined && { descricao: newDesc }),
+            ...(needsEditor && { editadoPor: editorName })
+          };
         } else {
           return {
             ...item,
-            subTarefas: updateTextNodeInTree(item.subTarefas || [], ids.slice(1), newText, newDesc)
+            subTarefas: updateTextNodeInTree(item.subTarefas || [], ids.slice(1), newText, newDesc, editorName)
           };
         }
       }
@@ -549,7 +558,6 @@ function MainApp() {
     } catch (e) {}
   };
 
-  // Dispara o pop-up de confirmação de exclusão
   const solicitarExclusaoTarefaPai = (tarefa) => {
     setModalExclusao({ isOpen: true, tipo: 'pai', tarefa, caminhoIds: null });
   };
@@ -597,12 +605,15 @@ function MainApp() {
     } catch (e) {}
   };
 
-  const salvarEdicaoInlineTarefa = async (tarefaId, colecaoAlvo, novoTitulo) => {
+  const salvarEdicaoInlineTarefa = async (tarefaId, colecaoAlvo, novoTitulo, tarefaObj) => {
     if (!novoTitulo.trim()) return;
     try {
-      await updateDoc(doc(db, colecaoAlvo || 'tarefas_gerais', tarefaId), {
-        titulo: novoTitulo.trim()
-      });
+      const creator = tarefaObj.criadoPor || '';
+      const needsEditor = creator && creator.toUpperCase() !== nomeFormatadoGlobal.toUpperCase();
+      const updates = { titulo: novoTitulo.trim() };
+      if (needsEditor) updates.editadoPor = nomeFormatadoGlobal;
+
+      await updateDoc(doc(db, colecaoAlvo || 'tarefas_gerais', tarefaId), updates);
       setEditandoId(null);
     } catch (e) {}
   };
@@ -621,12 +632,17 @@ function MainApp() {
 
     try {
       const colecaoAlvo = tarefaEditando._colecao || 'tarefas_gerais';
-      await updateDoc(doc(db, colecaoAlvo, tarefaEditando.id), {
+      const creator = tarefaEditando.criadoPor || '';
+      const needsEditor = creator && creator.toUpperCase() !== nomeFormatadoGlobal.toUpperCase();
+      const updates = {
         titulo: editTitulo.trim(),
         descricao: editDescricao.trim(),
         prazo: editPrazo,
         prioridade: editPrioridade
-      });
+      };
+      if (needsEditor) updates.editadoPor = nomeFormatadoGlobal;
+
+      await updateDoc(doc(db, colecaoAlvo, tarefaEditando.id), updates);
       setTarefaEditando(null);
     } catch (err) {}
   };
@@ -648,17 +664,23 @@ function MainApp() {
         const tarefaRaiz = tarefas.find(t => t.id === paginaLateral.raizId);
         if (!tarefaRaiz) return;
 
-        const novaSubTarefas = updateTextNodeInTree(tarefaRaiz.subTarefas || [], paginaLateral.caminhoIds, editTituloLateral.trim(), editDescricaoLateral.trim());
+        const novaSubTarefas = updateTextNodeInTree(tarefaRaiz.subTarefas || [], paginaLateral.caminhoIds, editTituloLateral.trim(), editDescricaoLateral.trim(), nomeFormatadoGlobal);
         await updateDoc(doc(db, colecaoAlvo, paginaLateral.raizId), {
           subTarefas: novaSubTarefas
         });
+        const subItem = tarefaRaiz.subTarefas; // update local representation view if needed
         setPaginaLateral(prev => ({ ...prev, titulo: editTituloLateral.trim(), descricao: editDescricaoLateral.trim() }));
       } else {
         if (!editTituloLateral.trim()) return;
-        await updateDoc(doc(db, colecaoAlvo, paginaLateral.id), {
+        const creator = paginaLateral.criadoPor || '';
+        const needsEditor = creator && creator.toUpperCase() !== nomeFormatadoGlobal.toUpperCase();
+        const updates = {
           titulo: editTituloLateral.trim(),
           descricao: editDescricaoLateral.trim()
-        });
+        };
+        if (needsEditor) updates.editadoPor = nomeFormatadoGlobal;
+
+        await updateDoc(doc(db, colecaoAlvo, paginaLateral.id), updates);
         setPaginaLateral(prev => ({ ...prev, titulo: editTituloLateral.trim(), descricao: editDescricaoLateral.trim() }));
       }
       alert("Alterações salvas com sucesso!");
@@ -699,6 +721,10 @@ function MainApp() {
           if (paginaAtual === 'arquivados' && (isExcluido || !isArquivada)) return null;
           if (paginaAtual === 'lixeira' && !isExcluido) return null;
 
+          const autorSub = sub.criadoPor || tarefaRaizObj.criadoPor || 'Usuário';
+          const editorSub = sub.editadoPor;
+          const displayAutorSub = editorSub && editorSub.toUpperCase() !== autorSub.toUpperCase() ? `${autorSub} (${editorSub})` : autorSub;
+
           return (
             <React.Fragment key={sub.id}>
               <div 
@@ -732,7 +758,7 @@ function MainApp() {
                 </div>
 
                 <div style={{ color: isConcluida ? '#27ae60' : theme.textMuted, fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {sub.criadoPor || 'Usuário'}
+                  {displayAutorSub}
                 </div>
 
                 <div style={{ color: isConcluida ? '#27ae60' : theme.textMuted, fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -753,7 +779,7 @@ function MainApp() {
                     </button>
                   ) : <div></div>}
 
-                  {/* REMOVIDO BOTÃO DE ARQUIVAR DAS TAREFAS FILHAS - MANTIDO APENAS EXCLUIR */}
+                  {/* REMOVIDO BOTÃO DE ARQUIVAR DAS TAREFAS FILHAS */}
                   <div style={{ display: 'flex', gap: '6px' }}>
                     <button onClick={() => solicitarExclusaoSub(tarefaRaizObj, caminhoAtual)} style={{ background: 'transparent', border: 'none', color: '#eb5757', cursor: 'pointer', fontSize: '11px', fontWeight: '500' }}>
                       {isExcluido ? 'Restaurar' : 'Excluir'}
@@ -968,6 +994,10 @@ function MainApp() {
                   const isArquivada = Boolean(t.arquivada);
                   const isExcluido = Boolean(t.excluido);
 
+                  const creatorPai = t.criadoPor || 'Usuário';
+                  const editorPai = t.editadoPor;
+                  const displayAutorPai = editorPai && editorPai.toUpperCase() !== creatorPai.toUpperCase() ? `${creatorPai} (${editorPai})` : creatorPai;
+
                   return (
                     <React.Fragment key={t.id}>
                       {/* LINHA PRINCIPAL DA PÁGINA PAI */}
@@ -998,8 +1028,8 @@ function MainApp() {
                               value={textoEditando}
                               autoFocus
                               onChange={(e) => setTextoEditando(e.target.value)}
-                              onBlur={() => salvarEdicaoInlineTarefa(t.id, t._colecao, textoEditando)}
-                              onKeyDown={(e) => { if (e.key === 'Enter') salvarEdicaoInlineTarefa(t.id, t._colecao, textoEditando); }}
+                              onBlur={() => salvarEdicaoInlineTarefa(t.id, t._colecao, textoEditando, t)}
+                              onKeyDown={(e) => { if (e.key === 'Enter') salvarEdicaoInlineTarefa(t.id, t._colecao, textoEditando, t); }}
                               style={{ background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, padding: '2px 6px', fontSize: '13px', borderRadius: '3px', width: '80%' }}
                             />
                           ) : (
@@ -1013,7 +1043,7 @@ function MainApp() {
                         </div>
 
                         <div style={{ color: isConcluida ? '#27ae60' : theme.textMuted, fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {t.criadoPor || t.responsavel}
+                          {displayAutorPai}
                         </div>
 
                         <div style={{ color: isConcluida ? '#27ae60' : theme.textMuted, fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
