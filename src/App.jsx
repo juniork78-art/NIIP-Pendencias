@@ -474,7 +474,7 @@ function MainApp() {
   };
 
   const arquivarTarefaPai = async (tarefa) => {
-    if (!window.confirm("Deseja realmente arquivar esta página?")) return;
+    if (!window.confirm("Deseja realmente alterar o status de arquivamento desta página?")) return;
     try {
       const novaArquivada = !Boolean(tarefa.arquivada);
       const colecaoAlvo = tarefa._colecao || 'tarefas_gerais';
@@ -497,7 +497,7 @@ function MainApp() {
   };
 
   const arquivarSubRecursivo = async (tarefaRaiz, caminhoIds) => {
-    if (!window.confirm("Deseja realmente arquivar esta subtarefa?")) return;
+    if (!window.confirm("Deseja realmente alterar o status de arquivamento desta subtarefa?")) return;
     try {
       const novaSubTarefas = archiveNodeInTree(tarefaRaiz.subTarefas || [], caminhoIds);
       const colecaoAlvo = tarefaRaiz._colecao || 'tarefas_gerais';
@@ -605,10 +605,10 @@ function MainApp() {
           const isConcluida = Boolean(sub.concluida);
           const isArquivada = Boolean(sub.arquivada);
 
-          // Se estiver na aba principal, oculta subtarefas arquivadas
+          // Quando estiver na aba principal, oculta subtarefas arquivadas individualmente
           if (paginaAtual === 'andamento' && isArquivada) return null;
-          // Se estiver na aba arquivados, mostra apenas as arquivadas
-          if (paginaAtual === 'arquivados' && !isArquivada) return null;
+          // Quando estiver na aba arquivados, se a tarefa pai está arquivada, exibimos todas as subtarefas dela para manter a árvore completa
+          if (paginaAtual === 'arquivados' && !tarefaRaizObj.arquivada && !isArquivada) return null;
 
           return (
             <React.Fragment key={sub.id}>
@@ -653,12 +653,15 @@ function MainApp() {
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', color: theme.textMuted, fontSize: '13px', paddingRight: '10px' }}>
-                  <button 
-                    onClick={() => alternarStatusRecursivo(tarefaRaizObj, caminhoAtual)} 
-                    style={{ background: isConcluida ? '#27ae60' : theme.cardInner, border: `1px solid ${isConcluida ? '#27ae60' : theme.border}`, color: isConcluida ? '#fff' : theme.textMain, padding: '3px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: '500' }}
-                  >
-                    {isConcluida ? '✔ Concluído' : 'Concluir'}
-                  </button>
+                  {paginaAtual === 'andamento' ? (
+                    <button 
+                      onClick={() => alternarStatusRecursivo(tarefaRaizObj, caminhoAtual)} 
+                      style={{ background: isConcluida ? '#27ae60' : theme.cardInner, border: `1px solid ${isConcluida ? '#27ae60' : theme.border}`, color: isConcluida ? '#fff' : theme.textMain, padding: '3px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: '500' }}
+                    >
+                      {isConcluida ? '✔ Concluído' : 'Concluir'}
+                    </button>
+                  ) : <div></div>}
+
                   <button onClick={() => arquivarSubRecursivo(tarefaRaizObj, caminhoAtual)} style={{ background: 'transparent', border: 'none', color: '#d97706', cursor: 'pointer', fontSize: '11px', fontWeight: '500' }}>
                     {isArquivada ? 'Desarquivar' : 'Arquivar'}
                   </button>
@@ -727,7 +730,7 @@ function MainApp() {
   return (
     <div className="workspace-layout" style={{ display: 'flex', minHeight: '100vh', backgroundColor: theme.bg, color: theme.textMain, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif', boxSizing: 'border-box' }}>
       
-      {/* SIDEBAR ESQUERDA NOTION - COM PASTA ARQUIVADOS */}
+      {/* SIDEBAR ESQUERDA NOTION */}
       <div className="sidebar-notion" style={{ width: '240px', background: theme.sidebarBg, borderRight: `1px solid ${theme.border}`, display: 'flex', flexDirection: 'column', padding: '12px 8px', boxSizing: 'border-box', flexShrink: '0' }}>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 8px', borderRadius: '4px', marginBottom: '16px', background: theme.cardBg, border: `1px solid ${theme.border}` }}>
