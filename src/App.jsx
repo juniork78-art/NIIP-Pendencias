@@ -16,6 +16,20 @@ import {
   getDocs
 } from 'firebase/firestore';
 
+// Inserção dinâmica do Favicon (Letra "P" em negrito)
+(() => {
+  const faviconSvg = `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+      <rect width="64" height="64" rx="14" fill="#0d6efd"/>
+      <text x="32" y="47" font-family="Arial, sans-serif" font-size="46" font-weight="900" fill="#ffffff" text-anchor="middle">P</text>
+    </svg>`;
+  const link = document.createElement('link');
+  link.rel = 'icon';
+  link.type = 'image/svg+xml';
+  link.href = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(faviconSvg);
+  document.head.appendChild(link);
+})();
+
 const style = document.createElement('style');
 style.innerHTML = `
   @keyframes piscar {
@@ -620,7 +634,7 @@ export default function App() {
             Encerrar Sessão (Sair)
           </button>
       </div>
-    </div>
+  </div>
   );
 }
 
@@ -838,16 +852,16 @@ export default function App() {
                   </div>
                 </div>
               ))}
-            </div>
+          </div>
           )}
-        </div>
       </div>
+    </div>
     );
   }
 
   return (
     <div className="app-container" style={{ backgroundColor: theme.bg, color: theme.textMain, minHeight: '100vh', width: '100%', padding: '15px', fontFamily: 'sans-serif', boxSizing: 'border-box', position: 'relative' }}>
-       
+        
       {mostrarPopupAlerta && tarefasUrgentesUsuario.length > 0 && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.85)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, padding: '15px', boxSizing: 'border-box' }}>
           <div style={{ background: theme.cardBg, padding: '25px', borderRadius: '10px', width: '100%', maxWidth: '520px', border: '2px solid #ff4d4d', boxShadow: '0 8px 30px rgba(255, 77, 77, 0.3)', boxSizing: 'border-box', textAlign: 'center' }}>
@@ -857,26 +871,26 @@ export default function App() {
               Você possui <strong>{tarefasUrgentesUsuario.length}</strong> tarefa(s) sob sua responsabilidade que está(ão) com prazo crítico ou vencida(s):
             </p>
 
-            <div style={{ maxHeight: '250px', overflowY: 'auto', marginBottom: '25px', display: 'flex', flexDirection: 'column', gap: '10px', textAlign: 'left' }}>
-              {tarefasUrgentesUsuario.map(t => {
-                const st = calcularStatusPrazo(t.prazo);
-                return (
-                  <div key={t.id} style={{ background: theme.cardInner, padding: '12px 15px', borderRadius: '6px', borderLeft: '4px solid #ff4d4d', border: `1px solid ${theme.border}`, borderLeftWidth: '4px' }}>
-                    <div style={{ fontWeight: 'bold', fontSize: '14px', color: theme.textMain, marginBottom: '4px' }}>{t.titulo}</div>
-                    <div style={{ fontSize: '12px', color: '#ff4d4d', fontWeight: 'bold' }}>📅 {st.texto}</div>
-                  </div>
-                );
-              })}
-          </div>
-
-          <button 
-            onClick={() => setMostrarPopupAlerta(false)}
-            style={{ width: '100%', padding: '12px', background: '#ff4d4d', border: 'none', color: '#fff', fontWeight: 'bold', borderRadius: '6px', cursor: 'pointer', fontSize: '14px' }}
-          >
-            Entendido, acessar painel
-          </button>
+          <div style={{ maxHeight: '250px', overflowY: 'auto', marginBottom: '25px', display: 'flex', flexDirection: 'column', gap: '10px', textAlign: 'left' }}>
+            {tarefasUrgentesUsuario.map(t => {
+              const st = calcularStatusPrazo(t.prazo);
+              return (
+                <div key={t.id} style={{ background: theme.cardInner, padding: '12px 15px', borderRadius: '6px', borderLeft: '4px solid #ff4d4d', border: `1px solid ${theme.border}`, borderLeftWidth: '4px' }}>
+                  <div style={{ fontWeight: 'bold', fontSize: '14px', color: theme.textMain, marginBottom: '4px' }}>{t.titulo}</div>
+                  <div style={{ fontSize: '12px', color: '#ff4d4d', fontWeight: 'bold' }}>📅 {st.texto}</div>
+              </div>
+              );
+            })}
         </div>
+
+        <button 
+          onClick={() => setMostrarPopupAlerta(false)}
+          style={{ width: '100%', padding: '12px', background: '#ff4d4d', border: 'none', color: '#fff', fontWeight: 'bold', borderRadius: '6px', cursor: 'pointer', fontSize: '14px' }}
+        >
+          Entendido, acessar painel
+        </button>
       </div>
+    </div>
     )}
 
     <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `1px solid ${theme.border}`, paddingBottom: '15px', marginBottom: '25px', flexWrap: 'wrap', gap: '15px', width: '100%', boxSizing: 'border-box' }}>
@@ -904,7 +918,7 @@ export default function App() {
           </p>
       </div>
     </div>
-     
+      
     <div style={{ display: 'flex', alignItems: 'center', gap: '15px', flexWrap: 'wrap' }}>
       {isGestor && (
         <button 
@@ -920,7 +934,7 @@ export default function App() {
           ⚠️ {pendenciasUrgentesCount} Tarefa(s) Vencida(s) ou Próximas do Vencimento!
         </div>
       )}
-       
+        
       <button 
         onClick={() => mudarPagina('resolvidas')}
         style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, color: '#28a745', padding: '9px 16px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}
@@ -940,10 +954,10 @@ export default function App() {
   </header>
 
   <div className="main-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(320px, 380px) 1fr', gap: '20px', alignItems: 'start', width: '100%', boxSizing: 'border-box' }}>
-     
+      
     <div style={{ background: theme.cardBg, padding: '20px', borderRadius: '8px', border: `1px solid ${theme.border}`, width: '100%', boxSizing: 'border-box' }}>
       <h3 style={{ margin: '0 0 20px 0', color: theme.textMain, fontSize: '16px', borderBottom: `1px solid ${theme.border}`, paddingBottom: '10px' }}>➕ Nova Tarefa de Longo Prazo</h3>
-       
+        
       <form onSubmit={adicionarTarefa}>
         <div style={{ marginBottom: '15px' }}>
           <label style={{ display: 'block', fontSize: '12px', color: theme.textMuted, marginBottom: '5px' }}>Título da Tarefa *</label>
@@ -1025,10 +1039,10 @@ export default function App() {
     </div>
 
     <div style={{ background: theme.cardBg, padding: '20px', borderRadius: '8px', border: `1px solid ${theme.border}`, width: '100%', boxSizing: 'border-box' }}>
-       
+        
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: `1px solid ${theme.border}`, paddingBottom: '10px', flexWrap: 'wrap', gap: '12px' }}>
         <h3 style={{ margin: 0, color: theme.textMain, fontSize: '16px' }}>📋 Tarefas e Pendências em Andamento</h3>
-         
+          
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
           <select value={filtroResponsavel} onChange={(e) => setFiltroResponsavel(e.target.value)} style={{ padding: '8px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '4px', fontSize: '12px' }}>
             <option value="todos">Responsável: Todos</option>
@@ -1041,7 +1055,7 @@ export default function App() {
         <p style={{ color: theme.textMuted, fontSize: '14px', textAlign: 'center', padding: '60px 0' }}>Nenhuma tarefa em andamento encontrada.</p>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%', boxSizing: 'border-box' }}>
-           
+            
           {tarefasEspecialistas.length > 0 && (
             <div style={{ background: theme.cardInner, padding: '12px', borderRadius: '8px', border: `1px solid ${theme.border}`, width: '100%', boxSizing: 'border-box' }}>
               <h4 style={{ margin: '0 0 12px 0', fontSize: '13px', color: '#ffc107', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '1px solid #ffc107', paddingBottom: '6px' }}>
@@ -1086,7 +1100,7 @@ export default function App() {
     <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.8)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '15px', boxSizing: 'border-box' }}>
       <div style={{ background: theme.cardBg, padding: '25px', borderRadius: '8px', width: '100%', maxWidth: '450px', border: `1px solid ${theme.border}`, boxSizing: 'border-box' }}>
         <h3 style={{ margin: '0 0 20px 0', color: '#4dabf7', fontSize: '18px', borderBottom: `1px solid ${theme.border}`, paddingBottom: '10px' }}>✏️ Editar Tarefa</h3>
-         
+          
         <form onSubmit={salvarEdicaoTarefa}>
           <div style={{ marginBottom: '15px' }}>
             <label style={{ display: 'block', fontSize: '12px', color: theme.textMuted, marginBottom: '5px' }}>Título *</label>
@@ -1140,19 +1154,19 @@ export default function App() {
               type="button" 
               onClick={() => setTarefaEditando(null)}
               style={{ flex: 1, padding: '10px', background: theme.cardInner, border: `1px solid ${theme.border}`, color: theme.textMain, borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
-        >
-          Cancelar
-        </button>
-        <button 
-          type="submit" 
-          style={{ flex: 1, padding: '10px', background: '#007bff', border: 'none', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
-        >
-          Salvar Alterações
-        </button>
-      </div>
-    </form>
+          >
+            Cancelar
+          </button>
+          <button 
+            type="submit" 
+            style={{ flex: 1, padding: '10px', background: '#007bff', border: 'none', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+          >
+            Salvar Alterações
+          </button>
+        </div>
+      </form>
+    </div>
   </div>
-</div>
 )}
 
 {tarefaResolvendo && (
@@ -1162,7 +1176,7 @@ export default function App() {
       <p style={{ fontSize: '13px', color: theme.textMuted, marginBottom: '20px' }}>
         Informe o relato ou os detalhes de como a tarefa foi resolvida: <strong>{tarefaResolvendo.titulo}</strong>
       </p>
-        
+         
       <form onSubmit={confirmarResolucaoTarefa}>
         <div style={{ marginBottom: '20px' }}>
           <label style={{ display: 'block', fontSize: '12px', color: theme.textMuted, marginBottom: '5px' }}>Relato / Detalhes da Resolução *</label>
@@ -1181,19 +1195,19 @@ export default function App() {
             type="button" 
             onClick={() => setTarefaResolvendo(null)}
             style={{ flex: 1, padding: '10px', background: theme.cardInner, border: `1px solid ${theme.border}`, color: theme.textMain, borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
-        >
-          Cancelar
-        </button>
-        <button 
-          type="submit" 
-          style={{ flex: 1, padding: '10px', background: '#28a745', border: 'none', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
-        >
-          Confirmar Resolução
-        </button>
-      </div>
-    </form>
+          >
+            Cancelar
+          </button>
+          <button 
+            type="submit" 
+            style={{ flex: 1, padding: '10px', background: '#28a745', border: 'none', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+          >
+            Confirmar Resolução
+          </button>
+        </div>
+      </form>
+    </div>
   </div>
-</div>
 )}
 
 </div>
@@ -1246,32 +1260,32 @@ function renderizarCardTarefa(t, theme, isGestor, nomeFormatadoGlobal, abrirModa
             <button 
               onClick={() => abrirModalEdicao(t)}
               style={{ background: theme.cardInner, border: `1px solid ${theme.border}`, color: '#4dabf7', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}
-        >
-          ✏️ Editar
-        </button>
-      )}
+          >
+            ✏️ Editar
+          </button>
+        )}
 
           {podeAgerir && (
             <button 
               onClick={() => abrirModalResolucao(t)}
               style={{ background: '#28a745', border: 'none', color: '#fff', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}
-        >
-          ✔ Resolver
-        </button>
-      )}
-          
+          >
+            ✔ Resolver
+          </button>
+        )}
+           
           {isGestor && (
             <button 
               onClick={() => excluirTarefa(t.id, t.titulo)}
               style={{ background: theme.cardInner, border: `1px solid ${theme.border}`, color: '#ff6b6b', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px' }}
-        >
-          Excluir
-        </button>
-      )}
+          >
+            Excluir
+          </button>
+        )}
+        </div>
       </div>
     </div>
-  </div>
-  );
+    );
 }
 
 function TelaLogin({ onLoginSucesso, darkMode, setDarkMode, theme }) {
@@ -1326,7 +1340,7 @@ function TelaLogin({ onLoginSucesso, darkMode, setDarkMode, theme }) {
       </button>
 
       <form onSubmit={alterarSenhaMode ? handleAlterarSenha : handleLogin} style={{ background: theme.cardBg, padding: '30px 20px', borderRadius: '8px', width: '100%', maxWidth: '380px', boxShadow: '0 4px 15px rgba(0,0,0,0.15)', border: `1px solid ${theme.border}`, boxSizing: 'border-box' }}>
-         
+          
         <div style={{ textAlign: 'center', marginBottom: '20px' }}>
           <img 
             src="/logo.png" 
@@ -1342,7 +1356,7 @@ function TelaLogin({ onLoginSucesso, darkMode, setDarkMode, theme }) {
 
         {erro && <p style={{ color: '#ff6b6b', fontSize: '12px', marginBottom: '15px', background: darkMode ? '#2d1a1a' : '#f8d7da', padding: '8px', borderRadius: '4px' }}>{erro}</p>}
         {mensagemSucesso && <p style={{ color: '#28a745', fontSize: '12px', marginBottom: '15px', background: darkMode ? '#1a2d1a' : '#d4edda', padding: '8px', borderRadius: '4px' }}>{mensagemSucesso}</p>}
-         
+          
         <div style={{ marginBottom: '15px' }}>
           <label style={{ display: 'block', fontSize: '12px', marginBottom: '5px', color: theme.textMuted }}>E-mail</label>
           <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="seu.email@fibralink.net.br" style={{ width: '100%', padding: '10px', borderRadius: '4px', border: `1px solid ${theme.border}`, background: theme.inputBg, color: theme.inputText, boxSizing: 'border-box' }} />
