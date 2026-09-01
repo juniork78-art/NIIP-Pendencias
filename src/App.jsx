@@ -123,15 +123,8 @@ const calcularStatusPrazo = (dataStr) => {
   }
 };
 
-const INTEGRANTES_NIIP = ["Francisco", "Gabriel", "Walgney", "Duandys"];
-const INTEGRANTES_NOC = ["Gustavo", "Stevan", "Gilvan", "Kessy", "João", "Lucas", "Tolentino", "Duandys"];
-const INTEGRANTES_NMR = ["Dhennifer", "Duandys"];
-
-const SETORES_DISPONIVEIS = [
-  { id: 'noc', nome: 'NOC - Network Operations Center', descricao: 'Monitoramento de rede, incidentes e controle de enlaces.' },
-  { id: 'nmr', nome: 'NMR - Núcleo de Monitoramento', descricao: 'Acompanhamento de alertas, métricas e supervisão contínua.' },
-  { id: 'niip', nome: 'NIIP - Núcleo de Informática e Inspeção de POPs', descricao: 'Gestão de tarefas, prazos e manutenções da infraestrutura de POPs.' }
-];
+// Lista unificada de todos os integrantes
+const TODOS_INTEGRANTES = ["Dhennifer", "Duandys", "Francisco", "Gabriel", "Gilvan", "Gustavo", "João", "Kessy", "Lucas", "Stevan", "Tolentino", "Walgney"];
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -170,7 +163,6 @@ export default function AppWrapper() {
 function MainApp() {
   const [usuarioLogado, setUsuarioLogado] = useState(null);
   const [loadingAuth, setLoadingAuth] = useState(true);
-  const [setorSelecionado, setSetorSelecionado] = useState(null);
   const [paginaAtual, setPaginaAtual] = useState('andamento'); 
   
   const [darkMode, setDarkMode] = useState(() => {
@@ -196,7 +188,7 @@ function MainApp() {
   const [descricao, setDescription] = useState('');
   const [prazo, setPrazo] = useState('');
   const [prioridade, setPrioridade] = useState('Média');
-  const [responsavelSelecionadoGestor, setResponsavelSelecionadoGestor] = useState('');
+  const [responsavelSelecionadoGestor, setResponsavelSelecionadoGestor] = useState(TODOS_INTEGRANTES[0]);
   const [subPendenciasInput, setSubPendenciasInput] = useState('');
   
   const [filtroResponsavel, setFiltroResponsavel] = useState('todos');
@@ -300,13 +292,6 @@ function MainApp() {
     window.history.pushState({ view: novaPagina }, '');
   };
 
-  const mudarSetor = (novoSetor) => {
-    setPaginaLateral(null);
-    setSetorSelecionado(novoSetor);
-    setPaginaAtual('andamento');
-    window.history.pushState({ view: 'andamento' }, '');
-  };
-
   useEffect(() => {
     try {
       if (!auth) {
@@ -316,30 +301,10 @@ function MainApp() {
       const unsubscribe = onAuthStateChanged(auth, (user) => {
         try {
           if (user && user.email) {
-            const emailLower = user.email.toLowerCase();
             setUsuarioLogado(user.email);
             setPopupJaExibido(false);
-
-            if (emailLower.includes('duandys')) {
-              setSetorSelecionado(null);
-            } else if (
-              emailLower.includes('gustavo') || 
-              emailLower.includes('stevan') || 
-              emailLower.includes('gilvan') || 
-              emailLower.includes('kessy') || 
-              emailLower.includes('joao') || 
-              emailLower.includes('lucas') || 
-              emailLower.includes('tolentino')
-            ) {
-              setSetorSelecionado('noc');
-            } else if (emailLower.includes('dhennifer')) {
-              setSetorSelecionado('nmr');
-            } else {
-              setSetorSelecionado('niip');
-            }
           } else {
             setUsuarioLogado(null);
-            setSetorSelecionado(null);
             setPopupJaExibido(false);
           }
         } catch (err) {
@@ -358,29 +323,6 @@ function MainApp() {
   const isGestor = nomeFormatadoGlobal.includes('DUANDYS');
 
   const emailLowerGlobal = usuarioLogado ? usuarioLogado.toLowerCase() : '';
-  const isGustavo = nomeFormatadoGlobal.includes('GUSTAVO');
-  const isDhennifer = nomeFormatadoGlobal.includes('DHENNIFER');
-  const isEspecialista = nomeFormatadoGlobal.includes('GILVAN') || nomeFormatadoGlobal.includes('STEVAN');
-  const isNocN1 = nomeFormatadoGlobal.includes('TOLENTINO') || nomeFormatadoGlobal.includes('KESSY') || nomeFormatadoGlobal.includes('JOAO') || nomeFormatadoGlobal.includes('JOÃO') || nomeFormatadoGlobal.includes('LUCAS') || emailLowerGlobal.includes('joao');
-  const isTecnicoN1 = nomeFormatadoGlobal.includes('FRANCISCO') || nomeFormatadoGlobal.includes('GABRIEL') || nomeFormatadoGlobal.includes('WALGNEY');
-   
-  const tipoCargo = isGestor 
-    ? 'Gestor' 
-    : isGustavo 
-    ? 'NOC N3' 
-    : isDhennifer 
-    ? 'Analista N1' 
-    : isEspecialista 
-    ? 'Especialista' 
-    : isNocN1 && setorSelecionado === 'noc'
-    ? 'NOC N1' 
-    : isTecnicoN1 && setorSelecionado === 'niip'
-    ? 'NIIP N1'
-    : isNocN1
-    ? 'NOC N1'
-    : isTecnicoN1
-    ? 'Técnico N1'
-    : 'Integrante';
 
   let nomeForcadoParaUsuario = null;
   if (emailLowerGlobal.includes('joao') || emailLowerGlobal.includes('joão') || nomeFormatadoGlobal.includes('JOAO') || nomeFormatadoGlobal.includes('JOÃO')) {
@@ -388,9 +330,9 @@ function MainApp() {
   }
 
   useEffect(() => {
-    if (usuarioLogado && setorSelecionado && db) {
+    if (usuarioLogado && db) {
       try {
-        const unsub = onSnapshot(collection(db, `${setorSelecionado}_tarefas`), (snapshot) => {
+        const unsub = onSnapshot(collection(db, 'tarefas_gerais'), (snapshot) => {
           const lista = [];
           snapshot.forEach((docSnap) => {
             lista.push({ id: docSnap.id, ...docSnap.data() });
@@ -404,7 +346,7 @@ function MainApp() {
           }
         }, (err) => console.error(err));
 
-        const unsubLogs = onSnapshot(collection(db, `${setorSelecionado}_auditoria`), (snapshot) => {
+        const unsubLogs = onSnapshot(collection(db, 'auditoria_geral'), (snapshot) => {
           const logsLista = [];
           snapshot.forEach((docSnap) => {
             logsLista.push({ id: docSnap.id, ...docSnap.data() });
@@ -419,26 +361,47 @@ function MainApp() {
         };
       } catch (e) {}
     }
-  }, [usuarioLogado, setorSelecionado]);
+  }, [usuarioLogado]);
 
-  useEffect(() => {
-    const integrantes = 
-      setorSelecionado === 'noc' ? INTEGRANTES_NOC :
-      setorSelecionado === 'nmr' ? INTEGRANTES_NMR : INTEGRANTES_NIIP;
-     
-    if (integrantes.length > 0) {
-      setResponsavelSelecionadoGestor(integrantes[0]);
-    }
-  }, [setorSelecionado]);
-
-  const obterIntegrantesSetor = () => {
-    if (setorSelecionado === 'noc') return INTEGRANTES_NOC;
-    if (setorSelecionado === 'nmr') return INTEGRANTES_NMR;
-    return INTEGRANTES_NIIP;
+  const registrarLogAuditoria = async (acao, detalhes, tarefaTitulo) => {
+    try {
+      if (!db) return;
+      const logId = Date.now().toString() + "_" + Math.random().toString(36).substring(2, 7);
+      await setDoc(doc(db, 'auditoria_geral', logId), {
+        usuario: nomeFormatadoGlobal,
+        acao,
+        detalhes,
+        tarefaTitulo,
+        timestamp: Date.now(),
+        dataHoraFormatada: new Date().toLocaleString('pt-BR')
+      });
+    } catch (e) {}
   };
 
-  const integrantesAtuais = obterIntegrantesSetor();
-  const responsavelFinal = isGestor ? responsavelSelecionadoGestor : nomeForcadoParaUsuario || (integrantesAtuais.find(n => nomeFormatadoGlobal.includes(n.toUpperCase())) || integrantesAtuais[0] || 'Gestor');
+  const excluirLogIndividual = async (logId) => {
+    if (window.confirm("Deseja realmente excluir este registro de auditoria?")) {
+      try {
+        await deleteDoc(doc(db, 'auditoria_geral', logId));
+      } catch (e) {
+        alert("Erro ao excluir log: " + e.message);
+      }
+    }
+  };
+
+  const apagarTodoHistoricoAuditoria = async () => {
+    if (window.confirm("ATENÇÃO: Deseja realmente apagar TODO o histórico de auditoria?")) {
+      try {
+        const querySnapshot = await getDocs(collection(db, 'auditoria_geral'));
+        const promessas = querySnapshot.docs.map((d) => deleteDoc(d.ref));
+        await Promise.all(promessas);
+        alert("Histórico de auditoria limpo com sucesso!");
+      } catch (e) {
+        alert("Erro ao limpar histórico: " + e.message);
+      }
+    }
+  };
+
+  const responsavelFinal = isGestor ? responsavelSelecionadoGestor : nomeForcadoParaUsuario || (TODOS_INTEGRANTES.find(n => nomeFormatadoGlobal.includes(n.toUpperCase())) || TODOS_INTEGRANTES[0]);
 
   const adicionarTarefa = async (e) => {
     e.preventDefault();
@@ -474,7 +437,8 @@ function MainApp() {
     };
 
     try {
-      await setDoc(doc(db, `${setorSelecionado}_tarefas`, novaTarefaId), tarefaObj);
+      await setDoc(doc(db, 'tarefas_gerais', novaTarefaId), tarefaObj);
+      await registrarLogAuditoria("CRIAÇÃO", `Criou a página para [${responsavelFinal}]`, titulo.trim());
       setTitulo('');
       setDescription('');
       setPrazo('');
@@ -573,7 +537,7 @@ function MainApp() {
 
     const novaSubTarefas = insertNodeInTree(tarefaRaiz.subTarefas || [], caminhoIds, novaSub);
 
-    updateDoc(doc(db, `${setorSelecionado}_tarefas`, tarefaRaizId), {
+    updateDoc(doc(db, 'tarefas_gerais', tarefaRaizId), {
       subTarefas: novaSubTarefas
     }).then(() => {
       setExpandidoIds(prev => {
@@ -590,7 +554,7 @@ function MainApp() {
       const tarefa = tarefas.find(t => t.id === tarefaId);
       if (!tarefa) return;
       const novoStatus = tarefa.status === 'Resolvida' ? 'Pendente' : 'Resolvida';
-      await updateDoc(doc(db, `${setorSelecionado}_tarefas`, tarefaId), {
+      await updateDoc(doc(db, 'tarefas_gerais', tarefaId), {
         status: novoStatus
       });
     } catch (e) {}
@@ -603,7 +567,7 @@ function MainApp() {
 
       const novaSubTarefas = toggleNodeInTree(tarefaRaiz.subTarefas || [], caminhoIds);
 
-      await updateDoc(doc(db, `${setorSelecionado}_tarefas`, tarefaRaizId), {
+      await updateDoc(doc(db, 'tarefas_gerais', tarefaRaizId), {
         subTarefas: novaSubTarefas
       });
     } catch (e) {}
@@ -617,7 +581,7 @@ function MainApp() {
 
       const novaSubTarefas = deleteNodeInTree(tarefaRaiz.subTarefas || [], caminhoIds);
 
-      await updateDoc(doc(db, `${setorSelecionado}_tarefas`, tarefaRaizId), {
+      await updateDoc(doc(db, 'tarefas_gerais', tarefaRaizId), {
         subTarefas: novaSubTarefas
       });
     } catch (e) {}
@@ -626,7 +590,7 @@ function MainApp() {
   const salvarEdicaoInlineTarefa = async (tarefaId, novoTitulo) => {
     if (!novoTitulo.trim()) return;
     try {
-      await updateDoc(doc(db, `${setorSelecionado}_tarefas`, tarefaId), {
+      await updateDoc(doc(db, 'tarefas_gerais', tarefaId), {
         titulo: novoTitulo.trim()
       });
       setEditandoId(null);
@@ -646,12 +610,14 @@ function MainApp() {
     if (!editTitulo.trim() || !editPrazo) return;
 
     try {
-      await updateDoc(doc(db, `${setorSelecionado}_tarefas`, tarefaEditando.id), {
+      await updateDoc(doc(db, 'tarefas_gerais', tarefaEditando.id), {
         titulo: editTitulo.trim(),
         descricao: editDescricao.trim(),
         prazo: editPrazo,
         prioridade: editPrioridade
       });
+
+      await registrarLogAuditoria("EDIÇÃO", `Atualizou a página "${editTitulo.trim()}"`, editTitulo.trim());
       setTarefaEditando(null);
     } catch (err) {}
   };
@@ -659,7 +625,7 @@ function MainApp() {
   const excluirTarefa = async (id, tituloTarefa) => {
     if (window.confirm("Deseja realmente excluir esta página?")) {
       try {
-        await deleteDoc(doc(db, `${setorSelecionado}_tarefas`, id));
+        await deleteDoc(doc(db, 'tarefas_gerais', id));
         if (paginaLateral && paginaLateral.id === id) fecharPainelLateral();
       } catch (err) {}
     }
@@ -673,13 +639,13 @@ function MainApp() {
         if (!tarefaRaiz) return;
 
         const novaSubTarefas = updateTextNodeInTree(tarefaRaiz.subTarefas || [], paginaLateral.caminhoIds, editTituloLateral.trim(), editDescricaoLateral.trim());
-        await updateDoc(doc(db, `${setorSelecionado}_tarefas`, paginaLateral.raizId), {
+        await updateDoc(doc(db, 'tarefas_gerais', paginaLateral.raizId), {
           subTarefas: novaSubTarefas
         });
         setPaginaLateral(prev => ({ ...prev, titulo: editTituloLateral.trim(), descricao: editDescricaoLateral.trim() }));
       } else {
         if (!editTituloLateral.trim()) return;
-        await updateDoc(doc(db, `${setorSelecionado}_tarefas`, paginaLateral.id), {
+        await updateDoc(doc(db, 'tarefas_gerais', paginaLateral.id), {
           titulo: editTituloLateral.trim(),
           descricao: editDescricaoLateral.trim()
         });
@@ -816,9 +782,7 @@ function MainApp() {
     return <TelaLogin onLoginSucesso={(email) => setUsuarioLogado(email)} darkMode={darkMode} setDarkMode={alternarTema} theme={theme} />;
   }
 
-  const setorAtualInfo = SETORES_DISPONIVEIS.find(s => s.id === setorSelecionado) || SETORES_DISPONIVEIS[0];
   const tarefasResolvidas = tarefas.filter(t => t.status === 'Resolvida');
-
   const tarefasFiltradas = tarefas.filter(t => {
     if (filtroResponsavel !== 'todos' && t.responsavel !== filtroResponsavel) return false;
     return true;
@@ -827,7 +791,7 @@ function MainApp() {
   return (
     <div className="workspace-layout" style={{ display: 'flex', minHeight: '100vh', backgroundColor: theme.bg, color: theme.textMain, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif', boxSizing: 'border-box' }}>
       
-      {/* SIDEBAR ESQUERDA NOTION */}
+      {/* SIDEBAR ESQUERDA NOTION - REMOVIDO "NÚCLEO" */}
       <div className="sidebar-notion" style={{ width: '240px', background: theme.sidebarBg, borderRight: `1px solid ${theme.border}`, display: 'flex', flexDirection: 'column', padding: '12px 8px', boxSizing: 'border-box', flexShrink: '0' }}>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 8px', borderRadius: '4px', marginBottom: '16px', background: theme.cardBg, border: `1px solid ${theme.border}` }}>
@@ -861,27 +825,7 @@ function MainApp() {
           ))}
         </div>
 
-        <div style={{ fontSize: '11px', fontWeight: '600', color: theme.textMuted, padding: '0 8px', marginBottom: '6px', textTransform: 'uppercase' }}>
-          Núcleo
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontSize: '12px', marginBottom: '20px' }}>
-          {SETORES_DISPONIVEIS.map(s => (
-            <div 
-              key={s.id} 
-              onClick={() => mudarSetor(s.id)}
-              style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 8px', borderRadius: '4px', cursor: 'pointer', background: setorSelecionado === s.id ? theme.cardInner : 'transparent', color: setorSelecionado === s.id ? theme.textMain : theme.textMuted, fontWeight: setorSelecionado === s.id ? '600' : '400' }}
-            >
-              <span>📁</span> <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.nome.split(' - ')[0]}</span>
-            </div>
-          ))}
-        </div>
-
         <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '6px', borderTop: `1px solid ${theme.border}`, paddingTop: '10px' }}>
-          {isGestor && (
-            <button onClick={() => mudarSetor(null)} style={{ background: 'transparent', border: `1px solid ${theme.border}`, color: theme.textMain, padding: '5px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', textAlign: 'left' }}>
-              🔄 Trocar Workspace
-            </button>
-          )}
           <button onClick={() => signOut(auth)} style={{ background: 'transparent', border: '1px solid #eb5757', color: '#eb5757', padding: '5px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', textAlign: 'left' }}>
             Sair
           </button>
@@ -910,7 +854,7 @@ function MainApp() {
                     setPrazo(new Date().toISOString().split('T')[0]);
                     setTimeout(() => {
                       const novaId = Date.now().toString();
-                      setDoc(doc(db, `${setorSelecionado || 'niip'}_tarefas`, novaId), {
+                      setDoc(doc(db, 'tarefas_gerais', novaId), {
                         titulo: nome.trim(),
                         descricao: 'Particular',
                         responsavel: responsavelFinal,
@@ -943,7 +887,7 @@ function MainApp() {
             <div style={{ display: 'flex', gap: '12px', alignItems: 'center', color: theme.textMuted }}>
               <select value={filtroResponsavel} onChange={(e) => setFiltroResponsavel(e.target.value)} style={{ padding: '4px 8px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '4px', fontSize: '12px' }}>
                 <option value="todos">Responsável: Todos</option>
-                {integrantesAtuais.map(n => <option key={n} value={n}>{n}</option>)}
+                {TODOS_INTEGRANTES.map(n => <option key={n} value={n}>{n}</option>)}
               </select>
             </div>
           </div>
