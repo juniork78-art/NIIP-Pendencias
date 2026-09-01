@@ -294,6 +294,11 @@ function MainApp() {
         try {
           if (user && user.email) {
             setUsuarioLogado(user.email);
+            const userUpper = user.email.split('@')[0].replace('.', ' ').toUpperCase();
+            const match = TODOS_INTEGRANTES.find(n => userUpper.includes(n.toUpperCase()));
+            if (match) {
+              setResponsavelSelecionadoGestor(match);
+            }
           } else {
             setUsuarioLogado(null);
           }
@@ -657,7 +662,7 @@ function MainApp() {
                 </div>
 
                 <div style={{ color: isConcluida ? '#27ae60' : theme.textMuted, fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {tarefaRaizObj.responsavel || 'Junior Gonçalves'}
+                  {tarefaRaizObj.responsavel || ' Junior Gonçalves'}
                 </div>
 
                 <div style={{ color: isConcluida ? '#27ae60' : theme.textMuted, fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
