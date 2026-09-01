@@ -221,7 +221,6 @@ function MainApp() {
   const [tarefasUrgentesUsuario, setTarefasUrgentesUsuario] = useState([]);
   const [popupJaExibido, setPopupJaExibido] = useState(false);
 
-  // Inicializa expandidoIds persistindo no localStorage e forçando itens com filhos a ficarem abertos
   const [expandidoIds, setExpandidoIds] = useState(() => {
     try {
       const salvo = localStorage.getItem('expandidoIds_fibralink');
@@ -245,7 +244,6 @@ function MainApp() {
     if (expandidoIds[id] !== undefined) {
       return expandidoIds[id];
     }
-    // Se tiver filhos e o usuário nunca mexeu, fica aberto por padrão
     return temFilhos ? true : false;
   };
 
@@ -721,47 +719,90 @@ function MainApp() {
     treeLine: darkMode ? '#444440' : '#d3d3ce'
   };
 
-  // Componente recursivo para renderizar subtarefas mantendo estado aberto por padrão se houver filhos
+  // Componente recursivo exato para renderizar subtarefas mantendo colunas alinhadas no formato de tabela Notion
   const renderizarSubTarefasRecursivas = (subLista, tarefaRaizId, caminhoPai, nivel = 1) => {
     if (!subLista || subLista.length === 0) return null;
 
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', background: theme.cardInner, borderTop: `1px solid ${theme.border}` }}>
+      <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
         {subLista.map((sub) => {
           const caminhoAtual = [...caminhoPai, sub.id];
           const temFilhos = sub.subTarefas && sub.subTarefas.length > 0;
           const isExpandidoSub = verificarExpandido(sub.id, temFilhos);
-          const paddingLeftPx = nivel * 24 + 6;
+          const paddingLeftPx = nivel * 24 + 16;
 
           return (
             <React.Fragment key={sub.id}>
-              <div style={{ display: 'grid', gridTemplateColumns: '2.5fr 1.5fr 1.5fr 1fr 1fr', padding: `8px 0 8px ${paddingLeftPx}px`, alignItems: 'center', fontSize: '13px', borderTop: `1px solid ${theme.border}` }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden' }}>
+              {/* Linha da subtarefa alinhada na mesma grade da tabela principal */}
+              <div 
+                style={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: '2.5fr 1.5fr 1.5fr 1fr 1fr', 
+                  padding: '10px 0', 
+                  borderBottom: `1px solid ${theme.border}`, 
+                  alignItems: 'center', 
+                  fontSize: '13px', 
+                  transition: 'background 0.1s' 
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = theme.cardInner} 
+                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+              >
+                {/* Coluna 1: Nome com recuo proporcional à profundidade */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden', paddingLeft: `${paddingLeftPx}px`, paddingRight: '10px' }}>
                   <span onClick={() => alternarExpandido(sub.id)} style={{ cursor: 'pointer', fontSize: '10px', color: theme.textMuted, userSelect: 'none', padding: '2px', width: '12px', textAlign: 'center' }}>
-                    {isExpandidoSub ? '▼' : '▶'}
+                    {temFilhos ? (isExpandidoSub ? '▼' : '▶') : ''}
                   </span>
-                  <input type="checkbox" checked={sub.concluida} onChange={() => alternarStatusRecursivo(tarefaRaizId, caminhoAtual)} style={{ accentColor: '#2eaadc', cursor: 'pointer' }} />
                   <span>📄</span>
-                  <span style={{ color: sub.concluida ? theme.textMuted : theme.textMain, textDecoration: sub.concluida ? 'line-through' : 'none', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sub.texto}</span>
+                  <span style={{ fontWeight: '400', color: sub.concluida ? theme.textMuted : theme.textMain, textDecoration: sub.concluida ? 'line-through' : 'none', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sub.texto}</span>
                 </div>
-                <div style={{ color: theme.textMuted, fontSize: '13px' }}>{tarefas.find(t => t.id === tarefaRaizId)?.responsavel}</div>
-                <div style={{ color: theme.textMuted, fontSize: '13px' }}>📄 Sub-tarefa</div>
-                <div style={{ color: theme.textMuted, fontSize: '13px' }}>Agora há pouco</div>
+
+                {/* Coluna 2: Criado por */}
+                <div style={{ color: theme.textMuted, fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {tarefas.find(t => t.id === tarefaRaizId)?.responsavel || 'Junior Gonçalves'}
+                </div>
+
+                {/* Coluna 3: Fonte */}
+                <div style={{ color: theme.textMuted, fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  📄 Sub-tarefa
+                </div>
+
+                {/* Coluna 4: Última edição */}
+                <div style={{ color: theme.textMuted, fontSize: '13px' }}>
+                  Agora há pouco
+                </div>
+
+                {/* Coluna 5: Última visita em + Ação */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', color: theme.textMuted, fontSize: '13px', paddingRight: '10px' }}>
                   <span>Agora há pouco</span>
                   <button onClick={() => excluirSubRecursivo(tarefaRaizId, caminhoAtual)} style={{ background: 'transparent', border: 'none', color: '#eb5757', cursor: 'pointer', fontSize: '11px' }}>Excluir</button>
                 </div>
               </div>
 
-              {/* Se expandido, renderiza os filhos recursivamente e o botão adicionar nova */}
+              {/* Se expandido, renderiza os filhos e o botão "+ Adicionar nova" abaixo */}
               {isExpandidoSub && (
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
                   {renderizarSubTarefasRecursivas(sub.subTarefas, tarefaRaizId, caminhoAtual, nivel + 1)}
+                  
                   <div 
                     onClick={() => promptAdicionarSub(tarefaRaizId, caminhoAtual)}
-                    style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: theme.textMuted, cursor: 'pointer', padding: `8px 0 8px ${paddingLeftPx + 30}px`, borderTop: `1px solid ${theme.border}`, fontWeight: '500' }}
+                    style={{ 
+                      display: 'grid', 
+                      gridTemplateColumns: '2.5fr 1.5fr 1.5fr 1fr 1fr', 
+                      padding: '10px 0', 
+                      borderBottom: `1px solid ${theme.border}`, 
+                      alignItems: 'center', 
+                      fontSize: '13px', 
+                      color: theme.textMuted, 
+                      cursor: 'pointer', 
+                      transition: 'background 0.1s' 
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = theme.cardInner}
+                    onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                   >
-                    <span>+</span> <span>Adicionar nova</span>
+                    <div style={{ paddingLeft: `${paddingLeftPx + 24}px`, display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '500' }}>
+                      <span>+</span> <span>Adicionar nova</span>
+                    </div>
+                    <div></div><div></div><div></div><div></div>
                   </div>
                 </div>
               )}
@@ -1099,9 +1140,25 @@ function MainApp() {
                           {renderizarSubTarefasRecursivas(subTarefas, t.id, [t.id], 1)}
                           <div 
                             onClick={() => promptAdicionarSub(t.id, [t.id])}
-                            style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: theme.textMuted, cursor: 'pointer', padding: '10px 0 10px 30px', borderTop: `1px solid ${theme.border}`, fontWeight: '500', background: theme.cardInner }}
+                            style={{ 
+                              display: 'grid', 
+                              gridTemplateColumns: '2.5fr 1.5fr 1.5fr 1fr 1fr', 
+                              padding: '10px 0', 
+                              borderBottom: `1px solid ${theme.border}`, 
+                              alignItems: 'center', 
+                              fontSize: '13px', 
+                              color: theme.textMuted, 
+                              cursor: 'pointer', 
+                              transition: 'background 0.1s',
+                              background: theme.cardInner
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.background = theme.cardInner}
+                            onMouseLeave={(e) => e.currentTarget.style.background = theme.cardInner}
                           >
-                            <span>+</span> <span>Adicionar nova</span>
+                            <div style={{ paddingLeft: '40px', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '500' }}>
+                              <span>+</span> <span>Adicionar nova</span>
+                            </div>
+                            <div></div><div></div><div></div><div></div>
                           </div>
                         </div>
                       )}
