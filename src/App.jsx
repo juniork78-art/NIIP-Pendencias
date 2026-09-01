@@ -142,7 +142,7 @@ class ErrorBoundary extends React.Component {
     return { hasError: true, error };
   }
   componentDidCatch(error, errorInfo) {
-    console.error("Erro crítico capturado:", error, errorInfo);
+    console.error("Erro capturado:", error, errorInfo);
   }
   render() {
     if (this.state.hasError) {
@@ -201,9 +201,10 @@ function MainApp() {
   
   const [filtroResponsavel, setFiltroResponsavel] = useState('todos');
 
-  const [paginaAberta, setPaginaAberta] = useState(null);
-  const [editTituloPagina, setEditTituloPagina] = useState('');
-  const [editDescricaoPagina, setEditDescricaoPagina] = useState('');
+  // Estado do painel lateral (Split-View)
+  const [paginaLateral, setPaginaLateral] = useState(null); 
+  const [editTituloLateral, setEditTituloLateral] = useState('');
+  const [editDescricaoLateral, setEditDescricaoLateral] = useState('');
 
   const [tarefaEditando, setTarefaEditando] = useState(null);
   const [editTitulo, setEditTitulo] = useState('');
@@ -224,15 +225,14 @@ function MainApp() {
     setExpandidoIds(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
-  // ----- INTEGRAÇÃO DO BOTÃO VOLTAR DO NAVEGADOR (HISTORY API) -----
+  // ----- CONTROLE DO PAINEL LATERAL E BOTÃO VOLTAR DO NAVEGADOR -----
   useEffect(() => {
     if (!window.history.state) {
       window.history.replaceState({ view: 'andamento' }, '');
     }
 
     const handlePopState = (e) => {
-      // Ao clicar em Voltar no navegador, sempre fecha a visualização de página se estiver aberta
-      setPaginaAberta(null);
+      setPaginaLateral(null);
       if (e.state && e.state.view) {
         setPaginaAtual(e.state.view);
       }
@@ -242,27 +242,26 @@ function MainApp() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  const abrirPaginaEmTelaCheia = (t) => {
-    setPaginaAberta(t);
-    setEditTituloPagina(t.titulo);
-    setEditDescricaoPagina(t.descricao || '');
-    // Empurra um novo estado para que o botão voltar feche a página
-    window.history.pushState({ view: paginaAtual, paginaAberta: true }, '');
+  const abrirPainelLateral = (t) => {
+    setPaginaLateral(t);
+    setEditTituloLateral(t.titulo);
+    setEditDescricaoLateral(t.descricao || '');
+    window.history.pushState({ view: paginaAtual, lateralAberta: true }, '');
   };
 
-  const fecharPaginaEmTelaCheia = () => {
-    setPaginaAberta(null);
-    window.history.back(); // Retorna o histórico para sincronizar a URL invisível
+  const fecharPainelLateral = () => {
+    setPaginaLateral(null);
+    window.history.back();
   };
 
   const mudarPagina = (novaPagina) => {
-    setPaginaAberta(null);
+    setPaginaLateral(null);
     setPaginaAtual(novaPagina);
     window.history.pushState({ view: novaPagina }, '');
   };
 
   const mudarSetor = (novoSetor) => {
-    setPaginaAberta(null);
+    setPaginaLateral(null);
     setSetorSelecionado(novoSetor);
     setPaginaAtual('andamento');
     window.history.pushState({ view: 'andamento' }, '');
@@ -360,9 +359,9 @@ function MainApp() {
           lista.sort((a, b) => b.criadoEm - a.criadoEm);
           setTarefas(lista);
 
-          if (paginaAberta) {
-            const atualizada = lista.find(t => t.id === paginaAberta.id);
-            if (atualizada) setPaginaAberta(atualizada);
+          if (paginaLateral) {
+            const atualizada = lista.find(t => t.id === paginaLateral.id);
+            if (atualizada) setPaginaLateral(atualizada);
           }
 
           if (!popupJaExibido) {
@@ -600,7 +599,7 @@ function MainApp() {
       });
       await registrarLogAuditoria("RESOLUÇÃO", `Concluiu a página`, tarefaResolvendo.titulo);
       setTarefaResolvendo(null);
-      if (paginaAberta && paginaAberta.id === tarefaResolvendo.id) fecharPaginaEmTelaCheia();
+      if (paginaLateral && paginaLateral.id === tarefaResolvendo.id) fecharPainelLateral();
     } catch (err) {}
   };
 
@@ -619,19 +618,19 @@ function MainApp() {
       try {
         await deleteDoc(doc(db, `${setorSelecionado}_tarefas`, id));
         await registrarLogAuditoria("EXCLUSÃO", `Excluiu a página`, tituloTarefa || 'Sem título');
-        if (paginaAberta && paginaAberta.id === id) fecharPaginaEmTelaCheia();
+        if (paginaLateral && paginaLateral.id === id) fecharPainelLateral();
       } catch (err) {}
     }
   };
 
-  const salvarAlteracoesPaginaAberta = async () => {
-    if (!paginaAberta || !editTituloPagina.trim()) return;
+  const salvarAlteracoesPaginaLateral = async () => {
+    if (!paginaLateral || !editTituloLateral.trim()) return;
     try {
-      await updateDoc(doc(db, `${setorSelecionado}_tarefas`, paginaAberta.id), {
-        titulo: editTituloPagina.trim(),
-        descricao: editDescricaoPagina.trim()
+      await updateDoc(doc(db, `${setorSelecionado}_tarefas`, paginaLateral.id), {
+        titulo: editTituloLateral.trim(),
+        descricao: editDescricaoLateral.trim()
       });
-      setPaginaAberta(prev => ({ ...prev, titulo: editTituloPagina.trim(), descricao: editDescricaoPagina.trim() }));
+      setPaginaLateral(prev => ({ ...prev, titulo: editTituloLateral.trim(), descricao: editDescricaoLateral.trim() }));
     } catch (e) {}
   };
 
@@ -756,7 +755,7 @@ function MainApp() {
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontSize: '13px', marginBottom: '16px' }}>
-          <div onClick={() => mudarPagina('andamento')} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 8px', borderRadius: '4px', cursor: 'pointer', background: !paginaAberta && paginaAtual === 'andamento' ? theme.cardInner : 'transparent' }}>
+          <div onClick={() => mudarPagina('andamento')} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 8px', borderRadius: '4px', cursor: 'pointer', background: !paginaLateral && paginaAtual === 'andamento' ? theme.cardInner : 'transparent' }}>
             <span>🏠</span> <span>Página inicial</span>
           </div>
           <div onClick={() => mudarPagina('resolvidas')} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 8px', borderRadius: '4px', cursor: 'pointer' }}>
@@ -771,8 +770,8 @@ function MainApp() {
           {tarefasAndamento.map(t => (
             <div 
               key={t.id} 
-              onClick={() => abrirPaginaEmTelaCheia(t)}
-              style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 8px', borderRadius: '4px', cursor: 'pointer', background: paginaAberta?.id === t.id ? theme.cardInner : 'transparent', color: paginaAberta?.id === t.id ? theme.textMain : theme.textMuted }}
+              onClick={() => abrirPainelLateral(t)}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 8px', borderRadius: '4px', cursor: 'pointer', background: paginaLateral?.id === t.id ? theme.cardInner : 'transparent', color: paginaLateral?.id === t.id ? theme.textMain : theme.textMuted }}
             >
               <span>📄</span> <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.titulo}</span>
             </div>
@@ -806,222 +805,241 @@ function MainApp() {
         </div>
       </div>
 
-      {/* ÁREA PRINCIPAL */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '32px 48px', boxSizing: 'border-box', overflowY: 'auto' }}>
+      {/* ÁREA PRINCIPAL SPLIT-VIEW (BIBLIOTECA À ESQUERDA + PAINEL LATERAL À DIREITA) */}
+      <div style={{ flex: 1, display: 'flex', width: '100%', boxSizing: 'border-box', overflow: 'hidden' }}>
         
-        {mostrarPopupAlerta && tarefasUrgentesUsuario.length > 0 && (
-          <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, padding: '15px', boxSizing: 'border-box' }}>
-            <div style={{ background: theme.cardBg, padding: '24px', borderRadius: '6px', width: '100%', maxWidth: '480px', border: `1px solid ${theme.border}`, boxShadow: '0 8px 24px rgba(0,0,0,0.2)', textAlign: 'center' }}>
-              <div style={{ fontSize: '28px', marginBottom: '8px' }}>🚨</div>
-              <h2 style={{ margin: '0 0 8px 0', color: '#eb5757', fontSize: '18px', fontWeight: '600' }}>Atenção, {nomeFormatadoGlobal}!</h2>
-              <p style={{ fontSize: '13px', color: theme.textMuted, marginBottom: '20px' }}>Você possui <strong>{tarefasUrgentesUsuario.length}</strong> tarefa(s) crítica(s) ou vencida(s):</p>
-              <div style={{ maxHeight: '200px', overflowY: 'auto', marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '8px', textAlign: 'left' }}>
-                {tarefasUrgentesUsuario.map(t => (
-                  <div key={t.id} style={{ background: theme.cardInner, padding: '8px 10px', borderRadius: '4px', borderLeft: '3px solid #eb5757' }}>
-                    <div style={{ fontWeight: '600', fontSize: '12px' }}>{t.titulo}</div>
-                  </div>
-                ))}
+        {/* CONTEÚDO DA BIBLIOTECA */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '32px 48px', boxSizing: 'border-box', overflowY: 'auto' }}>
+          
+          {mostrarPopupAlerta && tarefasUrgentesUsuario.length > 0 && (
+            <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, padding: '15px', boxSizing: 'border-box' }}>
+              <div style={{ background: theme.cardBg, padding: '24px', borderRadius: '6px', width: '100%', maxWidth: '480px', border: `1px solid ${theme.border}`, boxShadow: '0 8px 24px rgba(0,0,0,0.2)', textAlign: 'center' }}>
+                <div style={{ fontSize: '28px', marginBottom: '8px' }}>🚨</div>
+                <h2 style={{ margin: '0 0 8px 0', color: '#eb5757', fontSize: '18px', fontWeight: '600' }}>Atenção, {nomeFormatadoGlobal}!</h2>
+                <p style={{ fontSize: '13px', color: theme.textMuted, marginBottom: '20px' }}>Você possui <strong>{tarefasUrgentesUsuario.length}</strong> tarefa(s) crítica(s) ou vencida(s):</p>
+                <div style={{ maxHeight: '200px', overflowY: 'auto', marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '8px', textAlign: 'left' }}>
+                  {tarefasUrgentesUsuario.map(t => (
+                    <div key={t.id} style={{ background: theme.cardInner, padding: '8px 10px', borderRadius: '4px', borderLeft: '3px solid #eb5757' }}>
+                      <div style={{ fontWeight: '600', fontSize: '12px' }}>{t.titulo}</div>
+                    </div>
+                  ))}
+                </div>
+                <button onClick={() => setMostrarPopupAlerta(false)} style={{ width: '100%', padding: '10px', background: '#37352f', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: '500', cursor: 'pointer' }}>Entendido</button>
               </div>
-              <button onClick={() => setMostrarPopupAlerta(false)} style={{ width: '100%', padding: '10px', background: '#37352f', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: '500', cursor: 'pointer' }}>Entendido</button>
+            </div>
+          )}
+
+          {/* CABEÇALHO E BOTÃO NOVA PÁGINA */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+            <h1 style={{ margin: 0, fontSize: '28px', fontWeight: '700', color: theme.textMain }}>Biblioteca</h1>
+
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+              <button onClick={alternarTema} style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, color: theme.textMain, padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: '500' }}>
+                {darkMode ? '☀️ Claro' : '🌙 Escuro'}
+              </button>
+              <button 
+                onClick={() => {
+                  const nome = prompt("Digite o título da nova página:");
+                  if (nome) {
+                    setTitulo(nome);
+                    setPrazo(new Date().toISOString().split('T')[0]);
+                    setTimeout(() => {
+                      const novaId = Date.now().toString();
+                      setDoc(doc(db, `${setorSelecionado || 'niip'}_tarefas`, novaId), {
+                        titulo: nome.trim(),
+                        descricao: 'Particular',
+                        responsavel: responsavelFinal,
+                        prazo: new Date().toISOString().split('T')[0],
+                        prioridade: 'Média',
+                        status: 'Pendente',
+                        criadoPor: nomeFormatadoGlobal,
+                        criadoEm: Date.now(),
+                        subTarefas: []
+                      });
+                    }, 100);
+                  }
+                }}
+                style={{ background: '#2383e2', color: '#fff', border: 'none', padding: '6px 14px', borderRadius: '6px', fontWeight: '500', fontSize: '13px', cursor: 'pointer', boxShadow: '0 1px 2px rgba(0,0,0,0.1)' }}
+              >
+                Nova página
+              </button>
             </div>
           </div>
-        )}
 
-        {paginaAberta ? (
-          <div style={{ display: 'flex', flexDirection: 'column', width: '100%', maxWidth: '800px', margin: '0 auto' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: theme.textMuted, marginBottom: '24px' }}>
-              <span onClick={fecharPaginaEmTelaCheia} style={{ cursor: 'pointer' }}>Biblioteca</span>
-              <span>/</span>
-              <span>{paginaAberta.titulo}</span>
+          {/* ABAS SUPERIORES */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `1px solid ${theme.border}`, paddingBottom: '10px', marginBottom: '20px', fontSize: '13px', flexWrap: 'wrap', gap: '12px' }}>
+            <div style={{ display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap', color: theme.textMuted }}>
+              <span style={{ fontWeight: '500', color: theme.textMain, display: 'flex', alignItems: 'center', gap: '6px' }}>🕒 Recentes</span>
+              <span style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>⭐ Favoritos</span>
+              <span style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>👥 Compartilhado</span>
+              <span style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>🔒 Particular</span>
+              <span style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>🎙️ Anotações IA</span>
+              <span style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>⚡ Habilidades</span>
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'center', color: theme.textMuted }}>
+              <span style={{ cursor: 'pointer' }}>☰</span>
+              <span style={{ cursor: 'pointer' }}>🔍</span>
+              <span style={{ cursor: 'pointer' }}>⚙️</span>
+              <select value={filtroResponsavel} onChange={(e) => setFiltroResponsavel(e.target.value)} style={{ padding: '4px 8px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '4px', fontSize: '12px' }}>
+                <option value="todos">Responsável: Todos</option>
+                {integrantesAtuais.map(n => <option key={n} value={n}>{n}</option>)}
+              </select>
+            </div>
+          </div>
+
+          {/* TABELA DE DADOS ESTILO NOTION */}
+          <div style={{ width: '100%', boxSizing: 'border-box' }}>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: '2.5fr 1.5fr 1.5fr 1fr 1fr', padding: '8px 0', borderBottom: `1px solid ${theme.border}`, fontSize: '12px', fontWeight: '500', color: theme.textMuted, minWidth: '700px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>📄 Nome da página</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>👤 Criado por</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>📑 Fonte</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>🕒 Última edição</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>🕒 Última visita em</div>
+            </div>
+
+            {tarefasFiltradas.length === 0 ? (
+              <div style={{ padding: '40px', textAlign: 'center', color: theme.textMuted, fontSize: '13px' }}>Nenhuma página encontrada.</div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', minWidth: '700px' }}>
+                {tarefasFiltradas.map(t => {
+                  const subTarefas = t.subTarefas || [];
+                  const isExpandido = expandidoIds[t.id];
+
+                  return (
+                    <React.Fragment key={t.id}>
+                      {/* LINHA PRINCIPAL DA PÁGINA PAI */}
+                      <div style={{ display: 'grid', gridTemplateColumns: '2.5fr 1.5fr 1.5fr 1fr 1fr', padding: '10px 0', borderBottom: `1px solid ${theme.border}`, alignItems: 'center', fontSize: '13px', transition: 'background 0.1s' }} onMouseEnter={(e) => e.currentTarget.style.background = theme.cardInner} onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
+                        
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden', paddingRight: '10px' }}>
+                          <span onClick={() => alternarExpandido(t.id)} style={{ cursor: 'pointer', fontSize: '10px', color: theme.textMuted, userSelect: 'none', padding: '2px', width: '12px', textAlign: 'center' }}>
+                            {isExpandido ? '▼' : '▶'}
+                          </span>
+                          <span>📄</span>
+                          <span 
+                            onClick={() => abrirPainelLateral(t)}
+                            style={{ fontWeight: '400', color: theme.textMain, cursor: 'pointer', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                          >
+                            {t.titulo}
+                          </span>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: theme.textMain, fontSize: '13px' }}>
+                          <span style={{ width: '16px', height: '16px', borderRadius: '50%', background: '#787774', color: '#fff', fontSize: '9px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>J</span>
+                          <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.responsavel}</span>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: theme.textMain, fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          <span>🔒</span> <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.descricao || 'Particular'}</span>
+                        </div>
+
+                        <div style={{ color: theme.textMuted, fontSize: '13px' }}>
+                          Agora há pouco
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: theme.textMuted, fontSize: '13px', paddingRight: '10px' }}>
+                          <span>Agora há pouco</span>
+                          <div style={{ display: 'flex', gap: '6px' }}>
+                            <button onClick={() => abrirModalEdicao(t)} title="Editar" style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '11px' }}>✏️</button>
+                            <button onClick={() => abrirModalResolucao(t)} title="Concluir" style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '11px' }}>✔</button>
+                            {isGestor && (
+                              <button onClick={() => excluirTarefa(t.id, t.titulo)} title="Excluir" style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '11px' }}>🗑️</button>
+                            )}
+                          </div>
+                        </div>
+
+                      </div>
+
+                      {/* SUB-PÁGINAS E BOTÃO "+ Adicionar nova" */}
+                      {isExpandido && (
+                        <div style={{ display: 'flex', flexDirection: 'column', background: theme.cardInner, borderBottom: `1px solid ${theme.border}` }}>
+                          {subTarefas.map((sub) => (
+                            <div key={sub.id} style={{ display: 'grid', gridTemplateColumns: '2.5fr 1.5fr 1.5fr 1fr 1fr', padding: '8px 0 8px 30px', alignItems: 'center', fontSize: '13px', borderTop: `1px solid ${theme.border}` }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
+                                <input type="checkbox" checked={sub.concluida} onChange={() => alternarStatusSubPendencia(t.id, sub.id)} style={{ accentColor: '#2eaadc', cursor: 'pointer' }} />
+                                <span>📄</span>
+                                <span style={{ color: sub.concluida ? theme.textMuted : theme.textMain, textDecoration: sub.concluida ? 'line-through' : 'none', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sub.texto}</span>
+                              </div>
+                              <div style={{ color: theme.textMuted, fontSize: '13px' }}>{t.responsavel}</div>
+                              <div style={{ color: theme.textMuted, fontSize: '13px' }}>📄 {t.titulo}</div>
+                              <div style={{ color: theme.textMuted, fontSize: '13px' }}>Agora há pouco</div>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', color: theme.textMuted, fontSize: '13px', paddingRight: '10px' }}>
+                                <span>Agora há pouco</span>
+                                <button onClick={() => excluirSubPendencia(t.id, sub.id)} style={{ background: 'transparent', border: 'none', color: '#eb5757', cursor: 'pointer', fontSize: '11px' }}>Excluir</button>
+                              </div>
+                            </div>
+                          ))}
+
+                          <div 
+                            onClick={() => adicionarSubPendenciaRapida(t.id)}
+                            style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: theme.textMuted, cursor: 'pointer', padding: '10px 0 10px 30px', borderTop: `1px solid ${theme.border}`, fontWeight: '500' }}
+                          >
+                            <span>+</span> <span>Adicionar nova</span>
+                          </div>
+                        </div>
+                      )}
+
+                    </React.Fragment>
+                  );
+                })}
+              </div>
+            )}
+
+          </div>
+
+        </div>
+
+        {/* PAINEL LATERAL DIREITO (SPLIT-VIEW EXATO DO NOTION) */}
+        {paginaLateral && (
+          <div style={{ width: '450px', background: theme.cardBg, borderLeft: `1px solid ${theme.border}`, display: 'flex', flexDirection: 'column', padding: '32px', boxSizing: 'border-box', height: '100vh', overflowY: 'auto', flexShrink: '0', boxShadow: '-5px 0 25px rgba(0,0,0,0.1)' }}>
+            
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <div style={{ fontSize: '12px', color: theme.textMuted }}>
+                Biblioteca / {paginaLateral.titulo}
+              </div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button onClick={() => abrirModalResolucao(paginaLateral)} title="Concluir" style={{ background: '#27ae60', border: 'none', color: '#fff', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>✔ Concluir</button>
+                <button onClick={fecharPainelLateral} style={{ background: 'transparent', border: `1px solid ${theme.border}`, color: theme.textMain, padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>✕ Fechar</button>
+              </div>
             </div>
 
             <input 
               type="text" 
-              value={editTituloPagina} 
-              onChange={(e) => { setEditTituloPagina(e.target.value); }}
-              onBlur={salvarAlteracoesPaginaAberta}
-              style={{ fontSize: '36px', fontWeight: '700', color: theme.textMain, background: 'transparent', border: 'none', outline: 'none', width: '100%', marginBottom: '16px' }}
+              value={editTituloLateral} 
+              onChange={(e) => setEditTituloLateral(e.target.value)}
+              onBlur={salvarAlteracoesPaginaLateral}
+              style={{ fontSize: '28px', fontWeight: '700', color: theme.textMain, background: 'transparent', border: 'none', outline: 'none', width: '100%', marginBottom: '20px' }}
             />
 
-            <div style={{ borderTop: `1px solid ${theme.border}`, paddingTop: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', borderTop: `1px solid ${theme.border}`, paddingTop: '16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: theme.textMuted }}>
+                <span>Atribuído a:</span>
+                <strong style={{ color: theme.textMain }}>{paginaLateral.responsavel}</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: theme.textMuted }}>
+                <span>Prazo:</span>
+                <strong style={{ color: theme.textMain }}>{formatarDataParaBr(paginaLateral.prazo)}</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: theme.textMuted }}>
+                <span>Prioridade:</span>
+                <strong style={{ color: theme.textMain }}>{paginaLateral.prioridade}</strong>
+              </div>
+            </div>
+
+            <div style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <label style={{ fontSize: '12px', color: theme.textMuted, fontWeight: '500' }}>Conteúdo / Bloco de Notas</label>
               <textarea 
-                rows="8"
-                value={editDescricaoPagina}
-                onChange={(e) => { setEditDescricaoPagina(e.target.value); }}
-                onBlur={salvarAlteracoesPaginaAberta}
+                rows="10"
+                value={editDescricaoLateral}
+                onChange={(e) => setEditDescricaoLateral(e.target.value)}
+                onBlur={salvarAlteracoesPaginaLateral}
                 placeholder="Clique na barra de espaço para ativar a IA ou '/' para acessar os comandos..."
-                style={{ width: '100%', padding: '12px', background: theme.cardBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '6px', fontSize: '14px', resize: 'vertical', lineHeight: '1.6' }}
+                style={{ width: '100%', padding: '12px', background: theme.cardInner, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '6px', fontSize: '13px', resize: 'vertical', lineHeight: '1.6' }}
               />
             </div>
 
-            <div style={{ marginTop: '24px', display: 'flex', gap: '10px' }}>
-              <button onClick={() => abrirModalResolucao(paginaAberta)} style={{ background: '#27ae60', border: 'none', color: '#fff', padding: '8px 16px', borderRadius: '4px', cursor: 'pointer', fontSize: '13px', fontWeight: '500' }}>✔ Concluir Página</button>
-              <button onClick={fecharPaginaEmTelaCheia} style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, color: theme.textMain, padding: '8px 16px', borderRadius: '4px', cursor: 'pointer', fontSize: '13px', fontWeight: '500' }}>← Voltar à Biblioteca</button>
-            </div>
           </div>
-        ) : (
-          <>
-            {/* CABEÇALHO E BOTÃO NOVA PÁGINA */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
-              <h1 style={{ margin: 0, fontSize: '28px', fontWeight: '700', color: theme.textMain }}>Biblioteca</h1>
-
-              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                <button onClick={alternarTema} style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, color: theme.textMain, padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: '500' }}>
-                  {darkMode ? '☀️ Claro' : '🌙 Escuro'}
-                </button>
-                <button 
-                  onClick={() => {
-                    const nome = prompt("Digite o título da nova página:");
-                    if (nome) {
-                      setTitulo(nome);
-                      setPrazo(new Date().toISOString().split('T')[0]);
-                      setTimeout(() => {
-                        const novaId = Date.now().toString();
-                        setDoc(doc(db, `${setorSelecionado || 'niip'}_tarefas`, novaId), {
-                          titulo: nome.trim(),
-                          descricao: 'Particular',
-                          responsavel: responsavelFinal,
-                          prazo: new Date().toISOString().split('T')[0],
-                          prioridade: 'Média',
-                          status: 'Pendente',
-                          criadoPor: nomeFormatadoGlobal,
-                          criadoEm: Date.now(),
-                          subTarefas: []
-                        });
-                      }, 100);
-                    }
-                  }}
-                  style={{ background: '#2383e2', color: '#fff', border: 'none', padding: '6px 14px', borderRadius: '6px', fontWeight: '500', fontSize: '13px', cursor: 'pointer', boxShadow: '0 1px 2px rgba(0,0,0,0.1)' }}
-                >
-                  Nova página
-                </button>
-              </div>
-            </div>
-
-            {/* ABAS SUPERIORES */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `1px solid ${theme.border}`, paddingBottom: '10px', marginBottom: '20px', fontSize: '13px', flexWrap: 'wrap', gap: '12px' }}>
-              <div style={{ display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap', color: theme.textMuted }}>
-                <span style={{ fontWeight: '500', color: theme.textMain, display: 'flex', alignItems: 'center', gap: '6px' }}>🕒 Recentes</span>
-                <span style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>⭐ Favoritos</span>
-                <span style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>👥 Compartilhado</span>
-                <span style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>🔒 Particular</span>
-                <span style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>🎙️ Anotações IA</span>
-                <span style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>⚡ Habilidades</span>
-              </div>
-
-              <div style={{ display: 'flex', gap: '12px', alignItems: 'center', color: theme.textMuted }}>
-                <span style={{ cursor: 'pointer' }}>☰</span>
-                <span style={{ cursor: 'pointer' }}>🔍</span>
-                <span style={{ cursor: 'pointer' }}>⚙️</span>
-                <select value={filtroResponsavel} onChange={(e) => setFiltroResponsavel(e.target.value)} style={{ padding: '4px 8px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '4px', fontSize: '12px' }}>
-                  <option value="todos">Responsável: Todos</option>
-                  {integrantesAtuais.map(n => <option key={n} value={n}>{n}</option>)}
-                </select>
-              </div>
-            </div>
-
-            {/* TABELA DE DADOS ESTILO NOTION COM SETAS EM TODAS AS LINHAS */}
-            <div style={{ width: '100%', boxSizing: 'border-box' }}>
-              
-              <div style={{ display: 'grid', gridTemplateColumns: '2.5fr 1.5fr 1.5fr 1fr 1fr', padding: '8px 0', borderBottom: `1px solid ${theme.border}`, fontSize: '12px', fontWeight: '500', color: theme.textMuted, minWidth: '700px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>📄 Nome da página</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>👤 Criado por</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>📑 Fonte</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>🕒 Última edição</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>🕒 Última visita em</div>
-              </div>
-
-              {tarefasFiltradas.length === 0 ? (
-                <div style={{ padding: '40px', textAlign: 'center', color: theme.textMuted, fontSize: '13px' }}>Nenhuma página encontrada.</div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', minWidth: '700px' }}>
-                  {tarefasFiltradas.map(t => {
-                    const subTarefas = t.subTarefas || [];
-                    const isExpandido = expandidoIds[t.id];
-
-                    return (
-                      <React.Fragment key={t.id}>
-                        {/* LINHA PRINCIPAL DA PÁGINA PAI (Seta visível sempre) */}
-                        <div style={{ display: 'grid', gridTemplateColumns: '2.5fr 1.5fr 1.5fr 1fr 1fr', padding: '10px 0', borderBottom: `1px solid ${theme.border}`, alignItems: 'center', fontSize: '13px', transition: 'background 0.1s' }} onMouseEnter={(e) => e.currentTarget.style.background = theme.cardInner} onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
-                          
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden', paddingRight: '10px' }}>
-                            {/* A Seta agora sempre aparece em toda e qualquer tarefa pai */}
-                            <span onClick={() => alternarExpandido(t.id)} style={{ cursor: 'pointer', fontSize: '10px', color: theme.textMuted, userSelect: 'none', padding: '2px', width: '12px', textAlign: 'center' }}>
-                              {isExpandido ? '▼' : '▶'}
-                            </span>
-                            <span>📄</span>
-                            <span 
-                              onClick={() => abrirPaginaEmTelaCheia(t)}
-                              style={{ fontWeight: '400', color: theme.textMain, cursor: 'pointer', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
-                            >
-                              {t.titulo}
-                            </span>
-                          </div>
-
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: theme.textMain, fontSize: '13px' }}>
-                            <span style={{ width: '16px', height: '16px', borderRadius: '50%', background: '#787774', color: '#fff', fontSize: '9px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>J</span>
-                            <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.responsavel}</span>
-                          </div>
-
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: theme.textMain, fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            <span>🔒</span> <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.descricao || 'Particular'}</span>
-                          </div>
-
-                          <div style={{ color: theme.textMuted, fontSize: '13px' }}>
-                            Agora há pouco
-                          </div>
-
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: theme.textMuted, fontSize: '13px', paddingRight: '10px' }}>
-                            <span>Agora há pouco</span>
-                            <div style={{ display: 'flex', gap: '6px' }}>
-                              <button onClick={() => abrirModalEdicao(t)} title="Editar" style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '11px' }}>✏️</button>
-                              <button onClick={() => abrirModalResolucao(t)} title="Concluir" style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '11px' }}>✔</button>
-                              {isGestor && (
-                                <button onClick={() => excluirTarefa(t.id, t.titulo)} title="Excluir" style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '11px' }}>🗑️</button>
-                              )}
-                            </div>
-                          </div>
-
-                        </div>
-
-                        {/* SUB-PÁGINAS E BOTÃO "+ Adicionar nova" AO EXPANDIR */}
-                        {isExpandido && (
-                          <div style={{ display: 'flex', flexDirection: 'column', background: theme.cardInner, borderBottom: `1px solid ${theme.border}` }}>
-                            {subTarefas.map((sub) => (
-                              <div key={sub.id} style={{ display: 'grid', gridTemplateColumns: '2.5fr 1.5fr 1.5fr 1fr 1fr', padding: '8px 0 8px 30px', alignItems: 'center', fontSize: '13px', borderTop: `1px solid ${theme.border}` }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
-                                  <input type="checkbox" checked={sub.concluida} onChange={() => alternarStatusSubPendencia(t.id, sub.id)} style={{ accentColor: '#2eaadc', cursor: 'pointer' }} />
-                                  <span>📄</span>
-                                  <span style={{ color: sub.concluida ? theme.textMuted : theme.textMain, textDecoration: sub.concluida ? 'line-through' : 'none', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sub.texto}</span>
-                                </div>
-                                <div style={{ color: theme.textMuted, fontSize: '13px' }}>{t.responsavel}</div>
-                                <div style={{ color: theme.textMuted, fontSize: '13px' }}>📄 {t.titulo}</div>
-                                <div style={{ color: theme.textMuted, fontSize: '13px' }}>Agora há pouco</div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', color: theme.textMuted, fontSize: '13px', paddingRight: '10px' }}>
-                                  <span>Agora há pouco</span>
-                                  <button onClick={() => excluirSubPendencia(t.id, sub.id)} style={{ background: 'transparent', border: 'none', color: '#eb5757', cursor: 'pointer', fontSize: '11px' }}>Excluir</button>
-                                </div>
-                              </div>
-                            ))}
-
-                            <div 
-                              onClick={() => adicionarSubPendenciaRapida(t.id)}
-                              style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: theme.textMuted, cursor: 'pointer', padding: '10px 0 10px 30px', borderTop: `1px solid ${theme.border}`, fontWeight: '500' }}
-                            >
-                              <span>+</span> <span>Adicionar nova</span>
-                            </div>
-                          </div>
-                        )}
-
-                      </React.Fragment>
-                    );
-                  })}
-                </div>
-              )}
-
-            </div>
-          </>
         )}
 
       </div>
