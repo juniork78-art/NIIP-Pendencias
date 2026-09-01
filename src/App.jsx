@@ -123,7 +123,6 @@ const calcularStatusPrazo = (dataStr) => {
   }
 };
 
-// "Duandys" adicionado para permitir que o gestor também crie tarefas para si mesmo
 const INTEGRANTES_NIIP = ["Francisco", "Gabriel", "Walgney", "Duandys"];
 const INTEGRANTES_NOC = ["Gustavo", "Stevan", "Gilvan", "Kessy", "João", "Lucas", "Tolentino", "Duandys"];
 const INTEGRANTES_NMR = ["Dhennifer", "Duandys"];
@@ -281,7 +280,8 @@ function MainApp() {
       descricao: sub.descricao || 'Sub-tarefa',
       responsavel: tarefaPai.responsavel,
       prazo: tarefaPai.prazo,
-      prioridade: tarefaPai.prioridade
+      prioridade: tarefaPai.prioridade,
+      concluida: sub.concluida
     };
     setPaginaLateral(subObj);
     setEditTituloLateral(sub.texto);
@@ -586,6 +586,17 @@ function MainApp() {
     adicionarSubPendenciaRecursiva(tarefaRaizId, caminhoIds, subTexto.trim());
   };
 
+  const alternarStatusTarefaPai = async (tarefaId) => {
+    try {
+      const tarefa = tarefas.find(t => t.id === tarefaId);
+      if (!tarefa) return;
+      const novoStatus = tarefa.status === 'Resolvida' ? 'Pendente' : 'Resolvida';
+      await updateDoc(doc(db, `${setorSelecionado}_tarefas`, tarefaId), {
+        status: novoStatus
+      });
+    } catch (e) {}
+  };
+
   const alternarStatusRecursivo = async (tarefaRaizId, caminhoIds) => {
     try {
       const tarefaRaiz = tarefas.find(t => t.id === tarefaRaizId);
@@ -673,36 +684,6 @@ function MainApp() {
     } catch (err) {}
   };
 
-  const abrirModalResolucao = (tarefa) => {
-    setTarefaResolvendo(tarefa);
-    setDetalhesResolucaoInput('');
-  };
-
-  const confirmarResolucaoTarefa = async (e) => {
-    e.preventDefault();
-    if (!detalhesResolucaoInput.trim()) return;
-
-    try {
-      await updateDoc(doc(db, `${setorSelecionado}_tarefas`, tarefaResolvendo.id), { 
-        status: 'Resolvida',
-        detalhesResolucao: detalhesResolucaoInput.trim()
-      });
-      await registrarLogAuditoria("RESOLUÇÃO", `Concluiu a página`, tarefaResolvendo.titulo);
-      setTarefaResolvendo(null);
-      if (paginaLateral && paginaLateral.id === tarefaResolvendo.id) fecharPainelLateral();
-    } catch (err) {}
-  };
-
-  const reabrirTarefa = async (tarefa) => {
-    try {
-      await updateDoc(doc(db, `${setorSelecionado}_tarefas`, tarefa.id), { 
-        status: 'Pendente',
-        detalhesResolucao: null 
-      });
-      await registrarLogAuditoria("REABERTURA", `Reabriu a página`, tarefa.titulo);
-    } catch (err) {}
-  };
-
   const excluirTarefa = async (id, tituloTarefa) => {
     if (window.confirm("Deseja realmente excluir esta página?")) {
       try {
@@ -766,7 +747,7 @@ function MainApp() {
     treeLine: darkMode ? '#444440' : '#d3d3ce'
   };
 
-  // Componente recursivo para renderizar subtarefas mantendo colunas alinhadas no formato de tabela Notion
+  // Componente recursivo para renderizar subtarefas com destaque verde quando concluídas
   const renderizarSubTarefasRecursivas = (subLista, tarefaRaizId, caminhoPai, nivel = 1, tarefaPaiObj) => {
     if (!subLista || subLista.length === 0) return null;
 
@@ -777,6 +758,7 @@ function MainApp() {
           const temFilhos = sub.subTarefas && sub.subTarefas.length > 0;
           const isExpandidoSub = verificarExpandido(sub.id, temFilhos);
           const paddingLeftPx = nivel * 24 + 16;
+          const isConcluida = sub.concluida;
 
           return (
             <React.Fragment key={sub.id}>
@@ -788,39 +770,45 @@ function MainApp() {
                   borderBottom: `1px solid ${theme.border}`, 
                   alignItems: 'center', 
                   fontSize: '13px', 
-                  transition: 'background 0.1s' 
+                  transition: 'background 0.1s',
+                  backgroundColor: isConcluida ? (darkMode ? 'rgba(39, 174, 96, 0.2)' : 'rgba(39, 174, 96, 0.15)') : 'transparent'
                 }}
-                onMouseEnter={(e) => e.currentTarget.style.background = theme.cardInner} 
-                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                onMouseEnter={(e) => { if (!isConcluida) e.currentTarget.style.background = theme.cardInner; }} 
+                onMouseLeave={(e) => { if (!isConcluida) e.currentTarget.style.background = 'transparent'; }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden', paddingLeft: `${paddingLeftPx}px`, paddingRight: '10px' }}>
                   <span onClick={() => alternarExpandido(sub.id)} style={{ cursor: 'pointer', fontSize: '10px', color: theme.textMuted, userSelect: 'none', padding: '2px', width: '12px', textAlign: 'center' }}>
                     {isExpandidoSub ? '▼' : '▶'}
                   </span>
-                  <input type="checkbox" checked={sub.concluida} onChange={() => alternarStatusRecursivo(tarefaRaizId, caminhoAtual)} style={{ accentColor: '#2eaadc', cursor: 'pointer' }} />
+                  <input type="checkbox" checked={sub.concluida} onChange={() => alternarStatusRecursivo(tarefaRaizId, caminhoAtual)} style={{ accentColor: '#27ae60', cursor: 'pointer' }} />
                   <span>📄</span>
                   <span 
                     onClick={() => abrirPainelLateralSub(sub, tarefaRaizId, caminhoAtual, tarefaPaiObj)}
-                    style={{ fontWeight: '400', color: sub.concluida ? theme.textMuted : theme.textMain, textDecoration: sub.concluida ? 'line-through' : 'none', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', cursor: 'pointer' }}
+                    style={{ fontWeight: isConcluida ? '600' : '400', color: isConcluida ? '#27ae60' : theme.textMain, textDecoration: isConcluida ? 'line-through' : 'none', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', cursor: 'pointer' }}
                   >
                     {sub.texto}
                   </span>
                 </div>
 
-                <div style={{ color: theme.textMuted, fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <div style={{ color: isConcluida ? '#27ae60' : theme.textMuted, fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {tarefaPaiObj.responsavel || 'Junior Gonçalves'}
                 </div>
 
-                <div style={{ color: theme.textMuted, fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <div style={{ color: isConcluida ? '#27ae60' : theme.textMuted, fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   📄 Sub-tarefa
                 </div>
 
-                <div style={{ color: theme.textMuted, fontSize: '13px' }}>
-                  Agora há pouco
+                <div style={{ color: isConcluida ? '#27ae60' : theme.textMuted, fontSize: '13px' }}>
+                  {isConcluida ? 'Concluída' : 'Agora há pouco'}
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', color: theme.textMuted, fontSize: '13px', paddingRight: '10px' }}>
-                  <span>Agora há pouco</span>
+                  <button 
+                    onClick={() => alternarStatusRecursivo(tarefaRaizId, caminhoAtual)} 
+                    style={{ background: isConcluida ? '#27ae60' : theme.cardInner, border: `1px solid ${isConcluida ? '#27ae60' : theme.border}`, color: isConcluida ? '#fff' : theme.textMain, padding: '3px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: '500' }}
+                  >
+                    {isConcluida ? '✔ Concluído' : 'Concluir'}
+                  </button>
                   <button onClick={() => excluirSubRecursivo(tarefaRaizId, caminhoAtual)} style={{ background: 'transparent', border: 'none', color: '#eb5757', cursor: 'pointer', fontSize: '11px' }}>Excluir</button>
                 </div>
               </div>
@@ -1023,15 +1011,25 @@ function MainApp() {
                   const subTarefas = t.subTarefas || [];
                   const temFilhos = subTarefas.length > 0;
                   const isExpandido = verificarExpandido(t.id, temFilhos);
+                  const isConcluida = t.status === 'Resolvida';
 
                   return (
                     <React.Fragment key={t.id}>
-                      {/* LINHA PRINCIPAL DA PÁGINA PAI */}
+                      {/* LINHA PRINCIPAL DA PÁGINA PAI COM DESTAQUE VERDE SE CONCLUÍDA */}
                       <div 
                         onDoubleClick={() => { setEditandoId(t.id); setTextoEditando(t.titulo); }}
-                        style={{ display: 'grid', gridTemplateColumns: '2.5fr 1.5fr 1.5fr 1fr 1fr', padding: '10px 0', borderBottom: `1px solid ${theme.border}`, alignItems: 'center', fontSize: '13px', transition: 'background 0.1s' }} 
-                        onMouseEnter={(e) => e.currentTarget.style.background = theme.cardInner} 
-                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                        style={{ 
+                          display: 'grid', 
+                          gridTemplateColumns: '2.5fr 1.5fr 1.5fr 1fr 1fr', 
+                          padding: '10px 0', 
+                          borderBottom: `1px solid ${theme.border}`, 
+                          alignItems: 'center', 
+                          fontSize: '13px', 
+                          transition: 'background 0.1s',
+                          backgroundColor: isConcluida ? (darkMode ? 'rgba(39, 174, 96, 0.2)' : 'rgba(39, 174, 96, 0.15)') : 'transparent'
+                        }} 
+                        onMouseEnter={(e) => { if (!isConcluida) e.currentTarget.style.background = theme.cardInner; }} 
+                        onMouseLeave={(e) => { if (!isConcluida) e.currentTarget.style.background = 'transparent'; }}
                       >
                         
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden', paddingRight: '10px' }}>
@@ -1052,31 +1050,34 @@ function MainApp() {
                           ) : (
                             <span 
                               onClick={() => abrirPainelLateral(t)}
-                              style={{ fontWeight: '400', color: theme.textMain, cursor: 'pointer', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                              style={{ fontWeight: isConcluida ? '600' : '400', color: isConcluida ? '#27ae60' : theme.textMain, textDecoration: isConcluida ? 'line-through' : 'none', cursor: 'pointer', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
                             >
                               {t.titulo}
                             </span>
                           )}
                         </div>
 
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: theme.textMain, fontSize: '13px' }}>
-                          <span style={{ width: '16px', height: '16px', borderRadius: '50%', background: '#787774', color: '#fff', fontSize: '9px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>J</span>
-                          <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.responsavel}</span>
+                        <div style={{ color: isConcluida ? '#27ae60' : theme.textMuted, fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {t.responsavel}
                         </div>
 
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: theme.textMain, fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          <span>🔒</span> <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.descricao || 'Particular'}</span>
+                        <div style={{ color: isConcluida ? '#27ae60' : theme.textMuted, fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          🔒 {t.descricao || 'Particular'}
                         </div>
 
-                        <div style={{ color: theme.textMuted, fontSize: '13px' }}>
-                          Agora há pouco
+                        <div style={{ color: isConcluida ? '#27ae60' : theme.textMuted, fontSize: '13px' }}>
+                          {isConcluida ? 'Concluída' : 'Agora há pouco'}
                         </div>
 
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: theme.textMuted, fontSize: '13px', paddingRight: '10px' }}>
-                          <span>Agora há pouco</span>
+                          <button 
+                            onClick={() => alternarStatusTarefaPai(t.id)} 
+                            style={{ background: isConcluida ? '#27ae60' : theme.cardInner, border: `1px solid ${isConcluida ? '#27ae60' : theme.border}`, color: isConcluida ? '#fff' : theme.textMain, padding: '3px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: '500' }}
+                          >
+                            {isConcluida ? '✔ Concluído' : 'Concluir'}
+                          </button>
                           <div style={{ display: 'flex', gap: '6px' }}>
                             <button onClick={() => abrirModalEdicao(t)} title="Editar" style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '11px' }}>✏️</button>
-                            <button onClick={() => abrirModalResolucao(t)} title="Concluir" style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '11px' }}>✔</button>
                             {isGestor && (
                               <button onClick={() => excluirTarefa(t.id, t.titulo)} title="Excluir" style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '11px' }}>🗑️</button>
                             )}
