@@ -18,16 +18,20 @@ import {
 
 // Inserção dinâmica do Favicon (Letra "P" em negrito)
 (() => {
-  const faviconSvg = `
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-      <rect width="64" height="64" rx="14" fill="#2f3437"/>
-      <text x="32" y="47" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="46" font-weight="900" fill="#ffffff" text-anchor="middle">P</text>
-    </svg>`;
-  const link = document.createElement('link');
-  link.rel = 'icon';
-  link.type = 'image/svg+xml';
-  link.href = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(faviconSvg);
-  document.head.appendChild(link);
+  try {
+    const faviconSvg = `
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+        <rect width="64" height="64" rx="14" fill="#2f3437"/>
+        <text x="32" y="47" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="46" font-weight="900" fill="#ffffff" text-anchor="middle">P</text>
+      </svg>`;
+    const link = document.createElement('link');
+    link.rel = 'icon';
+    link.type = 'image/svg+xml';
+    link.href = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(faviconSvg);
+    document.head.appendChild(link);
+  } catch (e) {
+    // Evita falhas de DOM
+  }
 })();
 
 const style = document.createElement('style');
@@ -1046,41 +1050,16 @@ export default function App() {
 function TelaLogin({ onLoginSucesso, darkMode, setDarkMode, theme }) {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
-  const [senhaNova, setSenhaNova] = useState('');
-  const [mostrarSenha, setMostrarSenha] = useState(false);
   const [erro, setErro] = useState('');
-  const [mensagemSucesso, setMensagemSucesso] = useState('');
-  const [alterarSenhaMode, setAlterarSenhaMode] = useState(false);
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setErro('');
-    setMensagemSucesso('');
     try {
       const result = await signInWithEmailAndPassword(auth, email, senha);
       onLoginSucesso(result.user.email);
     } catch (e) {
       setErro(`Erro ao entrar: Verifique seu e-mail e senha.`);
-    }
-  };
-
-  const handleAlterarSenha = async (e) => {
-    e.preventDefault();
-    setErro('');
-    setMensagemSucesso('');
-    if (!email.trim() || !senha.trim() || !senhaNova.trim()) {
-      setErro("Preencha todos os campos.");
-      return;
-    }
-    try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, senha);
-      await updatePassword(userCredential.user, senhaNova);
-      setMensagemSucesso("Senha alterada com sucesso!");
-      setSenha('');
-      setSenhaNova('');
-      setAlterarSenhaMode(false);
-    } catch (e) {
-      setErro("Erro ao alterar senha.");
     }
   };
 
@@ -1090,14 +1069,13 @@ function TelaLogin({ onLoginSucesso, darkMode, setDarkMode, theme }) {
         {darkMode ? '☀️ Claro' : '🌙 Escuro'}
       </button>
 
-      <form onSubmit={alterarSenhaMode ? handleAlterarSenha : handleLogin} style={{ background: theme.cardBg, padding: '32px 24px', borderRadius: '6px', width: '100%', maxWidth: '360px', border: `1px solid ${theme.border}`, boxSizing: 'border-box' }}>
+      <form onSubmit={handleLogin} style={{ background: theme.cardBg, padding: '32px 24px', borderRadius: '6px', width: '100%', maxWidth: '360px', border: `1px solid ${theme.border}`, boxSizing: 'border-box' }}>
         <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-          <img src="/logo.png" alt="Logo Fibralink" style={{ maxWidth: '170px', maxHeight: '55px', height: 'auto', objectFit: 'contain', display: 'inline-block', marginBottom: '6px' }} onError={(e) => { e.target.style.display = 'none'; }} />
+          <span style={{ fontSize: '14px', color: theme.textMain, fontWeight: 'bold', display: 'block' }}>Sistema Integrado</span>
           <span style={{ fontSize: '11px', color: theme.textMuted, fontWeight: '500', display: 'block' }}>NOC • NMR • NIIP</span>
         </div>
 
         {erro && <p style={{ color: '#eb5757', fontSize: '12px', marginBottom: '14px', background: darkMode ? '#3b1c1c' : '#fde8e8', padding: '8px', borderRadius: '4px' }}>{erro}</p>}
-        {mensagemSucesso && <p style={{ color: '#27ae60', fontSize: '12px', marginBottom: '14px', background: darkMode ? '#18251e' : '#edf7ed', padding: '8px', borderRadius: '4px' }}>{mensagemSucesso}</p>}
           
         <div style={{ marginBottom: '14px' }}>
           <label style={{ display: 'block', fontSize: '11px', fontWeight: '500', marginBottom: '4px', color: theme.textMuted }}>E-mail</label>
