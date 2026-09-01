@@ -433,6 +433,18 @@ function MainApp() {
     });
   };
 
+  // Função auxiliar para validar se todas as subtarefas e filhas estão concluídas
+  const todasSubTarefasConcluidas = (subLista) => {
+    if (!subLista || subLista.length === 0) return true;
+    for (const sub of subLista) {
+      if (!sub.concluida) return false;
+      if (sub.subTarefas && sub.subTarefas.length > 0) {
+        if (!todasSubTarefasConcluidas(sub.subTarefas)) return false;
+      }
+    }
+    return true;
+  };
+
   const promptAdicionarSub = (tarefaRaizId, caminhoIds) => {
     const subTexto = prompt("Digite o título da nova subtarefa:");
     if (!subTexto || !subTexto.trim()) return;
@@ -466,6 +478,12 @@ function MainApp() {
   const alternarStatusTarefaPai = async (tarefa) => {
     try {
       const novoStatus = tarefa.status === 'Resolvida' ? 'Pendente' : 'Resolvida';
+      if (novoStatus === 'Resolvida') {
+        if (!todasSubTarefasConcluidas(tarefa.subTarefas)) {
+          alert("Você não pode concluir a tarefa pai sem que todas as subtarefas estejam concluídas primeiro!");
+          return;
+        }
+      }
       const colecaoAlvo = tarefa._colecao || 'tarefas_gerais';
       await updateDoc(doc(db, colecaoAlvo, tarefa.id), {
         status: novoStatus
@@ -605,9 +623,7 @@ function MainApp() {
           const isConcluida = Boolean(sub.concluida);
           const isArquivada = Boolean(sub.arquivada);
 
-          // Quando estiver na aba principal, oculta subtarefas arquivadas individualmente
           if (paginaAtual === 'andamento' && isArquivada) return null;
-          // Quando estiver na aba arquivados, se a tarefa pai está arquivada, exibimos todas as subtarefas dela para manter a árvore completa
           if (paginaAtual === 'arquivados' && !tarefaRaizObj.arquivada && !isArquivada) return null;
 
           return (
