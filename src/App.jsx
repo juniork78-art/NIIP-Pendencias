@@ -310,6 +310,11 @@ function MainApp() {
     ? 'Técnico N1'
     : 'Integrante';
 
+  let nomeForcadoParaUsuario = null;
+  if (emailLowerGlobal.includes('joao') || emailLowerGlobal.includes('joão') || nomeFormatadoGlobal.includes('JOAO') || nomeFormatadoGlobal.includes('JOÃO')) {
+    nomeForcadoParaUsuario = 'João';
+  }
+
   useEffect(() => {
     if (usuarioLogado && setorSelecionado && db) {
       try {
