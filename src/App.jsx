@@ -281,7 +281,7 @@ function MainApp() {
       responsavel: tarefaPai.responsavel,
       prazo: tarefaPai.prazo,
       prioridade: tarefaPai.prioridade,
-      concluida: sub.concluida
+      concluida: Boolean(sub.concluida)
     };
     setPaginaLateral(subObj);
     setEditTituloLateral(sub.texto);
@@ -567,7 +567,7 @@ function MainApp() {
         return lista.map(item => {
           if (item.id === ids[0]) {
             if (ids.length === 1) {
-              return { ...item, concluida: !item.concluida };
+              return { ...item, concluida: !Boolean(item.concluida) };
             } else {
               return { ...item, subTarefas: atualizarArvore(item.subTarefas || [], ids.slice(1)) };
             }
@@ -718,7 +718,7 @@ function MainApp() {
           const temFilhos = sub.subTarefas && sub.subTarefas.length > 0;
           const isExpandidoSub = verificarExpandido(sub.id, temFilhos);
           const paddingLeftPx = nivel * 24 + 16;
-          const isConcluida = sub.concluida;
+          const isConcluida = Boolean(sub.concluida);
 
           return (
             <React.Fragment key={sub.id}>
@@ -740,7 +740,7 @@ function MainApp() {
                   <span onClick={() => alternarExpandido(sub.id)} style={{ cursor: 'pointer', fontSize: '10px', color: theme.textMuted, userSelect: 'none', padding: '2px', width: '12px', textAlign: 'center' }}>
                     {isExpandidoSub ? '▼' : '▶'}
                   </span>
-                  <input type="checkbox" checked={sub.concluida} onChange={() => alternarStatusRecursivo(tarefaRaizId, caminhoAtual)} style={{ accentColor: '#27ae60', cursor: 'pointer' }} />
+                  <input type="checkbox" checked={isConcluida} onChange={() => alternarStatusRecursivo(tarefaRaizId, caminhoAtual)} style={{ accentColor: '#27ae60', cursor: 'pointer' }} />
                   <span>📄</span>
                   <span 
                     onClick={() => abrirPainelLateralSub(sub, tarefaRaizId, caminhoAtual, tarefaPaiObj)}
@@ -820,7 +820,7 @@ function MainApp() {
   }
 
   const setorAtualInfo = SETORES_DISPONIVEIS.find(s => s.id === setorSelecionado) || SETORES_DISPONIVEIS[0];
-  const tarefasAndamento = tarefas.filter(t => t.status !== 'Resolvida'); // Manteremos todas na lista para que fiquem visíveis e verdes
+  const tarefasAndamento = tarefas.filter(t => t.status !== 'Resolvida');
   const tarefasResolvidas = tarefas.filter(t => t.status === 'Resolvida');
 
   const tarefasFiltradas = tarefas.filter(t => {
