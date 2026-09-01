@@ -142,7 +142,7 @@ class ErrorBoundary extends React.Component {
     return { hasError: true, error };
   }
   componentDidCatch(error, errorInfo) {
-    console.error("Erro crítico capturado:", error, errorInfo);
+    console.error("Erro capturado:", error, errorInfo);
   }
   render() {
     if (this.state.hasError) {
@@ -712,7 +712,7 @@ function MainApp() {
     <div className="workspace-layout" style={{ display: 'flex', minHeight: '100vh', backgroundColor: theme.bg, color: theme.textMain, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif', boxSizing: 'border-box' }}>
       
       {/* SIDEBAR ESQUERDA NOTION */}
-      <div className="sidebar-notion" style={{ width: '260px', background: theme.sidebarBg, borderRight: `1px solid ${theme.border}`, display: 'flex', flexDirection: 'column', padding: '12px 8px', boxSizing: 'border-box', flexShrink: '0' }}>
+      <div className="sidebar-notion" style={{ width: '240px', background: theme.sidebarBg, borderRight: `1px solid ${theme.border}`, display: 'flex', flexDirection: 'column', padding: '12px 8px', boxSizing: 'border-box', flexShrink: '0' }}>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 8px', borderRadius: '4px', marginBottom: '16px', background: theme.cardBg, border: `1px solid ${theme.border}` }}>
           <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: '#2eaadc', color: '#fff', fontSize: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
@@ -772,8 +772,8 @@ function MainApp() {
         </div>
       </div>
 
-      {/* ÁREA PRINCIPAL */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '24px 32px', boxSizing: 'border-box', overflowY: 'auto' }}>
+      {/* ÁREA PRINCIPAL EXATAMENTE NO LAYOUT DA IMAGEM */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '32px 48px', boxSizing: 'border-box', overflowY: 'auto' }}>
         
         {mostrarPopupAlerta && tarefasUrgentesUsuario.length > 0 && (
           <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, padding: '15px', boxSizing: 'border-box' }}>
@@ -828,25 +828,59 @@ function MainApp() {
           </div>
         ) : (
           <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
-              <div>
-                <h1 style={{ margin: '0 0 4px 0', fontSize: '28px', fontWeight: '700', color: theme.textMain }}>Biblioteca</h1>
-                <p style={{ margin: 0, fontSize: '12px', color: theme.textMuted }}>{setorAtualInfo.nome} • Usuário: <strong>{nomeFormatadoGlobal}</strong> ({tipoCargo})</p>
-              </div>
+            {/* CABEÇALHO DA BIBLIOTECA COM BOTÃO "Nova página" AZUL À DIREITA */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+              <h1 style={{ margin: 0, fontSize: '28px', fontWeight: '700', color: theme.textMain }}>Biblioteca</h1>
 
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                 <button onClick={alternarTema} style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, color: theme.textMain, padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: '500' }}>
                   {darkMode ? '☀️ Claro' : '🌙 Escuro'}
+                </button>
+                <button 
+                  onClick={() => {
+                    const nome = prompt("Digite o título da nova página:");
+                    if (nome) {
+                      setTitulo(nome);
+                      setPrazo(new Date().toISOString().split('T')[0]);
+                      // Cria direto
+                      setTimeout(() => {
+                        const novaId = Date.now().toString();
+                        setDoc(doc(db, `${setorSelecionado || 'niip'}_tarefas`, novaId), {
+                          titulo: nome.trim(),
+                          descricao: 'Particular',
+                          responsavel: responsavelFinal,
+                          prazo: new Date().toISOString().split('T')[0],
+                          prioridade: 'Média',
+                          status: 'Pendente',
+                          criadoPor: nomeFormatadoGlobal,
+                          criadoEm: Date.now(),
+                          subTarefas: []
+                        });
+                      }, 100);
+                    }
+                  }}
+                  style={{ background: '#2383e2', color: '#fff', border: 'none', padding: '6px 14px', borderRadius: '6px', fontWeight: '500', fontSize: '13px', cursor: 'pointer', boxShadow: '0 1px 2px rgba(0,0,0,0.1)' }}
+                >
+                  Nova página
                 </button>
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: '16px', borderBottom: `1px solid ${theme.border}`, paddingBottom: '8px', marginBottom: '20px', fontSize: '13px', alignItems: 'center', flexWrap: 'wrap' }}>
-              <span style={{ fontWeight: '600', color: theme.textMain, borderBottom: `2px solid ${theme.textMain}`, paddingBottom: '8px', marginBottom: '-9px' }}>🕒 Recentes</span>
-              <span style={{ color: theme.textMuted, cursor: 'pointer' }}>⭐ Favoritos</span>
-              <span style={{ color: theme.textMuted, cursor: 'pointer' }}>🔒 Particular</span>
-              
-              <div style={{ marginLeft: 'auto' }}>
+            {/* ABAS SUPERIORES DA BIBLIOTECA (Recentes, Favoritos, Compartilhado, Particular, Anotações IA, Habilidades) + ÍCONES DE BUSCA */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `1px solid ${theme.border}`, paddingBottom: '10px', marginBottom: '20px', fontSize: '13px', flexWrap: 'wrap', gap: '12px' }}>
+              <div style={{ display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap', color: theme.textMuted }}>
+                <span style={{ fontWeight: '500', color: theme.textMain, display: 'flex', alignItems: 'center', gap: '6px' }}>🕒 Recentes</span>
+                <span style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>⭐ Favoritos</span>
+                <span style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>👥 Compartilhado</span>
+                <span style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>🔒 Particular</span>
+                <span style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>🎙️ Anotações IA</span>
+                <span style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>⚡ Habilidades</span>
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center', color: theme.textMuted }}>
+                <span style={{ cursor: 'pointer' }}>☰</span>
+                <span style={{ cursor: 'pointer' }}>🔍</span>
+                <span style={{ cursor: 'pointer' }}>⚙️</span>
                 <select value={filtroResponsavel} onChange={(e) => setFiltroResponsavel(e.target.value)} style={{ padding: '4px 8px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '4px', fontSize: '12px' }}>
                   <option value="todos">Responsável: Todos</option>
                   {integrantesAtuais.map(n => <option key={n} value={n}>{n}</option>)}
@@ -854,176 +888,114 @@ function MainApp() {
               </div>
             </div>
 
-            <div className="main-grid" style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: '24px', alignItems: 'start', width: '100%' }}>
+            {/* TABELA DE DADOS ESTILO NOTION EXATA DA IMAGEM */}
+            <div style={{ width: '100%', boxSizing: 'border-box' }}>
               
-              {/* Formulário para criar Título e depois Adicionar Sub-tarefas */}
-              <div style={{ background: theme.cardBg, padding: '16px', borderRadius: '6px', border: `1px solid ${theme.border}`, boxSizing: 'border-box' }}>
-                <h3 style={{ margin: '0 0 14px 0', color: theme.textMain, fontSize: '14px', fontWeight: '600', borderBottom: `1px solid ${theme.border}`, paddingBottom: '8px' }}>➕ Nova Tarefa</h3>
-                
-                <form onSubmit={adicionarTarefa}>
-                  <div style={{ marginBottom: '12px' }}>
-                    <label style={{ display: 'block', fontSize: '11px', fontWeight: '500', color: theme.textMuted, marginBottom: '4px' }}>Título da Página *</label>
-                    <input 
-                      type="text" 
-                      placeholder="Ex: pop camera" 
-                      value={titulo} 
-                      onChange={(e) => setTitulo(e.target.value)} 
-                      required 
-                      style={{ width: '100%', padding: '6px 8px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '4px', boxSizing: 'border-box', fontSize: '12px' }} 
-                    />
-                  </div>
-
-                  <div style={{ marginBottom: '12px' }}>
-                    <label style={{ display: 'block', fontSize: '11px', fontWeight: '500', color: theme.textMuted, marginBottom: '4px' }}>Fonte / Descrição</label>
-                    <input 
-                      type="text" 
-                      placeholder="Ex: Particular ou pop camera" 
-                      value={descricao} 
-                      onChange={(e) => setDescription(e.target.value)} 
-                      style={{ width: '100%', padding: '6px 8px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '4px', boxSizing: 'border-box', fontSize: '12px' }} 
-                    />
-                  </div>
-
-                  <div style={{ marginBottom: '12px' }}>
-                    <label style={{ display: 'block', fontSize: '11px', fontWeight: '500', color: theme.textMuted, marginBottom: '4px' }}>Sub-tarefas (uma por linha)</label>
-                    <textarea 
-                      placeholder="alarme&#10;ip" 
-                      rows="2"
-                      value={subPendenciasInput} 
-                      onChange={(e) => setSubPendenciasInput(e.target.value)} 
-                      style={{ width: '100%', padding: '6px 8px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '4px', boxSizing: 'border-box', resize: 'vertical', fontSize: '12px' }} 
-                    />
-                  </div>
-
-                  <div style={{ marginBottom: '12px' }}>
-                    <label style={{ display: 'block', fontSize: '11px', fontWeight: '500', color: theme.textMuted, marginBottom: '4px' }}>Responsável</label>
-                    {isGestor ? (
-                      <select value={responsavelSelecionadoGestor} onChange={(e) => setResponsavelSelecionadoGestor(e.target.value)} style={{ width: '100%', padding: '6px 8px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '4px', fontSize: '12px' }}>
-                        {integrantesAtuais.map(nome => <option key={nome} value={nome}>{nome}</option>)}
-                      </select>
-                    ) : (
-                      <input type="text" value={responsavelFinal} disabled style={{ width: '100%', padding: '6px 8px', background: darkMode ? '#181818' : '#f0f0ef', border: `1px solid ${theme.border}`, color: theme.textMain, borderRadius: '4px', fontSize: '12px' }} />
-                    )}
-                  </div>
-
-                  <div style={{ display: 'flex', gap: '8px', marginBottom: '14px' }}>
-                    <div style={{ flex: 1 }}>
-                      <label style={{ display: 'block', fontSize: '11px', fontWeight: '500', color: theme.textMuted, marginBottom: '4px' }}>Prazo *</label>
-                      <input type="date" value={prazo} onChange={(e) => setPrazo(e.target.value)} required style={{ width: '100%', padding: '6px 8px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '4px', fontSize: '12px' }} />
-                    </div>
-                  </div>
-
-                  <button type="submit" style={{ width: '100%', padding: '8px', background: '#37352f', border: 'none', color: '#fff', fontWeight: '500', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>
-                    Criar Tarefa
-                  </button>
-                </form>
+              {/* CABEÇALHO DA TABELA */}
+              <div style={{ display: 'grid', gridTemplateColumns: '2.5fr 1.5fr 1.5fr 1fr 1fr', padding: '8px 0', borderBottom: `1px solid ${theme.border}`, fontSize: '12px', fontWeight: '500', color: theme.textMuted, minWidth: '700px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>📄 Nome da página</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>👤 Criado por</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>📑 Fonte</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>🕒 Última edição</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>🕒 Última visita em</div>
               </div>
 
-              {/* TABELA DE TAREFAS ESTILO NOTION */}
-              <div style={{ background: theme.cardBg, borderRadius: '6px', border: `1px solid ${theme.border}`, overflowX: 'auto', width: '100%', boxSizing: 'border-box' }}>
-                
-                <div style={{ display: 'grid', gridTemplateColumns: '2.2fr 1fr 1fr 1fr 1fr', padding: '10px 16px', borderBottom: `1px solid ${theme.border}`, fontSize: '12px', fontWeight: '600', color: theme.textMuted, background: theme.cardInner, minWidth: '650px' }}>
-                  <div>Nome da página</div>
-                  <div>Criado por</div>
-                  <div>Fonte</div>
-                  <div>Última edição</div>
-                  <div>Status / Prazo</div>
-                </div>
+              {tarefasFiltradas.length === 0 ? (
+                <div style={{ padding: '40px', textAlign: 'center', color: theme.textMuted, fontSize: '13px' }}>Nenhuma página encontrada.</div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', minWidth: '700px' }}>
+                  {tarefasFiltradas.map(t => {
+                    const subTarefas = t.subTarefas || [];
+                    const isExpandido = expandidoIds[t.id];
 
-                {tarefasFiltradas.length === 0 ? (
-                  <div style={{ padding: '40px', textAlign: 'center', color: theme.textMuted, fontSize: '13px' }}>Nenhuma página na biblioteca.</div>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', minWidth: '650px' }}>
-                    {tarefasFiltradas.map(t => {
-                      const infoPrazo = calcularStatusPrazo(t.prazo);
-                      const isUrgente = infoPrazo.status === 'vencido' || infoPrazo.status === 'hoje' || infoPrazo.status === 'um_dia';
-                      const subTarefas = t.subTarefas || [];
-                      const isExpandido = expandidoIds[t.id];
-
-                      return (
-                        <React.Fragment key={t.id}>
-                          <div className={isUrgente ? 'linha-tabela-piscando' : ''} style={{ display: 'grid', gridTemplateColumns: '2.2fr 1fr 1fr 1fr 1fr', padding: '10px 16px', borderBottom: `1px solid ${theme.border}`, alignItems: 'center', fontSize: '13px' }} onMouseEnter={(e) => e.currentTarget.style.background = theme.cardInner} onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
-                            
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden' }}>
+                    return (
+                      <React.Fragment key={t.id}>
+                        {/* LINHA PRINCIPAL DA PÁGINA PAI */}
+                        <div style={{ display: 'grid', gridTemplateColumns: '2.5fr 1.5fr 1.5fr 1fr 1fr', padding: '10px 0', borderBottom: `1px solid ${theme.border}`, alignItems: 'center', fontSize: '13px', transition: 'background 0.1s' }} onMouseEnter={(e) => e.currentTarget.style.background = theme.cardInner} onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
+                          
+                          {/* Nome da Página + Seta ▼ / ▶ */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden', paddingRight: '10px' }}>
+                            {subTarefas.length > 0 ? (
                               <span onClick={() => alternarExpandido(t.id)} style={{ cursor: 'pointer', fontSize: '10px', color: theme.textMuted, userSelect: 'none', padding: '2px' }}>
                                 {isExpandido ? '▼' : '▶'}
                               </span>
-                              <span>📄</span>
-                              <span 
-                                onClick={() => { setPaginaAberta(t); setEditTituloPagina(t.titulo); setEditDescricaoPagina(t.descricao || ''); }}
-                                style={{ fontWeight: '500', color: theme.textMain, cursor: 'pointer', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
-                              >
-                                {t.titulo}
-                              </span>
-                            </div>
-
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: theme.textMuted, fontSize: '12px' }}>
-                              <span style={{ width: '16px', height: '16px', borderRadius: '50%', background: '#2eaadc', color: '#fff', fontSize: '9px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>J</span>
-                              <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.responsavel}</span>
-                            </div>
-
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: theme.textMuted, fontSize: '12px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                              <span>🔒</span> <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.descricao || 'Particular'}</span>
-                            </div>
-
-                            <div style={{ color: theme.textMuted, fontSize: '12px' }}>
-                              Agora há pouco
-                            </div>
-
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
-                              <span className={isUrgente ? 'alerta-vencido-notion' : ''} style={{ fontSize: '11px', color: infoPrazo.status === 'normal' ? theme.textMuted : undefined, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                📅 {infoPrazo.texto || t.prazo}
-                              </span>
-                              <div style={{ display: 'flex', gap: '4px' }}>
-                                <button onClick={() => abrirModalEdicao(t)} title="Editar" style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '11px' }}>✏️</button>
-                                <button onClick={() => abrirModalResolucao(t)} title="Concluir" style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '11px' }}>✔</button>
-                                {isGestor && (
-                                  <button onClick={() => excluirTarefa(t.id, t.titulo)} title="Excluir" style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '11px' }}>🗑️</button>
-                                )}
-                              </div>
-                            </div>
-
+                            ) : (
+                              <span style={{ width: '10px' }}></span>
+                            )}
+                            <span>📄</span>
+                            <span 
+                              onClick={() => { setPaginaAberta(t); setEditTituloPagina(t.titulo); setEditDescricaoPagina(t.descricao || ''); }}
+                              style={{ fontWeight: '400', color: theme.textMain, cursor: 'pointer', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                            >
+                              {t.titulo}
+                            </span>
                           </div>
 
-                          {/* SUB-TAREFAS E BOTÃO "+ Adicionar nova" */}
-                          {isExpandido && (
-                            <div style={{ background: theme.cardInner, padding: '4px 16px 8px 40px', borderBottom: `1px solid ${theme.border}`, display: 'flex', flexDirection: 'column', gap: '6px', position: 'relative' }}>
-                              <div style={{ position: 'absolute', left: '26px', top: '0', bottom: '10px', width: '2px', background: theme.treeLine }}></div>
-                              
-                              {subTarefas.map((sub) => (
-                                <div key={sub.id} style={{ display: 'grid', gridTemplateColumns: '2.2fr 1fr 1fr 1fr 1fr', alignItems: 'center', fontSize: '12px', position: 'relative', padding: '4px 0' }}>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    <div style={{ position: 'absolute', left: '-14px', top: '50%', width: '12px', height: '2px', background: theme.treeLine }}></div>
-                                    <input type="checkbox" checked={sub.concluida} onChange={() => alternarStatusSubPendencia(t.id, sub.id)} style={{ accentColor: '#2eaadc', cursor: 'pointer' }} />
-                                    <span style={{ color: sub.concluida ? theme.textMuted : theme.textMain, textDecoration: sub.concluida ? 'line-through' : 'none' }}>📄 {sub.texto}</span>
-                                  </div>
-                                  <div style={{ color: theme.textMuted, fontSize: '11px' }}>{t.responsavel}</div>
-                                  <div style={{ color: theme.textMuted, fontSize: '11px' }}>📄 {t.titulo}</div>
-                                  <div style={{ color: theme.textMuted, fontSize: '11px' }}>Agora há pouco</div>
-                                  <div style={{ textAlign: 'right' }}>
-                                    <button onClick={() => excluirSubPendencia(t.id, sub.id)} style={{ background: 'transparent', border: 'none', color: '#eb5757', cursor: 'pointer', fontSize: '10px' }}>Excluir</button>
-                                  </div>
-                                </div>
-                              ))}
+                          {/* Criado por */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: theme.textMain, fontSize: '13px' }}>
+                            <span style={{ width: '16px', height: '16px', borderRadius: '50%', background: '#787774', color: '#fff', fontSize: '9px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>J</span>
+                            <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.responsavel}</span>
+                          </div>
 
-                              <div 
-                                onClick={() => adicionarSubPendenciaRapida(t.id)}
-                                style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: theme.textMuted, cursor: 'pointer', padding: '4px 0', marginTop: '2px' }}
-                              >
-                                <span>+</span> <span style={{ fontWeight: '500' }}>Adicionar nova</span>
-                              </div>
+                          {/* Fonte */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: theme.textMain, fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            <span>🔒</span> <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.descricao || 'Particular'}</span>
+                          </div>
 
+                          {/* Última edição */}
+                          <div style={{ color: theme.textMuted, fontSize: '13px' }}>
+                            Agora há pouco
+                          </div>
+
+                          {/* Última visita em + Ações Rápidas */}
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: theme.textMuted, fontSize: '13px', paddingRight: '10px' }}>
+                            <span>Agora há pouco</span>
+                            <div style={{ display: 'flex', gap: '6px' }}>
+                              <button onClick={() => abrirModalEdicao(t)} title="Editar" style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '11px' }}>✏️</button>
+                              <button onClick={() => abrirModalResolucao(t)} title="Concluir" style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '11px' }}>✔</button>
+                              {isGestor && (
+                                <button onClick={() => excluirTarefa(t.id, t.titulo)} title="Excluir" style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '11px' }}>🗑️</button>
+                              )}
                             </div>
-                          )}
+                          </div>
 
-                        </React.Fragment>
-                      );
-                    })}
+                        </div>
 
-                  </div>
-                )}
+                        {/* SUB-PÁGINAS / SUB-TAREFAS E BOTÃO "+ Adicionar nova" */}
+                        {isExpandido && (
+                          <div style={{ display: 'flex', flexDirection: 'column', background: theme.cardInner, borderBottom: `1px solid ${theme.border}` }}>
+                            {subTarefas.map((sub) => (
+                              <div key={sub.id} style={{ display: 'grid', gridTemplateColumns: '2.5fr 1.5fr 1.5fr 1fr 1fr', padding: '8px 0 8px 30px', alignItems: 'center', fontSize: '13px', borderTop: `1px solid ${theme.border}` }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
+                                  <input type="checkbox" checked={sub.concluida} onChange={() => alternarStatusSubPendencia(t.id, sub.id)} style={{ accentColor: '#2eaadc', cursor: 'pointer' }} />
+                                  <span>📄</span>
+                                  <span style={{ color: sub.concluida ? theme.textMuted : theme.textMain, textDecoration: sub.concluida ? 'line-through' : 'none', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sub.texto}</span>
+                                </div>
+                                <div style={{ color: theme.textMuted, fontSize: '13px' }}>{t.responsavel}</div>
+                                <div style={{ color: theme.textMuted, fontSize: '13px' }}>📄 {t.titulo}</div>
+                                <div style={{ color: theme.textMuted, fontSize: '13px' }}>Agora há pouco</div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', color: theme.textMuted, fontSize: '13px', paddingRight: '10px' }}>
+                                  <span>Agora há pouco</span>
+                                  <button onClick={() => excluirSubPendencia(t.id, sub.id)} style={{ background: 'transparent', border: 'none', color: '#eb5757', cursor: 'pointer', fontSize: '11px' }}>Excluir</button>
+                                </div>
+                              </div>
+                            ))}
 
-              </div>
+                            {/* BOTÃO "+ Adicionar nova" EXATO DA SUA IMAGEM */}
+                            <div 
+                              onClick={() => adicionarSubPendenciaRapida(t.id)}
+                              style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: theme.textMuted, cursor: 'pointer', padding: '10px 0 10px 30px', borderTop: `1px solid ${theme.border}`, fontWeight: '500' }}
+                            >
+                              <span>+</span> <span>Adicionar nova</span>
+                            </div>
+                          </div>
+                        )}
+
+                      </React.Fragment>
+                    );
+                  })}
+                </div>
+              )}
 
             </div>
           </>
