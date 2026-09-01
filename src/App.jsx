@@ -742,7 +742,7 @@ function MainApp() {
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden', paddingLeft: `${paddingLeftPx}px`, paddingRight: '10px' }}>
                   <span onClick={() => alternarExpandido(sub.id)} style={{ cursor: 'pointer', fontSize: '10px', color: theme.textMuted, userSelect: 'none', padding: '2px', width: '12px', textAlign: 'center' }}>
-                    {temFilhos ? (isExpandidoSub ? '▼' : '▶') : ''}
+                    {isExpandidoSub ? '▼' : '▶'}
                   </span>
                   {paginaAtual !== 'lixeira' && (
                     <input type="checkbox" checked={isConcluida} onChange={() => alternarStatusRecursivo(tarefaRaizObj, caminhoAtual)} style={{ accentColor: '#27ae60', cursor: 'pointer' }} />
@@ -1017,7 +1017,7 @@ function MainApp() {
                         
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden', paddingRight: '10px' }}>
                           <span onClick={() => alternarExpandido(t.id)} style={{ cursor: 'pointer', fontSize: '10px', color: theme.textMuted, userSelect: 'none', padding: '2px', width: '12px', textAlign: 'center' }}>
-                            {temFilhos ? (isExpandido ? '▼' : '▶') : ''}
+                            {isExpandido ? '▼' : '▶'}
                           </span>
                           <span>📄</span>
                           {editandoId === t.id ? (
