@@ -123,9 +123,10 @@ const calcularStatusPrazo = (dataStr) => {
   }
 };
 
-const INTEGRANTES_NIIP = ["Francisco", "Gabriel", "Walgney"];
-const INTEGRANTES_NOC = ["Gustavo", "Stevan", "Gilvan", "Kessy", "João", "Lucas", "Tolentino"];
-const INTEGRANTES_NMR = ["Dhennifer"];
+// "Duandys" adicionado para permitir que o gestor também crie tarefas para si mesmo
+const INTEGRANTES_NIIP = ["Francisco", "Gabriel", "Walgney", "Duandys"];
+const INTEGRANTES_NOC = ["Gustavo", "Stevan", "Gilvan", "Kessy", "João", "Lucas", "Tolentino", "Duandys"];
+const INTEGRANTES_NMR = ["Dhennifer", "Duandys"];
 
 const SETORES_DISPONIVEIS = [
   { id: 'noc', nome: 'NOC - Network Operations Center', descricao: 'Monitoramento de rede, incidentes e controle de enlaces.' },
@@ -765,7 +766,7 @@ function MainApp() {
     treeLine: darkMode ? '#444440' : '#d3d3ce'
   };
 
-  // Componente recursivo atualizado para abrir o painel lateral ao clicar na subtarefa
+  // Componente recursivo para renderizar subtarefas mantendo colunas alinhadas no formato de tabela Notion
   const renderizarSubTarefasRecursivas = (subLista, tarefaRaizId, caminhoPai, nivel = 1, tarefaPaiObj) => {
     if (!subLista || subLista.length === 0) return null;
 
