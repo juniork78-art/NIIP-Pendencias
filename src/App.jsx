@@ -430,21 +430,6 @@ function MainApp() {
       setResponsavelSelecionadoGestor(integrantes[0]);
     }
   }, [setorSelecionado]);
-  
-  const registrarLogAuditoria = async (acao, detalhes, tarefaTitulo) => {
-    try {
-      if (!db || !setorSelecionado) return;
-      const logId = Date.now().toString() + "_" + Math.random().toString(36).substring(2, 7);
-      await setDoc(doc(db, `${setorSelecionado}_auditoria`, logId), {
-        usuario: nomeFormatadoGlobal,
-        acao,
-        detalhes,
-        tarefaTitulo,
-        timestamp: Date.now(),
-        dataHoraFormatada: new Date().toLocaleString('pt-BR')
-      });
-    } catch (e) {}
-  };
 
   const obterIntegrantesSetor = () => {
     if (setorSelecionado === 'noc') return INTEGRANTES_NOC;
@@ -490,7 +475,6 @@ function MainApp() {
 
     try {
       await setDoc(doc(db, `${setorSelecionado}_tarefas`, novaTarefaId), tarefaObj);
-      await registrarLogAuditoria("CRIAÇÃO", `Criou a página para [${responsavelFinal}]`, titulo.trim());
       setTitulo('');
       setDescription('');
       setPrazo('');
@@ -620,36 +604,10 @@ function MainApp() {
     } catch (e) {}
   };
 
-  const abrirModalEdicao = (tarefa) => {
-    setTarefaEditando(tarefa);
-    setEditTitulo(tarefa.titulo || '');
-    setEditDescricao(tarefa.descricao || '');
-    setEditPrazo(tarefa.prazo || '');
-    setEditPrioridade(tarefa.prioridade || 'Média');
-  };
-
-  const salvarEdicaoTarefa = async (e) => {
-    e.preventDefault();
-    if (!editTitulo.trim() || !editPrazo) return;
-
-    try {
-      await updateDoc(doc(db, `${setorSelecionado}_tarefas`, tarefaEditando.id), {
-        titulo: editTitulo.trim(),
-        descricao: editDescricao.trim(),
-        prazo: editPrazo,
-        prioridade: editPrioridade
-      });
-
-      await registrarLogAuditoria("EDIÇÃO", `Atualizou a página "${editTitulo.trim()}"`, editTitulo.trim());
-      setTarefaEditando(null);
-    } catch (err) {}
-  };
-
   const excluirTarefa = async (id, tituloTarefa) => {
     if (window.confirm("Deseja realmente excluir esta página?")) {
       try {
         await deleteDoc(doc(db, `${setorSelecionado}_tarefas`, id));
-        await registrarLogAuditoria("EXCLUSÃO", `Excluiu a página`, tituloTarefa || 'Sem título');
         if (paginaLateral && paginaLateral.id === id) fecharPainelLateral();
       } catch (err) {}
     }
@@ -820,7 +778,6 @@ function MainApp() {
   }
 
   const setorAtualInfo = SETORES_DISPONIVEIS.find(s => s.id === setorSelecionado) || SETORES_DISPONIVEIS[0];
-  const tarefasAndamento = tarefas.filter(t => t.status !== 'Resolvida');
   const tarefasResolvidas = tarefas.filter(t => t.status === 'Resolvida');
 
   const tarefasFiltradas = tarefas.filter(t => {
