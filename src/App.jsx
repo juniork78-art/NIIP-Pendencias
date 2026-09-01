@@ -182,7 +182,6 @@ export default function App() {
   const [tarefas, setTarefas] = useState([]);
   const [logsAuditoria, setLogsAuditoria] = useState([]);
   
-  // Criação rápida de página/tarefa
   const [titulo, setTitulo] = useState('');
   const [descricao, setDescription] = useState('');
   const [prazo, setPrazo] = useState('');
@@ -192,8 +191,7 @@ export default function App() {
   
   const [filtroResponsavel, setFiltroResponsavel] = useState('todos');
 
-  // Estado para visualizar/editar uma página em tela cheia (estilo Notion Page View)
-  const [paginaAberta, setPaginaAberta] = useState(null); // Contém o objeto da tarefa selecionada
+  const [paginaAberta, setPaginaAberta] = useState(null);
   const [editTituloPagina, setEditTituloPagina] = useState('');
   const [editDescricaoPagina, setEditDescricaoPagina] = useState('');
 
@@ -274,7 +272,6 @@ export default function App() {
         lista.sort((a, b) => b.criadoEm - a.criadoEm);
         setTarefas(lista);
 
-        // Se houver uma página aberta, atualiza os dados dela em tempo real
         if (paginaAberta) {
           const atualizada = lista.find(t => t.id === paginaAberta.id);
           if (atualizada) setPaginaAberta(atualizada);
@@ -380,7 +377,6 @@ export default function App() {
     ? responsavelSelecionadoGestor 
     : nomeForcadoParaUsuario || (integrantesAtuais.find(n => nomeFormatadoGlobal.includes(n.toUpperCase())) || integrantesAtuais[0] || 'Gestor');
 
-  // Criar nova página/tarefa preenchendo Título e depois permitindo adicionar descrição/sub-tarefas
   const adicionarTarefa = async (e) => {
     e.preventDefault();
     if (!titulo.trim()) {
@@ -425,7 +421,6 @@ export default function App() {
     }
   };
 
-  // Adicionar nova sub-tarefa diretamente pelo botão "+ Adicionar nova" na tabela
   const adicionarSubPendenciaRapida = async (tarefaId) => {
     const subTexto = prompt("Digite o título da nova sub-tarefa:");
     if (!subTexto || !subTexto.trim()) return;
@@ -445,7 +440,6 @@ export default function App() {
         subTarefas: novaLista
       });
 
-      // Abre automaticamente a árvore para mostrar a sub-tarefa criada
       setExpandidoIds(prev => ({ ...prev, [tarefaId]: true }));
     } catch (e) {
       alert("Erro ao adicionar sub-tarefa: " + e.message);
@@ -566,7 +560,6 @@ export default function App() {
     }
   };
 
-  // Salvar alterações diretas na Página Aberta em Tela Cheia
   const salvarAlteracoesPaginaAberta = async () => {
     if (!paginaAberta || !editTituloPagina.trim()) return;
     try {
@@ -617,7 +610,6 @@ export default function App() {
     return true;
   });
 
-  // TELA DE AUDITORIA
   if (paginaAtual === 'auditoria' && isGestor) {
     return (
       <div className="app-container" style={{ backgroundColor: theme.bg, color: theme.textMain, minHeight: '100vh', width: '100%', padding: '20px', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif', boxSizing: 'border-box' }}>
@@ -649,7 +641,6 @@ export default function App() {
     );
   }
 
-  // TELA DE TAREFAS RESOLVIDAS
   if (paginaAtual === 'resolvidas') {
     return (
       <div className="app-container" style={{ backgroundColor: theme.bg, color: theme.textMain, minHeight: '100vh', width: '100%', padding: '20px', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif', boxSizing: 'border-box' }}>
@@ -707,7 +698,6 @@ export default function App() {
           </div>
         </div>
 
-        {/* LISTA LATERAL DE PÁGINAS DO WORKSPACE */}
         <div style={{ fontSize: '11px', fontWeight: '600', color: theme.textMuted, padding: '0 8px', marginBottom: '6px', textTransform: 'uppercase' }}>
           Páginas Recentes
         </div>
@@ -723,7 +713,6 @@ export default function App() {
           ))}
         </div>
 
-        {/* NÚCLEO / WORKSPACE SELECTION */}
         <div style={{ fontSize: '11px', fontWeight: '600', color: theme.textMuted, padding: '0 8px', marginBottom: '6px', textTransform: 'uppercase' }}>
           Núcleo
         </div>
@@ -772,17 +761,14 @@ export default function App() {
           </div>
         )}
 
-        {/* SE UMA PÁGINA ESTIVER ABERTA EM TELA CHEIA (EXATAMENTE COMO NAS IMAGENS F0188A / F01921) */}
         {paginaAberta ? (
           <div style={{ display: 'flex', flexDirection: 'column', width: '100%', maxWidth: '800px', margin: '0 auto' }}>
-            {/* Breadcrumb superior */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: theme.textMuted, marginBottom: '24px' }}>
-              <span onClick={() => setPaginaAberta(null)} style={{ cursor: 'pointer', hover: { textDecoration: 'underline' } }}>Biblioteca</span>
+              <span onClick={() => setPaginaAberta(null)} style={{ cursor: 'pointer' }}>Biblioteca</span>
               <span>/</span>
               <span>{paginaAberta.titulo}</span>
             </div>
 
-            {/* Título da Página Editável */}
             <input 
               type="text" 
               value={editTituloPagina} 
@@ -791,7 +777,6 @@ export default function App() {
               style={{ fontSize: '36px', fontWeight: '700', color: theme.textMain, background: 'transparent', border: 'none', outline: 'none', width: '100%', marginBottom: '16px' }}
             />
 
-            {/* Editor de Bloco / Descrição */}
             <div style={{ borderTop: `1px solid ${theme.border}`, paddingTop: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <label style={{ fontSize: '12px', color: theme.textMuted, fontWeight: '500' }}>Conteúdo / Bloco de Notas</label>
               <textarea 
@@ -810,7 +795,6 @@ export default function App() {
             </div>
           </div>
         ) : (
-          /* TELA DA BIBLIOTECA / TABELA PRINCIPAL */
           <>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
               <div>
@@ -825,7 +809,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* Abas Superiores */}
             <div style={{ display: 'flex', gap: '16px', borderBottom: `1px solid ${theme.border}`, paddingBottom: '8px', marginBottom: '20px', fontSize: '13px', alignItems: 'center', flexWrap: 'wrap' }}>
               <span style={{ fontWeight: '600', color: theme.textMain, borderBottom: `2px solid ${theme.textMain}`, paddingBottom: '8px', marginBottom: '-9px' }}>🕒 Recentes</span>
               <span style={{ color: theme.textMuted, cursor: 'pointer' }}>⭐ Favoritos</span>
@@ -841,7 +824,7 @@ export default function App() {
 
             <div className="main-grid" style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: '24px', alignItems: 'start', width: '100%' }}>
               
-              {/* FORMULÁRIO DE NOVA TAREFA (Cria o Título e depois permite adicionar sub-tarefas) */}
+              {/* Formulário para criar Título e depois Adicionar Sub-tarefas */}
               <div style={{ background: theme.cardBg, padding: '16px', borderRadius: '6px', border: `1px solid ${theme.border}`, boxSizing: 'border-box' }}>
                 <h3 style={{ margin: '0 0 14px 0', color: theme.textMain, fontSize: '14px', fontWeight: '600', borderBottom: `1px solid ${theme.border}`, paddingBottom: '8px' }}>➕ Nova Tarefa</h3>
                 
@@ -904,7 +887,7 @@ export default function App() {
                 </form>
               </div>
 
-              {/* TABELA DE TAREFAS ESTILO NOTION IDÊNTICA ÀS IMAGENS */}
+              {/* TABELA DE TAREFAS ESTILO NOTION */}
               <div style={{ background: theme.cardBg, borderRadius: '6px', border: `1px solid ${theme.border}`, overflowX: 'auto', width: '100%', boxSizing: 'border-box' }}>
                 
                 <div style={{ display: 'grid', gridTemplateColumns: '2.2fr 1fr 1fr 1fr 1fr', padding: '10px 16px', borderBottom: `1px solid ${theme.border}`, fontSize: '12px', fontWeight: '600', color: theme.textMuted, background: theme.cardInner, minWidth: '650px' }}>
@@ -927,10 +910,8 @@ export default function App() {
 
                       return (
                         <React.Fragment key={t.id}>
-                          {/* Linha Pai */}
                           <div className={isUrgente ? 'linha-tabela-piscando' : ''} style={{ display: 'grid', gridTemplateColumns: '2.2fr 1fr 1fr 1fr 1fr', padding: '10px 16px', borderBottom: `1px solid ${theme.border}`, alignItems: 'center', fontSize: '13px' }} onMouseEnter={(e) => e.currentTarget.style.background = theme.cardInner} onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
                             
-                            {/* Nome da Página com Seta de expansão ▼ / ▶ */}
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden' }}>
                               <span onClick={() => alternarExpandido(t.id)} style={{ cursor: 'pointer', fontSize: '10px', color: theme.textMuted, userSelect: 'none', padding: '2px' }}>
                                 {isExpandido ? '▼' : '▶'}
@@ -944,23 +925,19 @@ export default function App() {
                               </span>
                             </div>
 
-                            {/* Criado por */}
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: theme.textMuted, fontSize: '12px' }}>
                               <span style={{ width: '16px', height: '16px', borderRadius: '50%', background: '#2eaadc', color: '#fff', fontSize: '9px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>J</span>
                               <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.responsavel}</span>
                             </div>
 
-                            {/* Fonte */}
                             <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: theme.textMuted, fontSize: '12px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                               <span>🔒</span> <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.descricao || 'Particular'}</span>
                             </div>
 
-                            {/* Última edição */}
                             <div style={{ color: theme.textMuted, fontSize: '12px' }}>
                               Agora há pouco
                             </div>
 
-                            {/* Prazo / Status + Botões */}
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
                               <span className={isUrgente ? 'alerta-vencido-notion' : ''} style={{ fontSize: '11px', color: infoPrazo.status === 'normal' ? theme.textMuted : undefined, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                 📅 {infoPrazo.texto || t.prazo}
@@ -976,7 +953,7 @@ export default function App() {
 
                           </div>
 
-                          {/* SUB-TAREFAS EXPANDIDAS E BOTÃO "+ Adicionar nova" EXATAMENTE COMO NA FOTO */}
+                          {/* SUB-TAREFAS E BOTÃO "+ Adicionar nova" */}
                           {isExpandido && (
                             <div style={{ background: theme.cardInner, padding: '4px 16px 8px 40px', borderBottom: `1px solid ${theme.border}`, display: 'flex', flexDirection: 'column', gap: '6px', position: 'relative' }}>
                               <div style={{ position: 'absolute', left: '26px', top: '0', bottom: '10px', width: '2px', background: theme.treeLine }}></div>
@@ -997,7 +974,6 @@ export default function App() {
                                 </div>
                               ))}
 
-                              {/* BOTÃO "+ Adicionar nova" EXATO DA SUA IMAGEM */}
                               <div 
                                 onClick={() => adicionarSubPendenciaRapida(t.id)}
                                 style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: theme.textMuted, cursor: 'pointer', padding: '4px 0', marginTop: '2px' }}
@@ -1023,7 +999,6 @@ export default function App() {
 
       </div>
 
-      {/* MODAL DE EDIÇÃO */}
       {tarefaEditando && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '15px', boxSizing: 'border-box' }}>
           <div style={{ background: theme.cardBg, padding: '24px', borderRadius: '6px', width: '100%', maxWidth: '420px', border: `1px solid ${theme.border}`, boxSizing: 'border-box' }}>
@@ -1046,7 +1021,6 @@ export default function App() {
         </div>
       )}
 
-      {/* MODAL DE RESOLUÇÃO */}
       {tarefaResolvendo && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '15px', boxSizing: 'border-box' }}>
           <div style={{ background: theme.cardBg, padding: '24px', borderRadius: '6px', width: '100%', maxWidth: '420px', border: `1px solid ${theme.border}`, boxSizing: 'border-box' }}>
