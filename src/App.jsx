@@ -484,7 +484,7 @@ function MainApp() {
     }
   };
 
-  // Árvore Recursiva Blindada
+  // Funções Árvore Recursiva Blindadas
   const insertNodeInTree = (lista, ids, newNode) => {
     if (!ids || ids.length === 0) {
       return [...(lista || []), newNode];
@@ -1045,9 +1045,9 @@ function MainApp() {
                       {/* SUB-PÁGINAS RECURSIVAS E BOTÃO "+ Adicionar nova" */}
                       {isExpandido && (
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
-                          {renderizarSubTarefasRecursivas(subTarefas, t.id, [t.id], 1, t)}
+                          {renderizarSubTarefasRecursivas(subTarefas, t.id, [], 1, t)}
                           <div 
-                            onClick={() => promptAdicionarSub(t.id, [t.id])}
+                            onClick={() => promptAdicionarSub(t.id, [])}
                             style={{ 
                               display: 'grid', 
                               gridTemplateColumns: '2.5fr 1.5fr 1.5fr 1fr 1fr', 
