@@ -181,7 +181,6 @@ function MainApp() {
   };
   
   const [tarefas, setTarefas] = useState([]);
-  const [logsAuditoria, setLogsAuditoria] = useState([]);
   
   const [titulo, setTitulo] = useState('');
   const [descricao, setDescription] = useState('');
@@ -265,6 +264,7 @@ function MainApp() {
       prazo: tarefaPai.prazo,
       prioridade: tarefaPai.prioridade,
       concluida: Boolean(sub.concluida),
+      arquivada: Boolean(sub.arquivada),
       _colecao: tarefaPai._colecao
     };
     setPaginaLateral(subObj);
@@ -318,7 +318,6 @@ function MainApp() {
     nomeForcadoParaUsuario = 'João';
   }
 
-  // Carrega e une simultaneamente as tarefas de todas as coleções antigas e novas
   useEffect(() => {
     if (usuarioLogado && db) {
       try {
@@ -360,7 +359,7 @@ function MainApp() {
 
   const responsavelFinal = isGestor ? responsavelSelecionadoGestor : nomeForcadoParaUsuario || (TODOS_INTEGRANTES.find(n => nomeFormatadoGlobal.includes(n.toUpperCase())) || TODOS_INTEGRANTES[0]);
 
-  // Funções Árvore Recursiva Blindadas
+  // Árvore Recursiva
   const insertNodeInTree = (lista, ids, newNode) => {
     if (!ids || ids.length === 0) {
       return [...(lista || []), newNode];
@@ -400,17 +399,18 @@ function MainApp() {
     });
   };
 
-  const deleteNodeInTree = (lista, ids) => {
+  const archiveNodeInTree = (lista, ids) => {
     if (!ids || ids.length === 0) return lista;
-    if (ids.length === 1) {
-      return (lista || []).filter(item => item.id !== ids[0]);
-    }
     return (lista || []).map(item => {
       if (item.id === ids[0]) {
-        return {
-          ...item,
-          subTarefas: deleteNodeInTree(item.subTarefas || [], ids.slice(1))
-        };
+        if (ids.length === 1) {
+          return { ...item, arquivada: !Boolean(item.arquivada) };
+        } else {
+          return {
+            ...item,
+            subTarefas: archiveNodeInTree(item.subTarefas || [], ids.slice(1))
+          };
+        }
       }
       return item;
     });
@@ -444,6 +444,7 @@ function MainApp() {
       id: Date.now().toString() + "_" + Math.random().toString(36).substring(2, 5),
       texto: subTexto.trim(),
       concluida: false,
+      arquivada: false,
       subTarefas: []
     };
 
@@ -472,6 +473,18 @@ function MainApp() {
     } catch (e) {}
   };
 
+  const arquivarTarefaPai = async (tarefa) => {
+    if (!window.confirm("Deseja realmente arquivar esta página?")) return;
+    try {
+      const novaArquivada = !Boolean(tarefa.arquivada);
+      const colecaoAlvo = tarefa._colecao || 'tarefas_gerais';
+      await updateDoc(doc(db, colecaoAlvo, tarefa.id), {
+        arquivada: novaArquivada
+      });
+      if (paginaLateral && paginaLateral.id === tarefa.id) fecharPainelLateral();
+    } catch (e) {}
+  };
+
   const alternarStatusRecursivo = async (tarefaRaiz, caminhoIds) => {
     try {
       const novaSubTarefas = toggleNodeInTree(tarefaRaiz.subTarefas || [], caminhoIds);
@@ -483,10 +496,10 @@ function MainApp() {
     } catch (e) {}
   };
 
-  const excluirSubRecursivo = async (tarefaRaiz, caminhoIds) => {
-    if (!window.confirm("Deseja realmente excluir esta subtarefa?")) return;
+  const arquivarSubRecursivo = async (tarefaRaiz, caminhoIds) => {
+    if (!window.confirm("Deseja realmente arquivar esta subtarefa?")) return;
     try {
-      const novaSubTarefas = deleteNodeInTree(tarefaRaiz.subTarefas || [], caminhoIds);
+      const novaSubTarefas = archiveNodeInTree(tarefaRaiz.subTarefas || [], caminhoIds);
       const colecaoAlvo = tarefaRaiz._colecao || 'tarefas_gerais';
 
       await updateDoc(doc(db, colecaoAlvo, tarefaRaiz.id), {
@@ -529,8 +542,8 @@ function MainApp() {
     } catch (err) {}
   };
 
-  const excluirTarefa = async (id, colecaoAlvo, tituloTarefa) => {
-    if (window.confirm("Deseja realmente excluir esta página?")) {
+  const excluirTarefaDefinitivo = async (id, colecaoAlvo, tituloTarefa) => {
+    if (window.confirm("Deseja realmente excluir DEFINTIVAMENTE esta página?")) {
       try {
         await deleteDoc(doc(db, colecaoAlvo || 'tarefas_gerais', id));
         if (paginaLateral && paginaLateral.id === id) fecharPainelLateral();
@@ -590,6 +603,12 @@ function MainApp() {
           const isExpandidoSub = verificarExpandido(sub.id, temFilhos);
           const paddingLeftPx = nivel * 24 + 16;
           const isConcluida = Boolean(sub.concluida);
+          const isArquivada = Boolean(sub.arquivada);
+
+          // Se estiver na aba principal, oculta subtarefas arquivadas
+          if (paginaAtual === 'andamento' && isArquivada) return null;
+          // Se estiver na aba arquivados, mostra apenas as arquivadas
+          if (paginaAtual === 'arquivados' && !isArquivada) return null;
 
           return (
             <React.Fragment key={sub.id}>
@@ -609,7 +628,7 @@ function MainApp() {
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden', paddingLeft: `${paddingLeftPx}px`, paddingRight: '10px' }}>
                   <span onClick={() => alternarExpandido(sub.id)} style={{ cursor: 'pointer', fontSize: '10px', color: theme.textMuted, userSelect: 'none', padding: '2px', width: '12px', textAlign: 'center' }}>
-                    {isExpandidoSub ? '▼' : '▶'}
+                    {temFilhos ? (isExpandidoSub ? '▼' : '▶') : ''}
                   </span>
                   <input type="checkbox" checked={isConcluida} onChange={() => alternarStatusRecursivo(tarefaRaizObj, caminhoAtual)} style={{ accentColor: '#27ae60', cursor: 'pointer' }} />
                   <span>📄</span>
@@ -640,7 +659,9 @@ function MainApp() {
                   >
                     {isConcluida ? '✔ Concluído' : 'Concluir'}
                   </button>
-                  <button onClick={() => excluirSubRecursivo(tarefaRaizObj, caminhoAtual)} style={{ background: 'transparent', border: 'none', color: '#eb5757', cursor: 'pointer', fontSize: '11px' }}>Excluir</button>
+                  <button onClick={() => arquivarSubRecursivo(tarefaRaizObj, caminhoAtual)} style={{ background: 'transparent', border: 'none', color: '#d97706', cursor: 'pointer', fontSize: '11px', fontWeight: '500' }}>
+                    {isArquivada ? 'Desarquivar' : 'Arquivar'}
+                  </button>
                 </div>
               </div>
 
@@ -648,27 +669,29 @@ function MainApp() {
                 <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
                   {renderizarSubTarefasRecursivas(sub.subTarefas, tarefaRaizObj, caminhoAtual, nivel + 1)}
                   
-                  <div 
-                    onClick={() => promptAdicionarSub(tarefaRaizObj.id, caminhoAtual)}
-                    style={{ 
-                      display: 'grid', 
-                      gridTemplateColumns: '2.5fr 1.5fr 1.5fr 1fr 1fr', 
-                      padding: '10px 0', 
-                      borderBottom: `1px solid ${theme.border}`, 
-                      alignItems: 'center', 
-                      fontSize: '13px', 
-                      color: theme.textMuted, 
-                      cursor: 'pointer', 
-                      transition: 'background 0.1s' 
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.background = theme.cardInner}
-                    onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                  >
-                    <div style={{ paddingLeft: `${paddingLeftPx + 24}px`, display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '500' }}>
-                      <span>+</span> <span>Adicionar nova</span>
+                  {paginaAtual === 'andamento' && (
+                    <div 
+                      onClick={() => promptAdicionarSub(tarefaRaizObj.id, caminhoAtual)}
+                      style={{ 
+                        display: 'grid', 
+                        gridTemplateColumns: '2.5fr 1.5fr 1.5fr 1fr 1fr', 
+                        padding: '10px 0', 
+                        borderBottom: `1px solid ${theme.border}`, 
+                        alignItems: 'center', 
+                        fontSize: '13px', 
+                        color: theme.textMuted, 
+                        cursor: 'pointer', 
+                        transition: 'background 0.1s' 
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = theme.cardInner}
+                      onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                    >
+                      <div style={{ paddingLeft: `${paddingLeftPx + 24}px`, display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '500' }}>
+                        <span>+</span> <span>Adicionar nova</span>
+                      </div>
+                      <div></div><div></div><div></div><div></div>
                     </div>
-                    <div></div><div></div><div></div><div></div>
-                  </div>
+                  )}
                 </div>
               )}
             </React.Fragment>
@@ -690,8 +713,13 @@ function MainApp() {
     return <TelaLogin onLoginSucesso={(email) => setUsuarioLogado(email)} darkMode={darkMode} setDarkMode={alternarTema} theme={theme} />;
   }
 
-  const tarefasResolvidas = tarefas.filter(t => t.status === 'Resolvida');
+  const tarefasResolvidas = tarefas.filter(t => t.status === 'Resolvida' && !t.arquivada);
+  const tarefasArquivadas = tarefas.filter(t => t.arquivada);
+
   const tarefasFiltradas = tarefas.filter(t => {
+    const isArquivada = Boolean(t.arquivada);
+    if (paginaAtual === 'arquivados' && !isArquivada) return false;
+    if (paginaAtual === 'andamento' && isArquivada) return false;
     if (filtroResponsavel !== 'todos' && t.responsavel !== filtroResponsavel) return false;
     return true;
   });
@@ -699,7 +727,7 @@ function MainApp() {
   return (
     <div className="workspace-layout" style={{ display: 'flex', minHeight: '100vh', backgroundColor: theme.bg, color: theme.textMain, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif', boxSizing: 'border-box' }}>
       
-      {/* SIDEBAR ESQUERDA NOTION - CATEGORIAS REMOVIDAS */}
+      {/* SIDEBAR ESQUERDA NOTION - COM PASTA ARQUIVADOS */}
       <div className="sidebar-notion" style={{ width: '240px', background: theme.sidebarBg, borderRight: `1px solid ${theme.border}`, display: 'flex', flexDirection: 'column', padding: '12px 8px', boxSizing: 'border-box', flexShrink: '0' }}>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 8px', borderRadius: '4px', marginBottom: '16px', background: theme.cardBg, border: `1px solid ${theme.border}` }}>
@@ -713,8 +741,11 @@ function MainApp() {
           <div onClick={() => mudarPagina('andamento')} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 8px', borderRadius: '4px', cursor: 'pointer', background: !paginaLateral && paginaAtual === 'andamento' ? theme.cardInner : 'transparent' }}>
             <span>🏠</span> <span>Página inicial</span>
           </div>
-          <div onClick={() => mudarPagina('resolvidas')} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 8px', borderRadius: '4px', cursor: 'pointer' }}>
+          <div onClick={() => mudarPagina('resolvidas')} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 8px', borderRadius: '4px', cursor: 'pointer', background: paginaAtual === 'resolvidas' ? theme.cardInner : 'transparent' }}>
             <span>✅</span> <span>Resolvidas ({tarefasResolvidas.length})</span>
+          </div>
+          <div onClick={() => mudarPagina('arquivados')} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 8px', borderRadius: '4px', cursor: 'pointer', background: paginaAtual === 'arquivados' ? theme.cardInner : 'transparent' }}>
+            <span>📁</span> <span>Arquivados ({tarefasArquivadas.length})</span>
           </div>
         </div>
 
@@ -722,7 +753,7 @@ function MainApp() {
           Páginas Recentes
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontSize: '12px', overflowY: 'auto', maxHeight: '40vh', marginBottom: '20px' }}>
-          {tarefas.map(t => (
+          {tarefas.filter(t => !t.arquivada).map(t => (
             <div 
               key={t.id} 
               onClick={() => abrirPainelLateral(t)}
@@ -748,48 +779,51 @@ function MainApp() {
           
           {/* CABEÇALHO E BOTÃO NOVA PÁGINA */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
-            <h1 style={{ margin: 0, fontSize: '28px', fontWeight: '700', color: theme.textMain }}>Biblioteca</h1>
+            <h1 style={{ margin: 0, fontSize: '28px', fontWeight: '700', color: theme.textMain }}>
+              {paginaAtual === 'arquivados' ? '📁 Arquivados' : 'Biblioteca'}
+            </h1>
 
             <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
               <button onClick={alternarTema} style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, color: theme.textMain, padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: '500' }}>
                 {darkMode ? '☀️ Claro' : '🌙 Escuro'}
               </button>
-              <button 
-                onClick={() => {
-                  const nome = prompt("Digite o título da nova página:");
-                  if (nome) {
-                    setTitulo(nome);
-                    setPrazo(new Date().toISOString().split('T')[0]);
-                    setTimeout(() => {
-                      const novaId = Date.now().toString();
-                      setDoc(doc(db, 'tarefas_gerais', novaId), {
-                        titulo: nome.trim(),
-                        descricao: 'Particular',
-                        responsavel: responsavelFinal,
-                        prazo: new Date().toISOString().split('T')[0],
-                        prioridade: 'Média',
-                        status: 'Pendente',
-                        criadoPor: nomeFormatadoGlobal,
-                        criadoEm: Date.now(),
-                        subTarefas: []
-                      });
-                    }, 100);
-                  }
-                }}
-                style={{ background: '#2383e2', color: '#fff', border: 'none', padding: '6px 14px', borderRadius: '6px', fontWeight: '500', fontSize: '13px', cursor: 'pointer', boxShadow: '0 1px 2px rgba(0,0,0,0.1)' }}
-              >
-                Nova página
-              </button>
+              {paginaAtual === 'andamento' && (
+                <button 
+                  onClick={() => {
+                    const nome = prompt("Digite o título da nova página:");
+                    if (nome) {
+                      setTitulo(nome);
+                      setPrazo(new Date().toISOString().split('T')[0]);
+                      setTimeout(() => {
+                        const novaId = Date.now().toString();
+                        setDoc(doc(db, 'tarefas_gerais', novaId), {
+                          titulo: nome.trim(),
+                          descricao: 'Particular',
+                          responsavel: responsavelFinal,
+                          prazo: new Date().toISOString().split('T')[0],
+                          prioridade: 'Média',
+                          status: 'Pendente',
+                          arquivada: false,
+                          criadoPor: nomeFormatadoGlobal,
+                          criadoEm: Date.now(),
+                          subTarefas: []
+                        });
+                      }, 100);
+                    }
+                  }}
+                  style={{ background: '#2383e2', color: '#fff', border: 'none', padding: '6px 14px', borderRadius: '6px', fontWeight: '500', fontSize: '13px', cursor: 'pointer', boxShadow: '0 1px 2px rgba(0,0,0,0.1)' }}
+                >
+                  Nova página
+                </button>
+              )}
             </div>
           </div>
 
           {/* ABAS SUPERIORES */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `1px solid ${theme.border}`, paddingBottom: '10px', marginBottom: '20px', fontSize: '13px', flexWrap: 'wrap', gap: '12px' }}>
             <div style={{ display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap', color: theme.textMuted }}>
-              <span style={{ fontWeight: '500', color: theme.textMain, display: 'flex', alignItems: 'center', gap: '6px' }}>🕒 Recentes</span>
-              <span style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>⭐ Favoritos</span>
-              <span style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>👥 Compartilhado</span>
-              <span style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>🔒 Particular</span>
+              <span onClick={() => mudarPagina('andamento')} style={{ fontWeight: paginaAtual === 'andamento' ? '600' : '400', color: paginaAtual === 'andamento' ? theme.textMain : theme.textMuted, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>🕒 Recentes</span>
+              <span onClick={() => mudarPagina('arquivados')} style={{ fontWeight: paginaAtual === 'arquivados' ? '600' : '400', color: paginaAtual === 'arquivados' ? theme.textMain : theme.textMuted, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>📁 Arquivados</span>
             </div>
 
             <div style={{ display: 'flex', gap: '12px', alignItems: 'center', color: theme.textMuted }}>
@@ -808,7 +842,7 @@ function MainApp() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>👤 Criado por</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>📑 Fonte</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>🕒 Última edição</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>🕒 Última visita em</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>Ações</div>
             </div>
 
             {tarefasFiltradas.length === 0 ? (
@@ -820,10 +854,11 @@ function MainApp() {
                   const temFilhos = subTarefas.length > 0;
                   const isExpandido = verificarExpandido(t.id, temFilhos);
                   const isConcluida = t.status === 'Resolvida';
+                  const isArquivada = Boolean(t.arquivada);
 
                   return (
                     <React.Fragment key={t.id}>
-                      {/* LINHA PRINCIPAL DA PÁGINA PAI COM DESTAQUE VERDE SE CONCLUÍDA */}
+                      {/* LINHA PRINCIPAL DA PÁGINA PAI */}
                       <div 
                         onDoubleClick={() => { setEditandoId(t.id); setTextoEditando(t.titulo); }}
                         style={{ 
@@ -878,15 +913,22 @@ function MainApp() {
                         </div>
 
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: theme.textMuted, fontSize: '13px', paddingRight: '10px' }}>
-                          <button 
-                            onClick={() => alternarStatusTarefaPai(t)} 
-                            style={{ background: isConcluida ? '#27ae60' : theme.cardInner, border: `1px solid ${isConcluida ? '#27ae60' : theme.border}`, color: isConcluida ? '#fff' : theme.textMain, padding: '3px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: '500' }}
-                          >
-                            {isConcluida ? '✔ Concluído' : 'Concluir'}
-                          </button>
+                          {paginaAtual === 'andamento' ? (
+                            <button 
+                              onClick={() => alternarStatusTarefaPai(t)} 
+                              style={{ background: isConcluida ? '#27ae60' : theme.cardInner, border: `1px solid ${isConcluida ? '#27ae60' : theme.border}`, color: isConcluida ? '#fff' : theme.textMain, padding: '3px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: '500' }}
+                            >
+                              {isConcluida ? '✔ Concluído' : 'Concluir'}
+                            </button>
+                          ) : <div></div>}
+
                           <div style={{ display: 'flex', gap: '6px' }}>
-                            <button onClick={() => abrirModalEdicao(t)} title="Editar" style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '11px' }}>✏️</button>
-                            <button onClick={() => excluirTarefa(t.id, t._colecao, t.titulo)} title="Excluir" style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '11px' }}>🗑️</button>
+                            <button onClick={() => arquivarTarefaPai(t)} title="Arquivar / Desarquivar" style={{ background: 'transparent', border: 'none', color: '#d97706', cursor: 'pointer', fontSize: '11px', fontWeight: '500' }}>
+                              {isArquivada ? 'Desarquivar' : 'Arquivar'}
+                            </button>
+                            {isGestor && (
+                              <button onClick={() => excluirTarefaDefinitivo(t.id, t._colecao, t.titulo)} title="Excluir Definitivo" style={{ background: 'transparent', border: 'none', color: '#eb5757', cursor: 'pointer', fontSize: '11px' }}>Excluir</button>
+                            )}
                           </div>
                         </div>
 
@@ -896,28 +938,30 @@ function MainApp() {
                       {isExpandido && (
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                           {renderizarSubTarefasRecursivas(subTarefas, t, [], 1)}
-                          <div 
-                            onClick={() => promptAdicionarSub(t.id, [])}
-                            style={{ 
-                              display: 'grid', 
-                              gridTemplateColumns: '2.5fr 1.5fr 1.5fr 1fr 1fr', 
-                              padding: '10px 0', 
-                              borderBottom: `1px solid ${theme.border}`, 
-                              alignItems: 'center', 
-                              fontSize: '13px', 
-                              color: theme.textMuted, 
-                              cursor: 'pointer', 
-                              transition: 'background 0.1s',
-                              background: theme.cardInner
-                            }}
-                            onMouseEnter={(e) => e.currentTarget.style.background = theme.cardInner}
-                            onMouseLeave={(e) => e.currentTarget.style.background = theme.cardInner}
-                          >
-                            <div style={{ paddingLeft: '40px', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '500' }}>
-                              <span>+</span> <span>Adicionar nova</span>
+                          {paginaAtual === 'andamento' && (
+                            <div 
+                              onClick={() => promptAdicionarSub(t.id, [])}
+                              style={{ 
+                                display: 'grid', 
+                                gridTemplateColumns: '2.5fr 1.5fr 1.5fr 1fr 1fr', 
+                                padding: '10px 0', 
+                                borderBottom: `1px solid ${theme.border}`, 
+                                alignItems: 'center', 
+                                fontSize: '13px', 
+                                color: theme.textMuted, 
+                                cursor: 'pointer', 
+                                transition: 'background 0.1s',
+                                background: theme.cardInner
+                              }}
+                              onMouseEnter={(e) => e.currentTarget.style.background = theme.cardInner}
+                              onMouseLeave={(e) => e.currentTarget.style.background = theme.cardInner}
+                            >
+                              <div style={{ paddingLeft: '40px', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '500' }}>
+                                <span>+</span> <span>Adicionar nova</span>
+                              </div>
+                              <div></div><div></div><div></div><div></div>
                             </div>
-                            <div></div><div></div><div></div><div></div>
-                          </div>
+                          )}
                         </div>
                       )}
 
@@ -931,7 +975,7 @@ function MainApp() {
 
         </div>
 
-        {/* PAINEL LATERAL DIREITO (SPLIT-VIEW) COM BOTÃO CONCLUIR PARA SALVAR */}
+        {/* PAINEL LATERAL DIREITO (SPLIT-VIEW) */}
         {paginaLateral && (
           <div style={{ width: '450px', background: theme.cardBg, borderLeft: `1px solid ${theme.border}`, display: 'flex', flexDirection: 'column', padding: '32px', boxSizing: 'border-box', height: '100vh', overflowY: 'auto', flexShrink: '0', boxShadow: '-5px 0 25px rgba(0,0,0,0.1)' }}>
             
