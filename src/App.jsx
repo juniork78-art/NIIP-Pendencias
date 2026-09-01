@@ -500,7 +500,7 @@ function MainApp() {
     }
   };
 
-  // Função recursiva para adicionar subtarefa em qualquer nível (tarefa pai ou subtarefa filha)
+  // Função recursiva para adicionar subtarefa em qualquer nível
   const adicionarSubPendenciaRecursiva = async (tarefaRaizId, caminhoAlvoIds, novoTexto) => {
     try {
       const tarefaRaiz = tarefas.find(t => t.id === tarefaRaizId);
@@ -513,29 +513,23 @@ function MainApp() {
         subTarefas: []
       };
 
-      const inserirNaArvore = (lista) => {
+      const inserirNaArvore = (lista, ids) => {
         return lista.map(item => {
-          if (item.id === caminhoAlvoIds[0]) {
-            if (caminhoAlvoIds.length === 1) {
+          if (item.id === ids[0]) {
+            if (ids.length === 1) {
               return { ...item, subTarefas: [...(item.subTarefas || []), novaSub] };
             } else {
-              return { ...item, subTarefas: inserirNaArvore(item.subTarefas || [], caminhoAlvoIds.slice(1)) };
+              return { ...item, subTarefas: inserirNaArvore(item.subTarefas || [], ids.slice(1)) };
             }
           }
           return item;
         });
       };
 
-      // Se o caminho for apenas o ID raiz
-      let novaListaSub;
-      if (caminhoAlvoIds.length === 1) {
-        novaListaSub = [...(tarefaRaiz.subTarefas || []), novaSub];
-      } else {
-        novaListaSub = inserirNaArvore(tarefaRaiz.subTarefas || [], caminhoAlvoIds.slice(1));
-      }
+      const novaSubTarefas = inserirNaArvore(tarefaRaiz.subTarefas || [], caminhoAlvoIds);
 
       await updateDoc(doc(db, `${setorSelecionado}_tarefas`, tarefaRaizId), {
-        subTarefas: caminhoAlvoIds.length === 1 ? [...(tarefaRaiz.subTarefas || []), novaSub] : inserirNaArvore(tarefaRaiz.subTarefas, caminhoAlvoIds)
+        subTarefas: novaSubTarefas
       });
 
       setExpandidoIds(prev => ({ ...prev, [caminhoAlvoIds[caminhoAlvoIds.length - 1]]: true }));
@@ -550,7 +544,6 @@ function MainApp() {
     adicionarSubPendenciaRecursiva(tarefaRaizId, caminhoIds, subTexto.trim());
   };
 
-  // Função recursiva para alternar status de conclusão
   const alternarStatusRecursivo = async (tarefaRaizId, caminhoIds) => {
     try {
       const tarefaRaiz = tarefas.find(t => t.id === tarefaRaizId);
@@ -577,7 +570,6 @@ function MainApp() {
     } catch (e) {}
   };
 
-  // Função recursiva para excluir subtarefa
   const excluirSubRecursivo = async (tarefaRaizId, caminhoIds) => {
     if (!window.confirm("Deseja realmente excluir esta subtarefa?")) return;
     try {
@@ -720,6 +712,7 @@ function MainApp() {
             <React.Fragment key={sub.id}>
               <div style={{ display: 'grid', gridTemplateColumns: '2.5fr 1.5fr 1.5fr 1fr 1fr', padding: `8px 0 8px ${paddingLeftPx}px`, alignItems: 'center', fontSize: '13px', borderTop: `1px solid ${theme.border}` }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden' }}>
+                  {/* Seta de expansão da subtarefa */}
                   <span onClick={() => alternarExpandido(sub.id)} style={{ cursor: 'pointer', fontSize: '10px', color: theme.textMuted, userSelect: 'none', padding: '2px', width: '12px', textAlign: 'center' }}>
                     {temFilhos ? (isExpandidoSub ? '▼' : '▶') : ''}
                   </span>
