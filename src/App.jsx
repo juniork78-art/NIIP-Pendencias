@@ -604,6 +604,31 @@ function MainApp() {
     } catch (e) {}
   };
 
+  const abrirModalEdicao = (tarefa) => {
+    setTarefaEditando(tarefa);
+    setEditTitulo(tarefa.titulo || '');
+    setEditDescricao(tarefa.descricao || '');
+    setEditPrazo(tarefa.prazo || '');
+    setEditPrioridade(tarefa.prioridade || 'Média');
+  };
+
+  const salvarEdicaoTarefa = async (e) => {
+    e.preventDefault();
+    if (!editTitulo.trim() || !editPrazo) return;
+
+    try {
+      await updateDoc(doc(db, `${setorSelecionado}_tarefas`, tarefaEditando.id), {
+        titulo: editTitulo.trim(),
+        descricao: editDescricao.trim(),
+        prazo: editPrazo,
+        prioridade: editPrioridade
+      });
+
+      await registrarLogAuditoria("EDIÇÃO", `Atualizou a página "${editTitulo.trim()}"`, editTitulo.trim());
+      setTarefaEditando(null);
+    } catch (err) {}
+  };
+
   const excluirTarefa = async (id, tituloTarefa) => {
     if (window.confirm("Deseja realmente excluir esta página?")) {
       try {
