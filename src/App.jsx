@@ -629,61 +629,6 @@ function MainApp() {
     } catch (e) {}
   };
 
-  const abrirModalEdicao = (tarefa) => {
-    setTarefaEditando(tarefa);
-    setEditTitulo(tarefa.titulo || '');
-    setEditDescricao(tarefa.descricao || '');
-    setEditPrazo(tarefa.prazo || '');
-    setEditPrioridade(tarefa.prioridade || 'Média');
-  };
-
-  const salvarEdicaoTarefa = async (e) => {
-    e.preventDefault();
-    if (!editTitulo.trim() || !editPrazo) return;
-
-    try {
-      await updateDoc(doc(db, `${setorSelecionado}_tarefas`, tarefaEditando.id), {
-        titulo: editTitulo.trim(),
-        descricao: editDescricao.trim(),
-        prazo: editPrazo,
-        prioridade: editPrioridade
-      });
-
-      await registrarLogAuditoria("EDIÇÃO", `Atualizou a página "${editTitulo.trim()}"`, editTitulo.trim());
-      setTarefaEditando(null);
-    } catch (err) {}
-  };
-
-  const abrirModalResolucao = (tarefa) => {
-    setTarefaResolvendo(tarefa);
-    setDetalhesResolucaoInput('');
-  };
-
-  const confirmarResolucaoTarefa = async (e) => {
-    e.preventDefault();
-    if (!detalhesResolucaoInput.trim()) return;
-
-    try {
-      await updateDoc(doc(db, `${setorSelecionado}_tarefas`, tarefaResolvendo.id), { 
-        status: 'Resolvida',
-        detalhesResolucao: detalhesResolucaoInput.trim()
-      });
-      await registrarLogAuditoria("RESOLUÇÃO", `Concluiu a página`, tarefaResolvendo.titulo);
-      setTarefaResolvendo(null);
-      if (paginaLateral && paginaLateral.id === tarefaResolvendo.id) fecharPainelLateral();
-    } catch (err) {}
-  };
-
-  const reabrirTarefa = async (tarefa) => {
-    try {
-      await updateDoc(doc(db, `${setorSelecionado}_tarefas`, tarefa.id), { 
-        status: 'Pendente',
-        detalhesResolucao: null 
-      });
-      await registrarLogAuditoria("REABERTURA", `Reabriu a página`, tarefa.titulo);
-    } catch (err) {}
-  };
-
   const excluirTarefa = async (id, tituloTarefa) => {
     if (window.confirm("Deseja realmente excluir esta página?")) {
       try {
@@ -694,6 +639,7 @@ function MainApp() {
     }
   };
 
+  // Botão verde "Concluir" no painel lateral agora salva as alterações da página atual instantaneamente
   const salvarAlteracoesPaginaLateral = async () => {
     if (!paginaLateral || !editTituloLateral.trim()) return;
     try {
@@ -702,7 +648,10 @@ function MainApp() {
         descricao: editDescricaoLateral.trim()
       });
       setPaginaLateral(prev => ({ ...prev, titulo: editTituloLateral.trim(), descricao: editDescricaoLateral.trim() }));
-    } catch (e) {}
+      alert("Alterações salvas com sucesso!");
+    } catch (e) {
+      alert("Erro ao salvar alterações: " + e.message);
+    }
   };
 
   const theme = {
@@ -719,7 +668,6 @@ function MainApp() {
     treeLine: darkMode ? '#444440' : '#d3d3ce'
   };
 
-  // Componente recursivo exato para renderizar subtarefas mantendo colunas alinhadas no formato de tabela Notion
   const renderizarSubTarefasRecursivas = (subLista, tarefaRaizId, caminhoPai, nivel = 1) => {
     if (!subLista || subLista.length === 0) return null;
 
@@ -733,7 +681,6 @@ function MainApp() {
 
           return (
             <React.Fragment key={sub.id}>
-              {/* Linha da subtarefa alinhada na mesma grade da tabela principal */}
               <div 
                 style={{ 
                   display: 'grid', 
@@ -747,38 +694,33 @@ function MainApp() {
                 onMouseEnter={(e) => e.currentTarget.style.background = theme.cardInner} 
                 onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
               >
-                {/* Coluna 1: Nome com recuo proporcional à profundidade */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden', paddingLeft: `${paddingLeftPx}px`, paddingRight: '10px' }}>
                   <span onClick={() => alternarExpandido(sub.id)} style={{ cursor: 'pointer', fontSize: '10px', color: theme.textMuted, userSelect: 'none', padding: '2px', width: '12px', textAlign: 'center' }}>
-                    {temFilhos ? (isExpandidoSub ? '▼' : '▶') : ''}
+                    {isExpandidoSub ? '▼' : '▶'}
                   </span>
+                  <input type="checkbox" checked={sub.concluida} onChange={() => alternarStatusRecursivo(tarefaRaizId, caminhoAtual)} style={{ accentColor: '#2eaadc', cursor: 'pointer' }} />
                   <span>📄</span>
                   <span style={{ fontWeight: '400', color: sub.concluida ? theme.textMuted : theme.textMain, textDecoration: sub.concluida ? 'line-through' : 'none', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sub.texto}</span>
                 </div>
 
-                {/* Coluna 2: Criado por */}
                 <div style={{ color: theme.textMuted, fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {tarefas.find(t => t.id === tarefaRaizId)?.responsavel || 'Junior Gonçalves'}
                 </div>
 
-                {/* Coluna 3: Fonte */}
                 <div style={{ color: theme.textMuted, fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   📄 Sub-tarefa
                 </div>
 
-                {/* Coluna 4: Última edição */}
                 <div style={{ color: theme.textMuted, fontSize: '13px' }}>
                   Agora há pouco
                 </div>
 
-                {/* Coluna 5: Última visita em + Ação */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', color: theme.textMuted, fontSize: '13px', paddingRight: '10px' }}>
                   <span>Agora há pouco</span>
                   <button onClick={() => excluirSubRecursivo(tarefaRaizId, caminhoAtual)} style={{ background: 'transparent', border: 'none', color: '#eb5757', cursor: 'pointer', fontSize: '11px' }}>Excluir</button>
                 </div>
               </div>
 
-              {/* Se expandido, renderiza os filhos e o botão "+ Adicionar nova" abaixo */}
               {isExpandidoSub && (
                 <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
                   {renderizarSubTarefasRecursivas(sub.subTarefas, tarefaRaizId, caminhoAtual, nivel + 1)}
@@ -826,12 +768,6 @@ function MainApp() {
   }
 
   const setorAtualInfo = SETORES_DISPONIVEIS.find(s => s.id === setorSelecionado) || SETORES_DISPONIVEIS[0];
-  const pendenciasUrgentesCount = tarefas.filter(t => {
-    if (t.status === 'Resolvida') return false;
-    const st = calcularStatusPrazo(t.prazo);
-    return st.status === 'vencido' || st.status === 'hoje' || st.status === 'um_dia';
-  }).length;
-
   const tarefasAndamento = tarefas.filter(t => t.status !== 'Resolvida');
   const tarefasResolvidas = tarefas.filter(t => t.status === 'Resolvida');
 
@@ -839,72 +775,6 @@ function MainApp() {
     if (filtroResponsavel !== 'todos' && t.responsavel !== filtroResponsavel) return false;
     return true;
   });
-
-  if (paginaAtual === 'auditoria' && isGestor) {
-    return (
-      <div className="app-container" style={{ backgroundColor: theme.bg, color: theme.textMain, minHeight: '100vh', width: '100%', padding: '20px', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif', boxSizing: 'border-box' }}>
-        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `1px solid ${theme.border}`, paddingBottom: '16px', marginBottom: '24px' }}>
-          <button onClick={() => mudarPagina('andamento')} style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, color: theme.textMain, padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>← Voltar para Biblioteca</button>
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <button onClick={alternarTema} style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, color: theme.textMain, padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>{darkMode ? '☀️ Claro' : '🌙 Escuro'}</button>
-            <button onClick={() => signOut(auth)} style={{ background: '#eb5757', border: 'none', color: '#fff', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>Sair</button>
-          </div>
-        </header>
-        <div style={{ background: theme.cardBg, padding: '20px', borderRadius: '6px', border: `1px solid ${theme.border}` }}>
-          <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: '600' }}>🔍 Histórico de Auditoria</h3>
-          {logsAuditoria.length === 0 ? <p style={{ color: theme.textMuted, fontSize: '13px' }}>Nenhum registro encontrado.</p> : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {logsAuditoria.map(log => (
-                <div key={log.id} style={{ background: theme.cardInner, padding: '12px', borderRadius: '4px', border: `1px solid ${theme.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <span style={{ background: '#2eaadc', color: '#fff', padding: '2px 6px', borderRadius: '3px', fontSize: '10px', fontWeight: 'bold' }}>{log.acao}</span>
-                    <strong style={{ fontSize: '13px', marginLeft: '8px' }}>{log.tarefaTitulo}</strong>
-                    <div style={{ fontSize: '12px', color: theme.textMuted, marginTop: '4px' }}>Usuário: {log.usuario} — {corrigirDatasNoTexto(log.detalhes)}</div>
-                  </div>
-                  <button onClick={() => excluirLogIndividual(log.id)} style={{ background: 'transparent', border: 'none', color: '#eb5757', cursor: 'pointer', fontSize: '12px' }}>Excluir</button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  if (paginaAtual === 'resolvidas') {
-    return (
-      <div className="app-container" style={{ backgroundColor: theme.bg, color: theme.textMain, minHeight: '100vh', width: '100%', padding: '20px', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif', boxSizing: 'border-box' }}>
-        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `1px solid ${theme.border}`, paddingBottom: '16px', marginBottom: '24px' }}>
-          <button onClick={() => mudarPagina('andamento')} style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, color: theme.textMain, padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>← Voltar para Biblioteca</button>
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <button onClick={alternarTema} style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, color: theme.textMain, padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>{darkMode ? '☀️ Claro' : '🌙 Escuro'}</button>
-            <button onClick={() => signOut(auth)} style={{ background: '#eb5757', border: 'none', color: '#fff', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>Sair</button>
-          </div>
-        </header>
-        <div style={{ background: theme.cardBg, padding: '20px', borderRadius: '6px', border: `1px solid ${theme.border}` }}>
-          <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: '600' }}>✅ Páginas Resolvidas ({tarefasResolvidas.length})</h3>
-          {tarefasResolvidas.length === 0 ? <p style={{ color: theme.textMuted, fontSize: '13px' }}>Nenhuma página resolvida.</p> : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {tarefasResolvidas.map(t => (
-                <div key={t.id} style={{ background: theme.cardInner, padding: '12px', borderRadius: '4px', borderLeft: '3px solid #27ae60', border: `1px solid ${theme.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <h4 style={{ margin: '0 0 4px 0', fontSize: '14px', fontWeight: '600' }}>{t.titulo}</h4>
-                    <p style={{ margin: 0, fontSize: '12px', color: theme.textMuted }}>Resolução: {t.detalhesResolucao}</p>
-                  </div>
-                  {isGestor && (
-                    <div style={{ display: 'flex', gap: '6px' }}>
-                      <button onClick={() => reabrirTarefa(t)} style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, color: '#d97706', padding: '4px 8px', borderRadius: '3px', cursor: 'pointer', fontSize: '11px' }}>Reabrir</button>
-                      <button onClick={() => excluirTarefa(t.id, t.titulo)} style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, color: '#eb5757', padding: '4px 8px', borderRadius: '3px', cursor: 'pointer', fontSize: '11px' }}>Excluir</button>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="workspace-layout" style={{ display: 'flex', minHeight: '100vh', backgroundColor: theme.bg, color: theme.textMain, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif', boxSizing: 'border-box' }}>
@@ -976,24 +846,6 @@ function MainApp() {
         {/* CONTEÚDO DA BIBLIOTECA */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '32px 48px', boxSizing: 'border-box', overflowY: 'auto' }}>
           
-          {mostrarPopupAlerta && tarefasUrgentesUsuario.length > 0 && (
-            <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, padding: '15px', boxSizing: 'border-box' }}>
-              <div style={{ background: theme.cardBg, padding: '24px', borderRadius: '6px', width: '100%', maxWidth: '480px', border: `1px solid ${theme.border}`, boxShadow: '0 8px 24px rgba(0,0,0,0.2)', textAlign: 'center' }}>
-                <div style={{ fontSize: '28px', marginBottom: '8px' }}>🚨</div>
-                <h2 style={{ margin: '0 0 8px 0', color: '#eb5757', fontSize: '18px', fontWeight: '600' }}>Atenção, {nomeFormatadoGlobal}!</h2>
-                <p style={{ fontSize: '13px', color: theme.textMuted, marginBottom: '20px' }}>Você possui <strong>{tarefasUrgentesUsuario.length}</strong> tarefa(s) crítica(s) ou vencida(s):</p>
-                <div style={{ maxHeight: '200px', overflowY: 'auto', marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '8px', textAlign: 'left' }}>
-                  {tarefasUrgentesUsuario.map(t => (
-                    <div key={t.id} style={{ background: theme.cardInner, padding: '8px 10px', borderRadius: '4px', borderLeft: '3px solid #eb5757' }}>
-                      <div style={{ fontWeight: '600', fontSize: '12px' }}>{t.titulo}</div>
-                    </div>
-                  ))}
-                </div>
-                <button onClick={() => setMostrarPopupAlerta(false)} style={{ width: '100%', padding: '10px', background: '#37352f', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: '500', cursor: 'pointer' }}>Entendido</button>
-              </div>
-            </div>
-          )}
-
           {/* CABEÇALHO E BOTÃO NOVA PÁGINA */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
             <h1 style={{ margin: 0, fontSize: '28px', fontWeight: '700', color: theme.textMain }}>Biblioteca</h1>
@@ -1038,14 +890,9 @@ function MainApp() {
               <span style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>⭐ Favoritos</span>
               <span style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>👥 Compartilhado</span>
               <span style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>🔒 Particular</span>
-              <span style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>🎙️ Anotações IA</span>
-              <span style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>⚡ Habilidades</span>
             </div>
 
             <div style={{ display: 'flex', gap: '12px', alignItems: 'center', color: theme.textMuted }}>
-              <span style={{ cursor: 'pointer' }}>☰</span>
-              <span style={{ cursor: 'pointer' }}>🔍</span>
-              <span style={{ cursor: 'pointer' }}>⚙️</span>
               <select value={filtroResponsavel} onChange={(e) => setFiltroResponsavel(e.target.value)} style={{ padding: '4px 8px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '4px', fontSize: '12px' }}>
                 <option value="todos">Responsável: Todos</option>
                 {integrantesAtuais.map(n => <option key={n} value={n}>{n}</option>)}
@@ -1173,7 +1020,7 @@ function MainApp() {
 
         </div>
 
-        {/* PAINEL LATERAL DIREITO (SPLIT-VIEW) */}
+        {/* PAINEL LATERAL DIREITO (SPLIT-VIEW) COM BOTÃO CONCLUIR REAJUSTADO PARA SALVAR */}
         {paginaLateral && (
           <div style={{ width: '450px', background: theme.cardBg, borderLeft: `1px solid ${theme.border}`, display: 'flex', flexDirection: 'column', padding: '32px', boxSizing: 'border-box', height: '100vh', overflowY: 'auto', flexShrink: '0', boxShadow: '-5px 0 25px rgba(0,0,0,0.1)' }}>
             
@@ -1182,8 +1029,8 @@ function MainApp() {
                 Biblioteca / {paginaLateral.titulo}
               </div>
               <div style={{ display: 'flex', gap: '8px' }}>
-                <button onClick={() => abrirModalResolucao(paginaLateral)} title="Concluir" style={{ background: '#27ae60', border: 'none', color: '#fff', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>✔ Concluir</button>
-                <button onClick={fecharPainelLateral} style={{ background: 'transparent', border: `1px solid ${theme.border}`, color: theme.textMain, padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>✕ Fechar</button>
+                <button onClick={salvarAlteracoesPaginaLateral} title="Salvar Alterações" style={{ background: '#27ae60', border: 'none', color: '#fff', padding: '6px 14px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '500' }}>✓ Concluir</button>
+                <button onClick={fecharPainelLateral} style={{ background: 'transparent', border: `1px solid ${theme.border}`, color: theme.textMain, padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}>✕ Fechar</button>
               </div>
             </div>
 
@@ -1191,7 +1038,6 @@ function MainApp() {
               type="text" 
               value={editTituloLateral} 
               onChange={(e) => setEditTituloLateral(e.target.value)}
-              onBlur={salvarAlteracoesPaginaLateral}
               style={{ fontSize: '28px', fontWeight: '700', color: theme.textMain, background: 'transparent', border: 'none', outline: 'none', width: '100%', marginBottom: '20px' }}
             />
 
@@ -1216,8 +1062,7 @@ function MainApp() {
                 rows="10"
                 value={editDescricaoLateral}
                 onChange={(e) => setEditDescricaoLateral(e.target.value)}
-                onBlur={salvarAlteracoesPaginaLateral}
-                placeholder="Clique na barra de espaço para ativar a IA ou '/' para acessar os comandos..."
+                placeholder="Escreva suas anotações aqui..."
                 style={{ width: '100%', padding: '12px', background: theme.cardInner, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '6px', fontSize: '13px', resize: 'vertical', lineHeight: '1.6' }}
               />
             </div>
@@ -1226,46 +1071,6 @@ function MainApp() {
         )}
 
       </div>
-
-      {tarefaEditando && (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '15px', boxSizing: 'border-box' }}>
-          <div style={{ background: theme.cardBg, padding: '24px', borderRadius: '6px', width: '100%', maxWidth: '420px', border: `1px solid ${theme.border}`, boxSizing: 'border-box' }}>
-            <h3 style={{ margin: '0 0 16px 0', color: theme.textMain, fontSize: '16px', fontWeight: '600', borderBottom: `1px solid ${theme.border}`, paddingBottom: '10px' }}>✏️ Editar Página</h3>
-            <form onSubmit={salvarEdicaoTarefa}>
-              <div style={{ marginBottom: '14px' }}>
-                <label style={{ display: 'block', fontSize: '11px', fontWeight: '500', color: theme.textMuted, marginBottom: '4px' }}>Título *</label>
-                <input type="text" value={editTitulo} onChange={(e) => setEditTitulo(e.target.value)} required style={{ width: '100%', padding: '8px 10px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '4px', fontSize: '13px' }} />
-              </div>
-              <div style={{ marginBottom: '14px' }}>
-                <label style={{ display: 'block', fontSize: '11px', fontWeight: '500', color: theme.textMuted, marginBottom: '4px' }}>Fonte / Descrição</label>
-                <textarea rows="3" value={editDescricao} onChange={(e) => setEditDescricao(e.target.value)} style={{ width: '100%', padding: '8px 10px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '4px', fontSize: '13px' }} />
-              </div>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button type="button" onClick={() => setTarefaEditando(null)} style={{ flex: 1, padding: '8px', background: theme.cardInner, border: `1px solid ${theme.border}`, color: theme.textMain, borderRadius: '4px', cursor: 'pointer', fontSize: '13px' }}>Cancelar</button>
-                <button type="submit" style={{ flex: 1, padding: '8px', background: '#37352f', border: 'none', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontSize: '13px' }}>Salvar</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {tarefaResolvendo && (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '15px', boxSizing: 'border-box' }}>
-          <div style={{ background: theme.cardBg, padding: '24px', borderRadius: '6px', width: '100%', maxWidth: '420px', border: `1px solid ${theme.border}`, boxSizing: 'border-box' }}>
-            <h3 style={{ margin: '0 0 8px 0', color: '#27ae60', fontSize: '16px', fontWeight: '600' }}>✔ Concluir Página</h3>
-            <form onSubmit={confirmarResolucaoTarefa}>
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', fontSize: '11px', fontWeight: '500', color: theme.textMuted, marginBottom: '4px' }}>Detalhes da Conclusão *</label>
-                <textarea rows="3" placeholder="Relato..." value={detalhesResolucaoInput} onChange={(e) => setDetalhesResolucaoInput(e.target.value)} required style={{ width: '100%', padding: '8px 10px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '4px', fontSize: '13px' }} />
-              </div>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button type="button" onClick={() => setTarefaResolvendo(null)} style={{ flex: 1, padding: '8px', background: theme.cardInner, border: `1px solid ${theme.border}`, color: theme.textMain, borderRadius: '4px', cursor: 'pointer', fontSize: '13px' }}>Cancelar</button>
-                <button type="submit" style={{ flex: 1, padding: '8px', background: '#27ae60', border: 'none', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontSize: '13px' }}>Confirmar</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
     </div>
   );
