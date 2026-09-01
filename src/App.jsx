@@ -484,12 +484,12 @@ function MainApp() {
     }
   };
 
-  // Funções Árvore Recursiva robustas (Insert, Toggle, Delete, Update)
+  // Árvore Recursiva Blindada
   const insertNodeInTree = (lista, ids, newNode) => {
     if (!ids || ids.length === 0) {
       return [...(lista || []), newNode];
     }
-    return lista.map(item => {
+    return (lista || []).map(item => {
       if (item.id === ids[0]) {
         if (ids.length === 1) {
           return {
@@ -509,7 +509,7 @@ function MainApp() {
 
   const toggleNodeInTree = (lista, ids) => {
     if (!ids || ids.length === 0) return lista;
-    return lista.map(item => {
+    return (lista || []).map(item => {
       if (item.id === ids[0]) {
         if (ids.length === 1) {
           return { ...item, concluida: !Boolean(item.concluida) };
@@ -527,9 +527,9 @@ function MainApp() {
   const deleteNodeInTree = (lista, ids) => {
     if (!ids || ids.length === 0) return lista;
     if (ids.length === 1) {
-      return lista.filter(item => item.id !== ids[0]);
+      return (lista || []).filter(item => item.id !== ids[0]);
     }
-    return lista.map(item => {
+    return (lista || []).map(item => {
       if (item.id === ids[0]) {
         return {
           ...item,
@@ -542,7 +542,7 @@ function MainApp() {
 
   const updateTextNodeInTree = (lista, ids, newText, newDesc) => {
     if (!ids || ids.length === 0) return lista;
-    return lista.map(item => {
+    return (lista || []).map(item => {
       if (item.id === ids[0]) {
         if (ids.length === 1) {
           return { ...item, texto: newText, ...(newDesc !== undefined && { descricao: newDesc }) };
@@ -652,7 +652,6 @@ function MainApp() {
         prazo: editPrazo,
         prioridade: editPrioridade
       });
-
       setTarefaEditando(null);
     } catch (err) {}
   };
