@@ -201,10 +201,17 @@ function MainApp() {
   
   const [filtroResponsavel, setFiltroResponsavel] = useState('todos');
 
-  // Estado do painel lateral (Split-View)
+  // Controle do painel lateral (Split-View)
   const [paginaLateral, setPaginaLateral] = useState(null); 
   const [editTituloLateral, setEditTituloLateral] = useState('');
   const [editDescricaoLateral, setEditDescricaoLateral] = useState('');
+
+  // Estados para Edição Inline (Duplo Clique estilo Notion)
+  const [editandoId, setEditandoId] = useState(null);
+  const [textoEditando, setTextoEditando] = useState('');
+
+  const [editandoSubId, setEditandoSubId] = useState(null);
+  const [textoSubEditando, setTextoSubEditando] = useState('');
 
   const [tarefaEditando, setTarefaEditando] = useState(null);
   const [editTitulo, setEditTitulo] = useState('');
@@ -225,7 +232,6 @@ function MainApp() {
     setExpandidoIds(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
-  // ----- CONTROLE DO PAINEL LATERAL E BOTÃO VOLTAR DO NAVEGADOR -----
   useEffect(() => {
     if (!window.history.state) {
       window.history.replaceState({ view: 'andamento' }, '');
@@ -266,7 +272,6 @@ function MainApp() {
     setPaginaAtual('andamento');
     window.history.pushState({ view: 'andamento' }, '');
   };
-  // ------------------------------------------------------------------
 
   useEffect(() => {
     try {
@@ -525,6 +530,36 @@ function MainApp() {
     } catch (e) {
       alert("Erro ao adicionar sub-tarefa: " + e.message);
     }
+  };
+
+  const salvarEdicaoInlineTarefa = async (tarefaId, novoTitulo) => {
+    if (!novoTitulo.trim()) return;
+    try {
+      await updateDoc(doc(db, `${setorSelecionado}_tarefas`, tarefaId), {
+        titulo: novoTitulo.trim()
+      });
+      setEditandoId(null);
+    } catch (e) {}
+  };
+
+  const salvarEdicaoInlineSub = async (tarefaId, subId, novoTexto) => {
+    if (!novoTexto.trim()) return;
+    try {
+      const tarefaAtual = tarefas.find(t => t.id === tarefaId);
+      if (!tarefaAtual || !tarefaAtual.subTarefas) return;
+
+      const novaLista = tarefaAtual.subTarefas.map(sub => {
+        if (sub.id === subId) {
+          return { ...sub, texto: novoTexto.trim() };
+        }
+        return sub;
+      });
+
+      await updateDoc(doc(db, `${setorSelecionado}_tarefas`, tarefaId), {
+        subTarefas: novaLista
+      });
+      setEditandoSubId(null);
+    } catch (e) {}
   };
 
   const alternarStatusSubPendencia = async (tarefaId, subId) => {
@@ -805,7 +840,7 @@ function MainApp() {
         </div>
       </div>
 
-      {/* ÁREA PRINCIPAL SPLIT-VIEW (BIBLIOTECA À ESQUERDA + PAINEL LATERAL À DIREITA) */}
+      {/* ÁREA PRINCIPAL SPLIT-VIEW */}
       <div style={{ flex: 1, display: 'flex', width: '100%', boxSizing: 'border-box', overflow: 'hidden' }}>
         
         {/* CONTEÚDO DA BIBLIOTECA */}
@@ -888,7 +923,7 @@ function MainApp() {
             </div>
           </div>
 
-          {/* TABELA DE DADOS ESTILO NOTION */}
+          {/* TABELA DE DADOS ESTILO NOTION COM EDIÇÃO INLINE (DUPLO CLIQUE) */}
           <div style={{ width: '100%', boxSizing: 'border-box' }}>
             
             <div style={{ display: 'grid', gridTemplateColumns: '2.5fr 1.5fr 1.5fr 1fr 1fr', padding: '8px 0', borderBottom: `1px solid ${theme.border}`, fontSize: '12px', fontWeight: '500', color: theme.textMuted, minWidth: '700px' }}>
@@ -910,19 +945,37 @@ function MainApp() {
                   return (
                     <React.Fragment key={t.id}>
                       {/* LINHA PRINCIPAL DA PÁGINA PAI */}
-                      <div style={{ display: 'grid', gridTemplateColumns: '2.5fr 1.5fr 1.5fr 1fr 1fr', padding: '10px 0', borderBottom: `1px solid ${theme.border}`, alignItems: 'center', fontSize: '13px', transition: 'background 0.1s' }} onMouseEnter={(e) => e.currentTarget.style.background = theme.cardInner} onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
+                      <div 
+                        onDoubleClick={() => { setEditandoId(t.id); setTextoEditando(t.titulo); }}
+                        style={{ display: 'grid', gridTemplateColumns: '2.5fr 1.5fr 1.5fr 1fr 1fr', padding: '10px 0', borderBottom: `1px solid ${theme.border}`, alignItems: 'center', fontSize: '13px', transition: 'background 0.1s' }} 
+                        onMouseEnter={(e) => e.currentTarget.style.background = theme.cardInner} 
+                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                      >
                         
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden', paddingRight: '10px' }}>
                           <span onClick={() => alternarExpandido(t.id)} style={{ cursor: 'pointer', fontSize: '10px', color: theme.textMuted, userSelect: 'none', padding: '2px', width: '12px', textAlign: 'center' }}>
                             {isExpandido ? '▼' : '▶'}
                           </span>
                           <span>📄</span>
-                          <span 
-                            onClick={() => abrirPainelLateral(t)}
-                            style={{ fontWeight: '400', color: theme.textMain, cursor: 'pointer', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
-                          >
-                            {t.titulo}
-                          </span>
+                          
+                          {editandoId === t.id ? (
+                            <input 
+                              type="text" 
+                              value={textoEditando}
+                              autoFocus
+                              onChange={(e) => setTextoEditando(e.target.value)}
+                              onBlur={() => salvarEdicaoInlineTarefa(t.id, textoEditando)}
+                              onKeyDown={(e) => { if (e.key === 'Enter') salvarEdicaoInlineTarefa(t.id, textoEditando); }}
+                              style={{ background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, padding: '2px 6px', fontSize: '13px', borderRadius: '3px', width: '80%' }}
+                            />
+                          ) : (
+                            <span 
+                              onClick={() => abrirPainelLateral(t)}
+                              style={{ fontWeight: '400', color: theme.textMain, cursor: 'pointer', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                            >
+                              {t.titulo}
+                            </span>
+                          )}
                         </div>
 
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: theme.textMain, fontSize: '13px' }}>
@@ -955,11 +1008,27 @@ function MainApp() {
                       {isExpandido && (
                         <div style={{ display: 'flex', flexDirection: 'column', background: theme.cardInner, borderBottom: `1px solid ${theme.border}` }}>
                           {subTarefas.map((sub) => (
-                            <div key={sub.id} style={{ display: 'grid', gridTemplateColumns: '2.5fr 1.5fr 1.5fr 1fr 1fr', padding: '8px 0 8px 30px', alignItems: 'center', fontSize: '13px', borderTop: `1px solid ${theme.border}` }}>
+                            <div 
+                              key={sub.id} 
+                              onDoubleClick={() => { setEditandoSubId(sub.id); setTextoSubEditando(sub.texto); }}
+                              style={{ display: 'grid', gridTemplateColumns: '2.5fr 1.5fr 1.5fr 1fr 1fr', padding: '8px 0 8px 30px', alignItems: 'center', fontSize: '13px', borderTop: `1px solid ${theme.border}` }}
+                            >
                               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
                                 <input type="checkbox" checked={sub.concluida} onChange={() => alternarStatusSubPendencia(t.id, sub.id)} style={{ accentColor: '#2eaadc', cursor: 'pointer' }} />
                                 <span>📄</span>
-                                <span style={{ color: sub.concluida ? theme.textMuted : theme.textMain, textDecoration: sub.concluida ? 'line-through' : 'none', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sub.texto}</span>
+                                {editandoSubId === sub.id ? (
+                                  <input 
+                                    type="text" 
+                                    value={textoSubEditando}
+                                    autoFocus
+                                    onChange={(e) => setTextoSubEditando(e.target.value)}
+                                    onBlur={() => salvarEdicaoInlineSub(t.id, sub.id, textoSubEditando)}
+                                    onKeyDown={(e) => { if (e.key === 'Enter') salvarEdicaoInlineSub(t.id, sub.id, textoSubEditando); }}
+                                    style={{ background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, padding: '2px 6px', fontSize: '13px', borderRadius: '3px', width: '80%' }}
+                                  />
+                                ) : (
+                                  <span style={{ color: sub.concluida ? theme.textMuted : theme.textMain, textDecoration: sub.concluida ? 'line-through' : 'none', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sub.texto}</span>
+                                )}
                               </div>
                               <div style={{ color: theme.textMuted, fontSize: '13px' }}>{t.responsavel}</div>
                               <div style={{ color: theme.textMuted, fontSize: '13px' }}>📄 {t.titulo}</div>
@@ -990,7 +1059,7 @@ function MainApp() {
 
         </div>
 
-        {/* PAINEL LATERAL DIREITO (SPLIT-VIEW EXATO DO NOTION) */}
+        {/* PAINEL LATERAL DIREITO (SPLIT-VIEW) */}
         {paginaLateral && (
           <div style={{ width: '450px', background: theme.cardBg, borderLeft: `1px solid ${theme.border}`, display: 'flex', flexDirection: 'column', padding: '32px', boxSizing: 'border-box', height: '100vh', overflowY: 'auto', flexShrink: '0', boxShadow: '-5px 0 25px rgba(0,0,0,0.1)' }}>
             
