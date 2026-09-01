@@ -13,7 +13,9 @@ import {
   onSnapshot,
   deleteDoc,
   updateDoc,
-  getDocs
+  getDocs,
+  arrayUnion,
+  arrayRemove
 } from 'firebase/firestore';
 
 // Inserção dinâmica do Favicon (Letra "P" em negrito)
@@ -42,7 +44,7 @@ style.innerHTML = `
     animation: piscar 2s infinite;
     font-weight: bold;
   }
-  .card-piscando {
+  .item-lista-piscando {
     border-left: 4px solid #ff4d4d !important;
     animation: piscar 2s infinite;
   }
@@ -54,26 +56,6 @@ style.innerHTML = `
   input[type="date"]::-webkit-calendar-picker-indicator {
     filter: invert(0.5);
     cursor: pointer;
-  }
-
-  .cards-container-grid {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 12px;
-    width: 100%;
-    box-sizing: border-box;
-  }
-
-  @media (max-width: 1400px) {
-    .cards-container-grid {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-  }
-
-  @media (max-width: 1050px) {
-    .cards-container-grid {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
   }
 
   @media (max-width: 768px) {
@@ -93,9 +75,6 @@ style.innerHTML = `
       grid-template-columns: 1fr !important;
       width: 100% !important;
       gap: 15px !important;
-    }
-    .cards-container-grid {
-      grid-template-columns: 1fr !important;
     }
   }
 `;
@@ -207,6 +186,7 @@ export default function App() {
   const [prazo, setPrazo] = useState('');
   const [prioridade, setPrioridade] = useState('Média');
   const [responsavelSelecionadoGestor, setResponsavelSelecionadoGestor] = useState('');
+  const [subPendenciasInput, setSubPendenciasInput] = useState('');
   
   const [filtroResponsavel, setFiltroResponsavel] = useState('todos');
 
@@ -222,6 +202,9 @@ export default function App() {
   const [mostrarPopupAlerta, setMostrarPopupAlerta] = useState(false);
   const [tarefasUrgentesUsuario, setTarefasUrgentesUsuario] = useState([]);
   const [popupJaExibido, setPopupJaExibido] = useState(false);
+
+  // Estados para gerenciar nova sub-pendência inline nas listas
+  const [textoNovaSub, setTextoNovaSub] = useState({});
 
   const mudarPagina = (novaPagina) => {
     window.history.pushState({ pagina: novaPagina, setor: setorSelecionado }, '');
@@ -414,6 +397,17 @@ export default function App() {
 
     const novaTarefaId = Date.now().toString();
 
+    // Processa sub-pendências iniciais se houver (separadas por linha)
+    const subPendenciasIniciais = subPendenciasInput
+      .split('\n')
+      .map(s => s.trim())
+      .filter(s => s.length > 0)
+      .map(textoSub => ({
+        id: Date.now().toString() + "_" + Math.random().toString(36).substring(2, 5),
+        texto: textoSub,
+        concluida: false
+      }));
+
     const tarefaObj = {
       titulo: titulo.trim(),
       descricao: descricao.trim(),
@@ -422,7 +416,8 @@ export default function App() {
       prioridade,
       status: 'Pendente',
       criadoPor: nomeFormatadoGlobal,
-      criadoEm: Date.now()
+      criadoEm: Date.now(),
+      subTarefas: subPendenciasIniciais
     };
 
     try {
@@ -432,6 +427,7 @@ export default function App() {
       setTitulo('');
       setDescription('');
       setPrazo('');
+      setSubPendenciasInput('');
       alert("Tarefa cadastrada com sucesso!");
     } catch (err) {
       alert("Erro ao salvar tarefa: " + err.message);
@@ -535,6 +531,65 @@ export default function App() {
       } catch (err) {
         alert("Erro ao excluir: " + err.message);
       }
+    }
+  };
+
+  // Funções de Gerenciamento de Sub-Pendências
+  const adicionarSubPendencia = async (tarefaId, subTexto) => {
+    if (!subTexto || !subTexto.trim()) return;
+    try {
+      const novaSub = {
+        id: Date.now().toString() + "_" + Math.random().toString(36).substring(2, 5),
+        texto: subTexto.trim(),
+        concluida: false
+      };
+      
+      const tarefaAtual = tarefas.find(t => t.id === tarefaId);
+      const listaSub = tarefaAtual?.subTarefas || [];
+      const novaLista = [...listaSub, novaSub];
+
+      await updateDoc(doc(db, `${setorSelecionado}_tarefas`, tarefaId), {
+        subTarefas: novaLista
+      });
+
+      setTextoNovaSub(prev => ({ ...prev, [tarefaId]: '' }));
+    } catch (e) {
+      alert("Erro ao adicionar sub-pendência: " + e.message);
+    }
+  };
+
+  const alternarStatusSubPendencia = async (tarefaId, subId) => {
+    try {
+      const tarefaAtual = tarefas.find(t => t.id === tarefaId);
+      if (!tarefaAtual || !tarefaAtual.subTarefas) return;
+
+      const novaLista = tarefaAtual.subTarefas.map(sub => {
+        if (sub.id === subId) {
+          return { ...sub, concluida: !sub.concluida };
+        }
+        return sub;
+      });
+
+      await updateDoc(doc(db, `${setorSelecionado}_tarefas`, tarefaId), {
+        subTarefas: novaLista
+      });
+    } catch (e) {
+      alert("Erro ao atualizar sub-pendência: " + e.message);
+    }
+  };
+
+  const excluirSubPendencia = async (tarefaId, subId) => {
+    try {
+      const tarefaAtual = tarefas.find(t => t.id === tarefaId);
+      if (!tarefaAtual || !tarefaAtual.subTarefas) return;
+
+      const novaLista = tarefaAtual.subTarefas.filter(sub => sub.id !== subId);
+
+      await updateDoc(doc(db, `${setorSelecionado}_tarefas`, tarefaId), {
+        subTarefas: novaLista
+      });
+    } catch (e) {
+      alert("Erro ao excluir sub-pendência: " + e.message);
     }
   };
 
@@ -809,7 +864,7 @@ export default function App() {
           {tarefasResolvidas.length === 0 ? (
             <p style={{ color: theme.textMuted, fontSize: '14px', textAlign: 'center', padding: '60px 0' }}>Nenhuma tarefa resolvida neste setor ainda.</p>
           ) : (
-            <div className="cards-container-grid">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {tarefasResolvidas.map((t) => (
                 <div key={t.id} style={{ background: theme.cardInner, padding: '16px', borderRadius: '6px', borderLeft: '4px solid #28a745', border: `1px solid ${theme.border}`, borderLeftWidth: '4px', opacity: 0.9, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box', width: '100%' }}>
                   <div>
@@ -852,10 +907,10 @@ export default function App() {
                   </div>
                 </div>
               ))}
-          </div>
+            </div>
           )}
+        </div>
       </div>
-    </div>
     );
   }
 
@@ -878,7 +933,7 @@ export default function App() {
                 <div key={t.id} style={{ background: theme.cardInner, padding: '12px 15px', borderRadius: '6px', borderLeft: '4px solid #ff4d4d', border: `1px solid ${theme.border}`, borderLeftWidth: '4px' }}>
                   <div style={{ fontWeight: 'bold', fontSize: '14px', color: theme.textMain, marginBottom: '4px' }}>{t.titulo}</div>
                   <div style={{ fontSize: '12px', color: '#ff4d4d', fontWeight: 'bold' }}>📅 {st.texto}</div>
-              </div>
+                </div>
               );
             })}
         </div>
@@ -975,9 +1030,20 @@ export default function App() {
           <label style={{ display: 'block', fontSize: '12px', color: theme.textMuted, marginBottom: '5px' }}>Descrição / Detalhes</label>
           <textarea 
             placeholder="Contexto, dependências ou motivo..." 
-            rows="4"
+            rows="3"
             value={descricao} 
             onChange={(e) => setDescription(e.target.value)} 
+            style={{ width: '100%', padding: '10px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '4px', boxSizing: 'border-box', resize: 'vertical' }} 
+          />
+        </div>
+
+        <div style={{ marginBottom: '15px' }}>
+          <label style={{ display: 'block', fontSize: '12px', color: theme.textMuted, marginBottom: '5px' }}>Sub-pendências Iniciais (uma por linha)</label>
+          <textarea 
+            placeholder="Ex: Verificar portas SFP&#10;Baixar backup das configs&#10;Agendar janela" 
+            rows="3"
+            value={subPendenciasInput} 
+            onChange={(e) => setSubPendenciasInput(e.target.value)} 
             style={{ width: '100%', padding: '10px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '4px', boxSizing: 'border-box', resize: 'vertical' }} 
           />
         </div>
@@ -1061,8 +1127,8 @@ export default function App() {
               <h4 style={{ margin: '0 0 12px 0', fontSize: '13px', color: '#ffc107', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '1px solid #ffc107', paddingBottom: '6px' }}>
                 ⭐ Especialistas ({tarefasEspecialistas.length})
               </h4>
-              <div className="cards-container-grid">
-                {tarefasEspecialistas.map(t => renderizarCardTarefa(t, theme, isGestor, nomeFormatadoGlobal, abrirModalEdicao, abrirModalResolucao, excluirTarefa))}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {tarefasEspecialistas.map(t => renderizarItemListaTarefa(t, theme, isGestor, nomeFormatadoGlobal, abrirModalEdicao, abrirModalResolucao, excluirTarefa, adicionarSubPendencia, alternarStatusSubPendencia, excluirSubPendencia, textoNovaSub, setTextoNovaSub))}
               </div>
             </div>
           )}
@@ -1072,8 +1138,8 @@ export default function App() {
               <h4 style={{ margin: '0 0 12px 0', fontSize: '13px', color: '#4dabf7', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '1px solid #4dabf7', paddingBottom: '6px' }}>
                 🔷 NOC N3 ({tarefasN3.length})
               </h4>
-              <div className="cards-container-grid">
-                {tarefasN3.map(t => renderizarCardTarefa(t, theme, isGestor, nomeFormatadoGlobal, abrirModalEdicao, abrirModalResolucao, excluirTarefa))}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {tarefasN3.map(t => renderizarItemListaTarefa(t, theme, isGestor, nomeFormatadoGlobal, abrirModalEdicao, abrirModalResolucao, excluirTarefa, adicionarSubPendencia, alternarStatusSubPendencia, excluirSubPendencia, textoNovaSub, setTextoNovaSub))}
               </div>
             </div>
           )}
@@ -1083,8 +1149,8 @@ export default function App() {
               <h4 style={{ margin: '0 0 12px 0', fontSize: '13px', color: '#20c997', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '1px solid #20c997', paddingBottom: '6px' }}>
                 🟢 N1 ({tarefasN1.length})
               </h4>
-              <div className="cards-container-grid">
-                {tarefasN1.map(t => renderizarCardTarefa(t, theme, isGestor, nomeFormatadoGlobal, abrirModalEdicao, abrirModalResolucao, excluirTarefa))}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {tarefasN1.map(t => renderizarItemListaTarefa(t, theme, isGestor, nomeFormatadoGlobal, abrirModalEdicao, abrirModalResolucao, excluirTarefa, adicionarSubPendencia, alternarStatusSubPendencia, excluirSubPendencia, textoNovaSub, setTextoNovaSub))}
               </div>
             </div>
           )}
@@ -1214,78 +1280,144 @@ export default function App() {
   );
 }
 
-function renderizarCardTarefa(t, theme, isGestor, nomeFormatadoGlobal, abrirModalEdicao, abrirModalResolucao, excluirTarefa) {
+function renderizarItemListaTarefa(t, theme, isGestor, nomeFormatadoGlobal, abrirModalEdicao, abrirModalResolucao, excluirTarefa, adicionarSubPendencia, alternarStatusSubPendencia, excluirSubPendencia, textoNovaSub, setTextoNovaSub) {
   const infoPrazo = calcularStatusPrazo(t.prazo);
   
-  // Normalização para ignorar acentos e maiúsculas/minúsculas nas comparações
   const normalizarTexto = (str) => (str || '').normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
   const isResponsavelPelaTarefa = normalizarTexto(nomeFormatadoGlobal).includes(normalizarTexto(t.responsavel));
   
   const podeAgerir = isGestor || isResponsavelPelaTarefa;
   const isUrgente = infoPrazo.status === 'vencido' || infoPrazo.status === 'hoje' || infoPrazo.status === 'um_dia';
 
+  const subTarefas = t.subTarefas || [];
+  const subConcluidas = subTarefas.filter(s => s.concluida).length;
+
   return (
-    <div key={t.id} className={`card-tarefa-item ${isUrgente ? 'card-piscando' : ''}`} style={{ background: theme.cardBg, padding: '16px', borderRadius: '6px', border: `1px solid ${theme.border}`, borderLeft: isUrgente ? undefined : `4px solid #007bff`, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box', width: '100%' }}>
-      <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px', gap: '8px' }}>
-          <h4 style={{ margin: 0, fontSize: '15px', color: theme.textMain, wordBreak: 'break-word' }}>
-            {t.titulo}
-          </h4>
-          <span style={{ fontSize: '10px', padding: '3px 8px', borderRadius: '4px', background: t.prioridade === 'Crítica' ? '#b02a37' : t.prioridade === 'Alta' ? '#dc3545' : '#333', color: '#fff', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
-            {t.prioridade}
-          </span>
-        </div>
-
-        {t.descricao && (
-          <p style={{ margin: '0 0 12px 0', fontSize: '13px', color: theme.textMuted, lineHeight: '1.4', wordBreak: 'break-word' }}>
-            {t.descricao}
-          </p>
-        )}
-      </div>
-
-      <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', color: theme.textMuted, borderTop: `1px solid ${theme.border}`, paddingTop: '10px', marginBottom: '12px', flexWrap: 'wrap', gap: '6px' }}>
-          <div>
-            👤 <strong style={{ color: '#4dabf7' }}>{t.responsavel}</strong>
-          </div>
-          <div>
-            <span className={isUrgente ? 'alerta-vencido' : ''} style={{ color: infoPrazo.status === 'normal' ? theme.textMuted : undefined }}>
-              📅 {infoPrazo.texto}
+    <div key={t.id} className={`item-lista-tarefa ${isUrgente ? 'item-lista-piscando' : ''}`} style={{ background: theme.cardBg, padding: '16px', borderRadius: '6px', border: `1px solid ${theme.border}`, borderLeft: isUrgente ? undefined : `4px solid #007bff`, display: 'flex', flexDirection: 'column', gap: '12px', boxSizing: 'border-box', width: '100%' }}>
+      
+      {/* Cabeçalho da Tarefa */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px', flexWrap: 'wrap' }}>
+        <div style={{ flex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px', flexWrap: 'wrap' }}>
+            <h4 style={{ margin: 0, fontSize: '15px', color: theme.textMain, wordBreak: 'break-word' }}>
+              {t.titulo}
+            </h4>
+            <span style={{ fontSize: '10px', padding: '3px 8px', borderRadius: '4px', background: t.prioridade === 'Crítica' ? '#b02a37' : t.prioridade === 'Alta' ? '#dc3545' : '#333', color: '#fff', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
+              {t.prioridade}
             </span>
           </div>
+          {t.descricao && (
+            <p style={{ margin: '0 0 8px 0', fontSize: '13px', color: theme.textMuted, lineHeight: '1.4', wordBreak: 'break-word' }}>
+              {t.descricao}
+            </p>
+          )}
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', flexWrap: 'wrap' }}>
+        {/* Botões de Ação Principal */}
+        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
           {podeAgerir && (
             <button 
               onClick={() => abrirModalEdicao(t)}
               style={{ background: theme.cardInner, border: `1px solid ${theme.border}`, color: '#4dabf7', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}
-          >
-            ✏️ Editar
-          </button>
-        )}
-
+            >
+              ✏️ Editar
+            </button>
+          )}
           {podeAgerir && (
             <button 
               onClick={() => abrirModalResolucao(t)}
               style={{ background: '#28a745', border: 'none', color: '#fff', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}
-          >
-            ✔ Resolver
-          </button>
-        )}
-           
+            >
+              ✔ Resolver
+            </button>
+          )}
           {isGestor && (
             <button 
               onClick={() => excluirTarefa(t.id, t.titulo)}
               style={{ background: theme.cardInner, border: `1px solid ${theme.border}`, color: '#ff6b6b', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px' }}
-          >
-            Excluir
-          </button>
-        )}
+            >
+              Excluir
+            </button>
+          )}
         </div>
       </div>
+
+      {/* Seção de Sub-pendências (Checklist interno) */}
+      <div style={{ background: theme.cardInner, padding: '10px 12px', borderRadius: '6px', border: `1px solid ${theme.border}` }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+          <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#4dabf7' }}>
+            📌 Sub-pendências ({subConcluidas}/{subTarefas.length})
+          </span>
+        </div>
+
+        {subTarefas.length > 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '8px' }}>
+            {subTarefas.map(sub => (
+              <div key={sub.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', fontSize: '13px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', flex: 1, wordBreak: 'break-word', color: sub.concluida ? theme.textMuted : theme.textMain, textDecoration: sub.concluida ? 'line-through' : 'none' }}>
+                  <input 
+                    type="checkbox" 
+                    checked={sub.concluida} 
+                    onChange={() => alternarStatusSubPendencia(t.id, sub.id)}
+                    style={{ cursor: 'pointer' }}
+                  />
+                  <span>{sub.texto}</span>
+                </label>
+                {podeAgerir && (
+                  <button 
+                    onClick={() => excluirSubPendencia(t.id, sub.id)}
+                    style={{ background: 'transparent', border: 'none', color: '#ff6b6b', cursor: 'pointer', fontSize: '11px', padding: '2px 4px' }}
+                    title="Remover sub-pendência"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Adicionar nova sub-pendência de forma rápida */}
+        {podeAgerir && (
+          <div style={{ display: 'flex', gap: '6px', marginTop: '6px' }}>
+            <input 
+              type="text" 
+              placeholder="Adicionar nova sub-pendência..." 
+              value={textoNovaSub[t.id] || ''}
+              onChange={(e) => setTextoNovaSub(prev => ({ ...prev, [t.id]: e.target.value }))}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  adicionarSubPendencia(t.id, textoNovaSub[t.id]);
+                }
+              }}
+              style={{ flex: 1, padding: '6px 8px', fontSize: '12px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '4px' }}
+            />
+            <button 
+              type="button"
+              onClick={() => adicionarSubPendencia(t.id, textoNovaSub[t.id])}
+              style={{ padding: '6px 10px', fontSize: '12px', background: '#007bff', border: 'none', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+            >
+              + Adicionar
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Rodapé da Tarefa: Responsável e Prazo */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', color: theme.textMuted, borderTop: `1px solid ${theme.border}`, paddingTop: '8px', flexWrap: 'wrap', gap: '6px' }}>
+        <div>
+          👤 <strong style={{ color: '#4dabf7' }}>{t.responsavel}</strong>
+        </div>
+        <div>
+          <span className={isUrgente ? 'alerta-vencido' : ''} style={{ color: infoPrazo.status === 'normal' ? theme.textMuted : undefined }}>
+            📅 {infoPrazo.texto}
+          </span>
+        </div>
+      </div>
+
     </div>
-    );
+  );
 }
 
 function TelaLogin({ onLoginSucesso, darkMode, setDarkMode, theme }) {
