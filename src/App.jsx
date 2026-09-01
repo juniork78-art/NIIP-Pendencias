@@ -402,22 +402,6 @@ function MainApp() {
             const atualizada = lista.find(t => t.id === paginaLateral.id);
             if (atualizada) setPaginaLateral(atualizada);
           }
-
-          if (!popupJaExibido) {
-            const minhasUrgentes = lista.filter(t => {
-              if (t.status === 'Resolvida') return false;
-              const isMeu = nomeFormatadoGlobal.includes((t.responsavel || '').toUpperCase());
-              if (!isMeu) return false;
-              const st = calcularStatusPrazo(t.prazo);
-              return st.status === 'vencido' || st.status === 'hoje' || st.status === 'um_dia';
-            });
-
-            if (minhasUrgentes.length > 0) {
-              setTarefasUrgentesUsuario(minhasUrgentes);
-              setMostrarPopupAlerta(true);
-              setPopupJaExibido(true);
-            }
-          }
         }, (err) => console.error(err));
 
         const unsubLogs = onSnapshot(collection(db, `${setorSelecionado}_auditoria`), (snapshot) => {
@@ -435,7 +419,7 @@ function MainApp() {
         };
       } catch (e) {}
     }
-  }, [usuarioLogado, setorSelecionado, nomeFormatadoGlobal, popupJaExibido]);
+  }, [usuarioLogado, setorSelecionado]);
 
   useEffect(() => {
     const integrantes = 
@@ -460,29 +444,6 @@ function MainApp() {
         dataHoraFormatada: new Date().toLocaleString('pt-BR')
       });
     } catch (e) {}
-  };
-
-  const excluirLogIndividual = async (logId) => {
-    if (window.confirm("Deseja realmente excluir este registro de auditoria?")) {
-      try {
-        await deleteDoc(doc(db, `${setorSelecionado}_auditoria`, logId));
-      } catch (e) {
-        alert("Erro ao excluir log: " + e.message);
-      }
-    }
-  };
-
-  const apagarTodoHistoricoAuditoria = async () => {
-    if (window.confirm("ATENÇÃO: Deseja realmente apagar TODO o histórico de auditoria deste setor?")) {
-      try {
-        const querySnapshot = await getDocs(collection(db, `${setorSelecionado}_auditoria`));
-        const promessas = querySnapshot.docs.map((d) => deleteDoc(d.ref));
-        await Promise.all(promessas);
-        alert("Histórico de auditoria limpo com sucesso!");
-      } catch (e) {
-        alert("Erro ao limpar histórico: " + e.message);
-      }
-    }
   };
 
   const obterIntegrantesSetor = () => {
@@ -747,7 +708,6 @@ function MainApp() {
     treeLine: darkMode ? '#444440' : '#d3d3ce'
   };
 
-  // Componente recursivo para renderizar subtarefas com destaque verde quando concluídas
   const renderizarSubTarefasRecursivas = (subLista, tarefaRaizId, caminhoPai, nivel = 1, tarefaPaiObj) => {
     if (!subLista || subLista.length === 0) return null;
 
@@ -860,10 +820,10 @@ function MainApp() {
   }
 
   const setorAtualInfo = SETORES_DISPONIVEIS.find(s => s.id === setorSelecionado) || SETORES_DISPONIVEIS[0];
-  const tarefasAndamento = tarefas.filter(t => t.status !== 'Resolvida');
+  const tarefasAndamento = tarefas.filter(t => t.status !== 'Resolvida'); // Manteremos todas na lista para que fiquem visíveis e verdes
   const tarefasResolvidas = tarefas.filter(t => t.status === 'Resolvida');
 
-  const tarefasFiltradas = tarefasAndamento.filter(t => {
+  const tarefasFiltradas = tarefas.filter(t => {
     if (filtroResponsavel !== 'todos' && t.responsavel !== filtroResponsavel) return false;
     return true;
   });
@@ -894,7 +854,7 @@ function MainApp() {
           Páginas Recentes
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontSize: '12px', overflowY: 'auto', maxHeight: '40vh', marginBottom: '20px' }}>
-          {tarefasAndamento.map(t => (
+          {tarefas.map(t => (
             <div 
               key={t.id} 
               onClick={() => abrirPainelLateral(t)}
