@@ -696,7 +696,7 @@ function MainApp() {
     treeLine: darkMode ? '#444440' : '#d3d3ce'
   };
 
-  // Componente recursivo para renderizar subtarefas em qualquer nível com seta e botão adicionar nova
+  // Componente recursivo para renderizar subtarefas em qualquer nível COM SETA SEMPRE VISÍVEL
   const renderizarSubTarefasRecursivas = (subLista, tarefaRaizId, caminhoPai, nivel = 1) => {
     if (!subLista || subLista.length === 0) return null;
 
@@ -705,16 +705,15 @@ function MainApp() {
         {subLista.map((sub) => {
           const caminhoAtual = [...caminhoPai, sub.id];
           const isExpandidoSub = expandidoIds[sub.id];
-          const temFilhos = sub.subTarefas && sub.subTarefas.length > 0;
           const paddingLeftPx = nivel * 24 + 6;
 
           return (
             <React.Fragment key={sub.id}>
               <div style={{ display: 'grid', gridTemplateColumns: '2.5fr 1.5fr 1.5fr 1fr 1fr', padding: `8px 0 8px ${paddingLeftPx}px`, alignItems: 'center', fontSize: '13px', borderTop: `1px solid ${theme.border}` }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden' }}>
-                  {/* Seta de expansão da subtarefa */}
+                  {/* Seta visível em TODA subtarefa para permitir ramificações infinitas */}
                   <span onClick={() => alternarExpandido(sub.id)} style={{ cursor: 'pointer', fontSize: '10px', color: theme.textMuted, userSelect: 'none', padding: '2px', width: '12px', textAlign: 'center' }}>
-                    {temFilhos ? (isExpandidoSub ? '▼' : '▶') : ''}
+                    {isExpandidoSub ? '▼' : '▶'}
                   </span>
                   <input type="checkbox" checked={sub.concluida} onChange={() => alternarStatusRecursivo(tarefaRaizId, caminhoAtual)} style={{ accentColor: '#2eaadc', cursor: 'pointer' }} />
                   <span>📄</span>
