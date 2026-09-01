@@ -270,6 +270,24 @@ function MainApp() {
     window.history.pushState({ view: paginaAtual, lateralAberta: true }, '');
   };
 
+  const abrirPainelLateralSub = (sub, raizId, caminhoIds, tarefaPai) => {
+    const subObj = {
+      isSub: true,
+      raizId,
+      caminhoIds,
+      id: sub.id,
+      titulo: sub.texto,
+      descricao: sub.descricao || 'Sub-tarefa',
+      responsavel: tarefaPai.responsavel,
+      prazo: tarefaPai.prazo,
+      prioridade: tarefaPai.prioridade
+    };
+    setPaginaLateral(subObj);
+    setEditTituloLateral(sub.texto);
+    setEditDescricaoLateral(sub.descricao || '');
+    window.history.pushState({ view: paginaAtual, lateralAberta: true }, '');
+  };
+
   const fecharPainelLateral = () => {
     setPaginaLateral(null);
     window.history.back();
@@ -629,6 +647,61 @@ function MainApp() {
     } catch (e) {}
   };
 
+  const abrirModalEdicao = (tarefa) => {
+    setTarefaEditando(tarefa);
+    setEditTitulo(tarefa.titulo || '');
+    setEditDescricao(tarefa.descricao || '');
+    setEditPrazo(tarefa.prazo || '');
+    setEditPrioridade(tarefa.prioridade || 'Média');
+  };
+
+  const salvarEdicaoTarefa = async (e) => {
+    e.preventDefault();
+    if (!editTitulo.trim() || !editPrazo) return;
+
+    try {
+      await updateDoc(doc(db, `${setorSelecionado}_tarefas`, tarefaEditando.id), {
+        titulo: editTitulo.trim(),
+        descricao: editDescricao.trim(),
+        prazo: editPrazo,
+        prioridade: editPrioridade
+      });
+
+      await registrarLogAuditoria("EDIÇÃO", `Atualizou a página "${editTitulo.trim()}"`, editTitulo.trim());
+      setTarefaEditando(null);
+    } catch (err) {}
+  };
+
+  const abrirModalResolucao = (tarefa) => {
+    setTarefaResolvendo(tarefa);
+    setDetalhesResolucaoInput('');
+  };
+
+  const confirmarResolucaoTarefa = async (e) => {
+    e.preventDefault();
+    if (!detalhesResolucaoInput.trim()) return;
+
+    try {
+      await updateDoc(doc(db, `${setorSelecionado}_tarefas`, tarefaResolvendo.id), { 
+        status: 'Resolvida',
+        detalhesResolucao: detalhesResolucaoInput.trim()
+      });
+      await registrarLogAuditoria("RESOLUÇÃO", `Concluiu a página`, tarefaResolvendo.titulo);
+      setTarefaResolvendo(null);
+      if (paginaLateral && paginaLateral.id === tarefaResolvendo.id) fecharPainelLateral();
+    } catch (err) {}
+  };
+
+  const reabrirTarefa = async (tarefa) => {
+    try {
+      await updateDoc(doc(db, `${setorSelecionado}_tarefas`, tarefa.id), { 
+        status: 'Pendente',
+        detalhesResolucao: null 
+      });
+      await registrarLogAuditoria("REABERTURA", `Reabriu a página`, tarefa.titulo);
+    } catch (err) {}
+  };
+
   const excluirTarefa = async (id, tituloTarefa) => {
     if (window.confirm("Deseja realmente excluir esta página?")) {
       try {
@@ -639,18 +712,42 @@ function MainApp() {
     }
   };
 
-  // Botão verde "Concluir" no painel lateral agora salva as alterações da página atual instantaneamente
   const salvarAlteracoesPaginaLateral = async () => {
-    if (!paginaLateral || !editTituloLateral.trim()) return;
+    if (!paginaLateral) return;
     try {
-      await updateDoc(doc(db, `${setorSelecionado}_tarefas`, paginaLateral.id), {
-        titulo: editTituloLateral.trim(),
-        descricao: editDescricaoLateral.trim()
-      });
-      setPaginaLateral(prev => ({ ...prev, titulo: editTituloLateral.trim(), descricao: editDescricaoLateral.trim() }));
+      if (paginaLateral.isSub) {
+        const tarefaRaiz = tarefas.find(t => t.id === paginaLateral.raizId);
+        if (!tarefaRaiz) return;
+
+        const atualizarArvore = (lista, ids) => {
+          return lista.map(item => {
+            if (item.id === ids[0]) {
+              if (ids.length === 1) {
+                return { ...item, texto: editTituloLateral.trim(), descricao: editDescricaoLateral.trim() };
+              } else {
+                return { ...item, subTarefas: atualizarArvore(item.subTarefas || [], ids.slice(1)) };
+              }
+            }
+            return item;
+          });
+        };
+
+        const novaSubTarefas = atualizarArvore(tarefaRaiz.subTarefas || [], paginaLateral.caminhoIds);
+        await updateDoc(doc(db, `${setorSelecionado}_tarefas`, paginaLateral.raizId), {
+          subTarefas: novaSubTarefas
+        });
+        setPaginaLateral(prev => ({ ...prev, titulo: editTituloLateral.trim(), descricao: editDescricaoLateral.trim() }));
+      } else {
+        if (!editTituloLateral.trim()) return;
+        await updateDoc(doc(db, `${setorSelecionado}_tarefas`, paginaLateral.id), {
+          titulo: editTituloLateral.trim(),
+          descricao: editDescricaoLateral.trim()
+        });
+        setPaginaLateral(prev => ({ ...prev, titulo: editTituloLateral.trim(), descricao: editDescricaoLateral.trim() }));
+      }
       alert("Alterações salvas com sucesso!");
     } catch (e) {
-      alert("Erro ao salvar alterações: " + e.message);
+      alert("Erro ao salvar: " + e.message);
     }
   };
 
@@ -668,7 +765,8 @@ function MainApp() {
     treeLine: darkMode ? '#444440' : '#d3d3ce'
   };
 
-  const renderizarSubTarefasRecursivas = (subLista, tarefaRaizId, caminhoPai, nivel = 1) => {
+  // Componente recursivo atualizado para abrir o painel lateral ao clicar na subtarefa
+  const renderizarSubTarefasRecursivas = (subLista, tarefaRaizId, caminhoPai, nivel = 1, tarefaPaiObj) => {
     if (!subLista || subLista.length === 0) return null;
 
     return (
@@ -700,11 +798,16 @@ function MainApp() {
                   </span>
                   <input type="checkbox" checked={sub.concluida} onChange={() => alternarStatusRecursivo(tarefaRaizId, caminhoAtual)} style={{ accentColor: '#2eaadc', cursor: 'pointer' }} />
                   <span>📄</span>
-                  <span style={{ fontWeight: '400', color: sub.concluida ? theme.textMuted : theme.textMain, textDecoration: sub.concluida ? 'line-through' : 'none', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sub.texto}</span>
+                  <span 
+                    onClick={() => abrirPainelLateralSub(sub, tarefaRaizId, caminhoAtual, tarefaPaiObj)}
+                    style={{ fontWeight: '400', color: sub.concluida ? theme.textMuted : theme.textMain, textDecoration: sub.concluida ? 'line-through' : 'none', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', cursor: 'pointer' }}
+                  >
+                    {sub.texto}
+                  </span>
                 </div>
 
                 <div style={{ color: theme.textMuted, fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {tarefas.find(t => t.id === tarefaRaizId)?.responsavel || 'Junior Gonçalves'}
+                  {tarefaPaiObj.responsavel || 'Junior Gonçalves'}
                 </div>
 
                 <div style={{ color: theme.textMuted, fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -723,7 +826,7 @@ function MainApp() {
 
               {isExpandidoSub && (
                 <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-                  {renderizarSubTarefasRecursivas(sub.subTarefas, tarefaRaizId, caminhoAtual, nivel + 1)}
+                  {renderizarSubTarefasRecursivas(sub.subTarefas, tarefaRaizId, caminhoAtual, nivel + 1, tarefaPaiObj)}
                   
                   <div 
                     onClick={() => promptAdicionarSub(tarefaRaizId, caminhoAtual)}
@@ -984,7 +1087,7 @@ function MainApp() {
                       {/* SUB-PÁGINAS RECURSIVAS E BOTÃO "+ Adicionar nova" */}
                       {isExpandido && (
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
-                          {renderizarSubTarefasRecursivas(subTarefas, t.id, [t.id], 1)}
+                          {renderizarSubTarefasRecursivas(subTarefas, t.id, [t.id], 1, t)}
                           <div 
                             onClick={() => promptAdicionarSub(t.id, [t.id])}
                             style={{ 
@@ -1020,7 +1123,7 @@ function MainApp() {
 
         </div>
 
-        {/* PAINEL LATERAL DIREITO (SPLIT-VIEW) COM BOTÃO CONCLUIR REAJUSTADO PARA SALVAR */}
+        {/* PAINEL LATERAL DIREITO (SPLIT-VIEW) COM BOTÃO CONCLUIR PARA SALVAR */}
         {paginaLateral && (
           <div style={{ width: '450px', background: theme.cardBg, borderLeft: `1px solid ${theme.border}`, display: 'flex', flexDirection: 'column', padding: '32px', boxSizing: 'border-box', height: '100vh', overflowY: 'auto', flexShrink: '0', boxShadow: '-5px 0 25px rgba(0,0,0,0.1)' }}>
             
