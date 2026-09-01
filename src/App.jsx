@@ -295,6 +295,11 @@ function MainApp() {
         try {
           if (user && user.email) {
             setUsuarioLogado(user.email);
+            const userUpper = user.email.split('@')[0].replace('.', ' ').toUpperCase();
+            const match = TODOS_INTEGRANTES.find(n => userUpper.includes(n.toUpperCase()));
+            if (match) {
+              setResponsavelSelecionadoGestor(match);
+            }
           } else {
             setUsuarioLogado(null);
           }
@@ -359,6 +364,23 @@ function MainApp() {
   }, [usuarioLogado]);
 
   const responsavelFinal = isGestor ? responsavelSelecionadoGestor : nomeForcadoParaUsuario || (TODOS_INTEGRANTES.find(n => nomeFormatadoGlobal.includes(n.toUpperCase())) || TODOS_INTEGRANTES[0]);
+
+  // Funções Auxiliares de Propagação Recursiva para Lixeira e Arquivamento
+  const setTrashRecursiveProp = (lista, val) => {
+    return (lista || []).map(item => ({
+      ...item,
+      excluido: val,
+      subTarefas: setTrashRecursiveProp(item.subTarefas, val)
+    }));
+  };
+
+  const setArchiveRecursiveProp = (lista, val) => {
+    return (lista || []).map(item => ({
+      ...item,
+      arquivada: val,
+      subTarefas: setArchiveRecursiveProp(item.subTarefas, val)
+    }));
+  };
 
   // Árvore Recursiva
   const insertNodeInTree = (lista, ids, newNode) => {
@@ -475,6 +497,7 @@ function MainApp() {
       concluida: false,
       arquivada: false,
       excluido: false,
+      criadoPor: nomeFormatadoGlobal || 'Usuário', // Atribui corretamente o autor atual
       subTarefas: []
     };
 
@@ -513,9 +536,11 @@ function MainApp() {
     if (!window.confirm("Deseja realmente alterar o status de arquivamento desta página?")) return;
     try {
       const novaArquivada = !Boolean(tarefa.arquivada);
+      const novasSubs = setArchiveRecursiveProp(tarefa.subTarefas, novaArquivada);
       const colecaoAlvo = tarefa._colecao || 'tarefas_gerais';
       await updateDoc(doc(db, colecaoAlvo, tarefa.id), {
-        arquivada: novaArquivada
+        arquivada: novaArquivada,
+        subTarefas: novasSubs
       });
       if (paginaLateral && paginaLateral.id === tarefa.id) fecharPainelLateral();
     } catch (e) {}
@@ -525,9 +550,11 @@ function MainApp() {
     if (!window.confirm("Deseja mover esta página para a Lixeira?")) return;
     try {
       const novoExcluido = !Boolean(tarefa.excluido);
+      const novasSubs = setTrashRecursiveProp(tarefa.subTarefas, novoExcluido);
       const colecaoAlvo = tarefa._colecao || 'tarefas_gerais';
       await updateDoc(doc(db, colecaoAlvo, tarefa.id), {
-        excluido: novoExcluido
+        excluido: novoExcluido,
+        subTarefas: novasSubs
       });
       if (paginaLateral && paginaLateral.id === tarefa.id) fecharPainelLateral();
     } catch (e) {}
@@ -568,15 +595,6 @@ function MainApp() {
     } catch (e) {}
   };
 
-  const excluirTarefaDefinitivo = async (id, colecaoAlvo) => {
-    if (window.confirm("ATENÇÃO: Deseja excluir DEFINTIVAMENTE este item da lixeira?")) {
-      try {
-        await deleteDoc(doc(db, colecaoAlvo || 'tarefas_gerais', id));
-        if (paginaLateral && paginaLateral.id === id) fecharPainelLateral();
-      } catch (err) {}
-    }
-  };
-
   const salvarEdicaoInlineTarefa = async (tarefaId, colecaoAlvo, novoTitulo) => {
     if (!novoTitulo.trim()) return;
     try {
@@ -585,6 +603,39 @@ function MainApp() {
       });
       setEditandoId(null);
     } catch (e) {}
+  };
+
+  const abrirModalEdicao = (tarefa) => {
+    setTarefaEditando(tarefa);
+    setEditTitulo(tarefa.titulo || '');
+    setEditDescricao(tarefa.descricao || '');
+    setEditPrazo(tarefa.prazo || '');
+    setEditPrioridade(tarefa.prioridade || 'Média');
+  };
+
+  const salvarEdicaoTarefa = async (e) => {
+    e.preventDefault();
+    if (!editTitulo.trim() || !editPrazo) return;
+
+    try {
+      const colecaoAlvo = tarefaEditando._colecao || 'tarefas_gerais';
+      await updateDoc(doc(db, colecaoAlvo, tarefaEditando.id), {
+        titulo: editTitulo.trim(),
+        descricao: editDescricao.trim(),
+        prazo: editPrazo,
+        prioridade: editPrioridade
+      });
+      setTarefaEditando(null);
+    } catch (err) {}
+  };
+
+  const excluirTarefaDefinitivo = async (id, colecaoAlvo) => {
+    if (window.confirm("ATENÇÃO: Deseja excluir DEFINTIVAMENTE este item da lixeira?")) {
+      try {
+        await deleteDoc(doc(db, colecaoAlvo || 'tarefas_gerais', id));
+        if (paginaLateral && paginaLateral.id === id) fecharPainelLateral();
+      } catch (err) {}
+    }
   };
 
   const salvarAlteracoesPaginaLateral = async () => {
@@ -679,7 +730,7 @@ function MainApp() {
                 </div>
 
                 <div style={{ color: isConcluida ? '#27ae60' : theme.textMuted, fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {tarefaRaizObj.responsavel || 'Junior Gonçalves'}
+                  {sub.criadoPor || tarefaRaizObj.responsavel || 'Usuário'}
                 </div>
 
                 <div style={{ color: isConcluida ? '#27ae60' : theme.textMuted, fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -779,7 +830,7 @@ function MainApp() {
   return (
     <div className="workspace-layout" style={{ display: 'flex', minHeight: '100vh', backgroundColor: theme.bg, color: theme.textMain, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif', boxSizing: 'border-box' }}>
       
-      {/* SIDEBAR ESQUERDA NOTION - LIXEIRA APENAS PARA DUANDYS */}
+      {/* SIDEBAR ESQUERDA NOTION */}
       <div className="sidebar-notion" style={{ width: '240px', background: theme.sidebarBg, borderRight: `1px solid ${theme.border}`, display: 'flex', flexDirection: 'column', padding: '12px 8px', boxSizing: 'border-box', flexShrink: '0' }}>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 8px', borderRadius: '4px', marginBottom: '16px', background: theme.cardBg, border: `1px solid ${theme.border}` }}>
@@ -800,7 +851,6 @@ function MainApp() {
             <span>📁</span> <span>Arquivados ({tarefasArquivadas.length})</span>
           </div>
           
-          {/* LIXEIRA RESTRITA APENAS AO DUANDYS (GESTOR) */}
           {isGestor && (
             <div onClick={() => mudarPagina('lixeira')} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 8px', borderRadius: '4px', cursor: 'pointer', background: paginaAtual === 'lixeira' ? theme.cardInner : 'transparent' }}>
               <span>🗑️</span> <span>Lixeira ({tarefasLixeira.length})</span>
@@ -864,7 +914,7 @@ function MainApp() {
                           status: 'Pendente',
                           arquivada: false,
                           excluido: false,
-                          criadoPor: nomeFormatadoGlobal,
+                          criadoPor: nomeFormatadoGlobal || 'Usuário',
                           criadoEm: Date.now(),
                           subTarefas: []
                         });
@@ -965,7 +1015,7 @@ function MainApp() {
                         </div>
 
                         <div style={{ color: isConcluida ? '#27ae60' : theme.textMuted, fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {t.responsavel}
+                          {t.criadoPor || t.responsavel}
                         </div>
 
                         <div style={{ color: isConcluida ? '#27ae60' : theme.textMuted, fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
