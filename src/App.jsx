@@ -142,7 +142,7 @@ class ErrorBoundary extends React.Component {
     return { hasError: true, error };
   }
   componentDidCatch(error, errorInfo) {
-    console.error("Erro capturado:", error, errorInfo);
+    console.error("Erro crítico capturado:", error, errorInfo);
   }
   render() {
     if (this.state.hasError) {
@@ -224,16 +224,50 @@ function MainApp() {
     setExpandidoIds(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
+  // ----- INTEGRAÇÃO DO BOTÃO VOLTAR DO NAVEGADOR (HISTORY API) -----
+  useEffect(() => {
+    if (!window.history.state) {
+      window.history.replaceState({ view: 'andamento' }, '');
+    }
+
+    const handlePopState = (e) => {
+      // Ao clicar em Voltar no navegador, sempre fecha a visualização de página se estiver aberta
+      setPaginaAberta(null);
+      if (e.state && e.state.view) {
+        setPaginaAtual(e.state.view);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  const abrirPaginaEmTelaCheia = (t) => {
+    setPaginaAberta(t);
+    setEditTituloPagina(t.titulo);
+    setEditDescricaoPagina(t.descricao || '');
+    // Empurra um novo estado para que o botão voltar feche a página
+    window.history.pushState({ view: paginaAtual, paginaAberta: true }, '');
+  };
+
+  const fecharPaginaEmTelaCheia = () => {
+    setPaginaAberta(null);
+    window.history.back(); // Retorna o histórico para sincronizar a URL invisível
+  };
+
   const mudarPagina = (novaPagina) => {
     setPaginaAberta(null);
     setPaginaAtual(novaPagina);
+    window.history.pushState({ view: novaPagina }, '');
   };
 
   const mudarSetor = (novoSetor) => {
     setPaginaAberta(null);
     setSetorSelecionado(novoSetor);
     setPaginaAtual('andamento');
+    window.history.pushState({ view: 'andamento' }, '');
   };
+  // ------------------------------------------------------------------
 
   useEffect(() => {
     try {
@@ -566,7 +600,7 @@ function MainApp() {
       });
       await registrarLogAuditoria("RESOLUÇÃO", `Concluiu a página`, tarefaResolvendo.titulo);
       setTarefaResolvendo(null);
-      if (paginaAberta && paginaAberta.id === tarefaResolvendo.id) setPaginaAberta(null);
+      if (paginaAberta && paginaAberta.id === tarefaResolvendo.id) fecharPaginaEmTelaCheia();
     } catch (err) {}
   };
 
@@ -585,7 +619,7 @@ function MainApp() {
       try {
         await deleteDoc(doc(db, `${setorSelecionado}_tarefas`, id));
         await registrarLogAuditoria("EXCLUSÃO", `Excluiu a página`, tituloTarefa || 'Sem título');
-        if (paginaAberta && paginaAberta.id === id) setPaginaAberta(null);
+        if (paginaAberta && paginaAberta.id === id) fecharPaginaEmTelaCheia();
       } catch (err) {}
     }
   };
@@ -737,7 +771,7 @@ function MainApp() {
           {tarefasAndamento.map(t => (
             <div 
               key={t.id} 
-              onClick={() => { setPaginaAberta(t); setEditTituloPagina(t.titulo); setEditDescricaoPagina(t.descricao || ''); }}
+              onClick={() => abrirPaginaEmTelaCheia(t)}
               style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 8px', borderRadius: '4px', cursor: 'pointer', background: paginaAberta?.id === t.id ? theme.cardInner : 'transparent', color: paginaAberta?.id === t.id ? theme.textMain : theme.textMuted }}
             >
               <span>📄</span> <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.titulo}</span>
@@ -772,7 +806,7 @@ function MainApp() {
         </div>
       </div>
 
-      {/* ÁREA PRINCIPAL EXATAMENTE NO LAYOUT DA IMAGEM */}
+      {/* ÁREA PRINCIPAL */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '32px 48px', boxSizing: 'border-box', overflowY: 'auto' }}>
         
         {mostrarPopupAlerta && tarefasUrgentesUsuario.length > 0 && (
@@ -796,7 +830,7 @@ function MainApp() {
         {paginaAberta ? (
           <div style={{ display: 'flex', flexDirection: 'column', width: '100%', maxWidth: '800px', margin: '0 auto' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: theme.textMuted, marginBottom: '24px' }}>
-              <span onClick={() => setPaginaAberta(null)} style={{ cursor: 'pointer' }}>Biblioteca</span>
+              <span onClick={fecharPaginaEmTelaCheia} style={{ cursor: 'pointer' }}>Biblioteca</span>
               <span>/</span>
               <span>{paginaAberta.titulo}</span>
             </div>
@@ -823,12 +857,12 @@ function MainApp() {
 
             <div style={{ marginTop: '24px', display: 'flex', gap: '10px' }}>
               <button onClick={() => abrirModalResolucao(paginaAberta)} style={{ background: '#27ae60', border: 'none', color: '#fff', padding: '8px 16px', borderRadius: '4px', cursor: 'pointer', fontSize: '13px', fontWeight: '500' }}>✔ Concluir Página</button>
-              <button onClick={() => setPaginaAberta(null)} style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, color: theme.textMain, padding: '8px 16px', borderRadius: '4px', cursor: 'pointer', fontSize: '13px', fontWeight: '500' }}>← Voltar à Biblioteca</button>
+              <button onClick={fecharPaginaEmTelaCheia} style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, color: theme.textMain, padding: '8px 16px', borderRadius: '4px', cursor: 'pointer', fontSize: '13px', fontWeight: '500' }}>← Voltar à Biblioteca</button>
             </div>
           </div>
         ) : (
           <>
-            {/* CABEÇALHO DA BIBLIOTECA COM BOTÃO "Nova página" AZUL À DIREITA */}
+            {/* CABEÇALHO E BOTÃO NOVA PÁGINA */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
               <h1 style={{ margin: 0, fontSize: '28px', fontWeight: '700', color: theme.textMain }}>Biblioteca</h1>
 
@@ -865,7 +899,7 @@ function MainApp() {
               </div>
             </div>
 
-            {/* ABAS SUPERIORES DA BIBLIOTECA */}
+            {/* ABAS SUPERIORES */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `1px solid ${theme.border}`, paddingBottom: '10px', marginBottom: '20px', fontSize: '13px', flexWrap: 'wrap', gap: '12px' }}>
               <div style={{ display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap', color: theme.textMuted }}>
                 <span style={{ fontWeight: '500', color: theme.textMain, display: 'flex', alignItems: 'center', gap: '6px' }}>🕒 Recentes</span>
@@ -887,10 +921,9 @@ function MainApp() {
               </div>
             </div>
 
-            {/* TABELA DE DADOS ESTILO NOTION */}
+            {/* TABELA DE DADOS ESTILO NOTION COM SETAS EM TODAS AS LINHAS */}
             <div style={{ width: '100%', boxSizing: 'border-box' }}>
               
-              {/* CABEÇALHO DA TABELA */}
               <div style={{ display: 'grid', gridTemplateColumns: '2.5fr 1.5fr 1.5fr 1fr 1fr', padding: '8px 0', borderBottom: `1px solid ${theme.border}`, fontSize: '12px', fontWeight: '500', color: theme.textMuted, minWidth: '700px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>📄 Nome da página</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>👤 Criado por</div>
@@ -909,40 +942,36 @@ function MainApp() {
 
                     return (
                       <React.Fragment key={t.id}>
-                        {/* LINHA PRINCIPAL DA PÁGINA PAI COM SETA EM TODAS */}
+                        {/* LINHA PRINCIPAL DA PÁGINA PAI (Seta visível sempre) */}
                         <div style={{ display: 'grid', gridTemplateColumns: '2.5fr 1.5fr 1.5fr 1fr 1fr', padding: '10px 0', borderBottom: `1px solid ${theme.border}`, alignItems: 'center', fontSize: '13px', transition: 'background 0.1s' }} onMouseEnter={(e) => e.currentTarget.style.background = theme.cardInner} onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
                           
-                          {/* Nome da Página + Seta ▼ / ▶ em todas as tarefas */}
                           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden', paddingRight: '10px' }}>
+                            {/* A Seta agora sempre aparece em toda e qualquer tarefa pai */}
                             <span onClick={() => alternarExpandido(t.id)} style={{ cursor: 'pointer', fontSize: '10px', color: theme.textMuted, userSelect: 'none', padding: '2px', width: '12px', textAlign: 'center' }}>
                               {isExpandido ? '▼' : '▶'}
                             </span>
                             <span>📄</span>
                             <span 
-                              onClick={() => { setPaginaAberta(t); setEditTituloPagina(t.titulo); setEditDescricaoPagina(t.descricao || ''); }}
+                              onClick={() => abrirPaginaEmTelaCheia(t)}
                               style={{ fontWeight: '400', color: theme.textMain, cursor: 'pointer', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
                             >
                               {t.titulo}
                             </span>
                           </div>
 
-                          {/* Criado por */}
                           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: theme.textMain, fontSize: '13px' }}>
                             <span style={{ width: '16px', height: '16px', borderRadius: '50%', background: '#787774', color: '#fff', fontSize: '9px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>J</span>
                             <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.responsavel}</span>
                           </div>
 
-                          {/* Fonte */}
                           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: theme.textMain, fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                             <span>🔒</span> <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.descricao || 'Particular'}</span>
                           </div>
 
-                          {/* Última edição */}
                           <div style={{ color: theme.textMuted, fontSize: '13px' }}>
                             Agora há pouco
                           </div>
 
-                          {/* Última visita em + Ações Rápidas */}
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: theme.textMuted, fontSize: '13px', paddingRight: '10px' }}>
                             <span>Agora há pouco</span>
                             <div style={{ display: 'flex', gap: '6px' }}>
@@ -956,7 +985,7 @@ function MainApp() {
 
                         </div>
 
-                        {/* SUB-PÁGINAS / SUB-TAREFAS E BOTÃO "+ Adicionar nova" */}
+                        {/* SUB-PÁGINAS E BOTÃO "+ Adicionar nova" AO EXPANDIR */}
                         {isExpandido && (
                           <div style={{ display: 'flex', flexDirection: 'column', background: theme.cardInner, borderBottom: `1px solid ${theme.border}` }}>
                             {subTarefas.map((sub) => (
@@ -976,7 +1005,6 @@ function MainApp() {
                               </div>
                             ))}
 
-                            {/* BOTÃO "+ Adicionar nova" */}
                             <div 
                               onClick={() => adicionarSubPendenciaRapida(t.id)}
                               style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: theme.textMuted, cursor: 'pointer', padding: '10px 0 10px 30px', borderTop: `1px solid ${theme.border}`, fontWeight: '500' }}
