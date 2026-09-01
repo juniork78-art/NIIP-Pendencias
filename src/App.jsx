@@ -15,21 +15,19 @@ import {
   getDocs
 } from 'firebase/firestore';
 
-// Inserção dinâmica do Favicon
-(() => {
-  try {
-    const faviconSvg = `
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-        <rect width="64" height="64" rx="14" fill="#2f3437"/>
-        <text x="32" y="47" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="46" font-weight="900" fill="#ffffff" text-anchor="middle">P</text>
-      </svg>`;
-    const link = document.createElement('link');
-    link.rel = 'icon';
-    link.type = 'image/svg+xml';
-    link.href = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(faviconSvg);
-    document.head.appendChild(link);
-  } catch (e) {}
-})();
+// Inserção dinâmica segura do Favicon
+try {
+  const faviconSvg = `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+      <rect width="64" height="64" rx="14" fill="#2f3437"/>
+      <text x="32" y="47" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="46" font-weight="900" fill="#ffffff" text-anchor="middle">P</text>
+    </svg>`;
+  const link = document.createElement('link');
+  link.rel = 'icon';
+  link.type = 'image/svg+xml';
+  link.href = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(faviconSvg);
+  document.head.appendChild(link);
+} catch (e) {}
 
 const style = document.createElement('style');
 style.innerHTML = `
@@ -204,87 +202,102 @@ export default function App() {
   };
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        const emailLower = user.email.toLowerCase();
-        setUsuarioLogado(user.email);
-        setPopupJaExibido(false);
-
-        if (emailLower.includes('duandys')) {
-          setSetorSelecionado(null);
-        } else if (
-          emailLower.includes('gustavo') || 
-          emailLower.includes('stevan') || 
-          emailLower.includes('gilvan') || 
-          emailLower.includes('kessy') || 
-          emailLower.includes('joao') || 
-          emailLower.includes('lucas') || 
-          emailLower.includes('tolentino')
-        ) {
-          setSetorSelecionado('noc');
-        } else if (emailLower.includes('dhennifer')) {
-          setSetorSelecionado('nmr');
-        } else {
-          setSetorSelecionado('niip');
-        }
-      } else {
-        setUsuarioLogado(null);
-        setSetorSelecionado(null);
-        setPopupJaExibido(false);
+    try {
+      if (!auth) {
+        setLoadingAuth(false);
+        return;
       }
+      const unsubscribe = onAuthStateChanged(auth, (user) => {
+        try {
+          if (user && user.email) {
+            const emailLower = user.email.toLowerCase();
+            setUsuarioLogado(user.email);
+            setPopupJaExibido(false);
+
+            if (emailLower.includes('duandys')) {
+              setSetorSelecionado(null);
+            } else if (
+              emailLower.includes('gustavo') || 
+              emailLower.includes('stevan') || 
+              emailLower.includes('gilvan') || 
+              emailLower.includes('kessy') || 
+              emailLower.includes('joao') || 
+              emailLower.includes('lucas') || 
+              emailLower.includes('tolentino')
+            ) {
+              setSetorSelecionado('noc');
+            } else if (emailLower.includes('dhennifer')) {
+              setSetorSelecionado('nmr');
+            } else {
+              setSetorSelecionado('niip');
+            }
+          } else {
+            setUsuarioLogado(null);
+            setSetorSelecionado(null);
+            setPopupJaExibido(false);
+          }
+        } catch (err) {
+          console.error(err);
+        } finally {
+          setLoadingAuth(false);
+        }
+      });
+      return () => unsubscribe();
+    } catch (e) {
       setLoadingAuth(false);
-    });
-    return () => unsubscribe();
+    }
   }, []);
 
   const nomeFormatadoGlobal = usuarioLogado ? usuarioLogado.split('@')[0].replace('.', ' ').toUpperCase() : '';
   const isGestor = nomeFormatadoGlobal.includes('DUANDYS');
 
   useEffect(() => {
-    if (usuarioLogado && setorSelecionado) {
-      const unsub = onSnapshot(collection(db, `${setorSelecionado}_tarefas`), (snapshot) => {
-        const lista = [];
-        snapshot.forEach((docSnap) => {
-          lista.push({ id: docSnap.id, ...docSnap.data() });
-        });
-        lista.sort((a, b) => b.criadoEm - a.criadoEm);
-        setTarefas(lista);
-
-        if (paginaAberta) {
-          const atualizada = lista.find(t => t.id === paginaAberta.id);
-          if (atualizada) setPaginaAberta(atualizada);
-        }
-
-        if (!popupJaExibido) {
-          const minhasUrgentes = lista.filter(t => {
-            if (t.status === 'Resolvida') return false;
-            const isMeu = nomeFormatadoGlobal.includes(t.responsavel.toUpperCase());
-            if (!isMeu) return false;
-            const st = calcularStatusPrazo(t.prazo);
-            return st.status === 'vencido' || st.status === 'hoje' || st.status === 'um_dia';
+    if (usuarioLogado && setorSelecionado && db) {
+      try {
+        const unsub = onSnapshot(collection(db, `${setorSelecionado}_tarefas`), (snapshot) => {
+          const lista = [];
+          snapshot.forEach((docSnap) => {
+            lista.push({ id: docSnap.id, ...docSnap.data() });
           });
+          lista.sort((a, b) => b.criadoEm - a.criadoEm);
+          setTarefas(lista);
 
-          if (minhasUrgentes.length > 0) {
-            setTarefasUrgentesUsuario(minhasUrgentes);
-            setMostrarPopupAlerta(true);
-            setPopupJaExibido(true);
+          if (paginaAberta) {
+            const atualizada = lista.find(t => t.id === paginaAberta.id);
+            if (atualizada) setPaginaAberta(atualizada);
           }
-        }
-      });
 
-      const unsubLogs = onSnapshot(collection(db, `${setorSelecionado}_auditoria`), (snapshot) => {
-        const logsLista = [];
-        snapshot.forEach((docSnap) => {
-          logsLista.push({ id: docSnap.id, ...docSnap.data() });
-        });
-        logsLista.sort((a, b) => b.timestamp - a.timestamp);
-        setLogsAuditoria(logsLista);
-      });
+          if (!popupJaExibido) {
+            const minhasUrgentes = lista.filter(t => {
+              if (t.status === 'Resolvida') return false;
+              const isMeu = nomeFormatadoGlobal.includes((t.responsavel || '').toUpperCase());
+              if (!isMeu) return false;
+              const st = calcularStatusPrazo(t.prazo);
+              return st.status === 'vencido' || st.status === 'hoje' || st.status === 'um_dia';
+            });
 
-      return () => {
-        unsub();
-        unsubLogs();
-      };
+            if (minhasUrgentes.length > 0) {
+              setTarefasUrgentesUsuario(minhasUrgentes);
+              setMostrarPopupAlerta(true);
+              setPopupJaExibido(true);
+            }
+          }
+        }, (err) => console.error(err));
+
+        const unsubLogs = onSnapshot(collection(db, `${setorSelecionado}_auditoria`), (snapshot) => {
+          const logsLista = [];
+          snapshot.forEach((docSnap) => {
+            logsLista.push({ id: docSnap.id, ...docSnap.data() });
+          });
+          logsLista.sort((a, b) => b.timestamp - a.timestamp);
+          setLogsAuditoria(logsLista);
+        }, (err) => console.error(err));
+
+        return () => {
+          unsub();
+          unsubLogs();
+        };
+      } catch (e) {}
     }
   }, [usuarioLogado, setorSelecionado, nomeFormatadoGlobal, popupJaExibido]);
 
@@ -300,6 +313,7 @@ export default function App() {
   
   const registrarLogAuditoria = async (acao, detalhes, tarefaTitulo) => {
     try {
+      if (!db || !setorSelecionado) return;
       const logId = Date.now().toString() + "_" + Math.random().toString(36).substring(2, 7);
       await setDoc(doc(db, `${setorSelecionado}_auditoria`, logId), {
         usuario: nomeFormatadoGlobal,
@@ -544,7 +558,11 @@ export default function App() {
   };
 
   if (loadingAuth) {
-    return <div style={{ color: '#fff', backgroundColor: '#191919', textAlign: 'center', marginTop: '20vh', fontFamily: 'sans-serif', minHeight: '100vh', padding: '20px' }}>Carregando workspace...</div>;
+    return (
+      <div style={{ color: '#dbdbd7', backgroundColor: '#191919', textAlign: 'center', marginTop: '40vh', fontFamily: 'sans-serif', minHeight: '100vh', fontSize: '14px' }}>
+        Carregando workspace...
+      </div>
+    );
   }
 
   if (!usuarioLogado) {
