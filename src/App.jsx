@@ -123,7 +123,6 @@ const calcularStatusPrazo = (dataStr) => {
   }
 };
 
-// Lista unificada de todos os integrantes
 const TODOS_INTEGRANTES = ["Dhennifer", "Duandys", "Francisco", "Gabriel", "Gilvan", "Gustavo", "João", "Kessy", "Lucas", "Stevan", "Tolentino", "Walgney"];
 
 class ErrorBoundary extends React.Component {
@@ -189,7 +188,6 @@ function MainApp() {
   const [prazo, setPrazo] = useState('');
   const [prioridade, setPrioridade] = useState('Média');
   const [responsavelSelecionadoGestor, setResponsavelSelecionadoGestor] = useState(TODOS_INTEGRANTES[0]);
-  const [subPendenciasInput, setSubPendenciasInput] = useState('');
   
   const [filtroResponsavel, setFiltroResponsavel] = useState('todos');
 
@@ -205,13 +203,6 @@ function MainApp() {
   const [editDescricao, setEditDescricao] = useState('');
   const [editPrazo, setEditPrazo] = useState('');
   const [editPrioridade, setEditPrioridade] = useState('');
-
-  const [tarefaResolvendo, setTarefaResolvendo] = useState(null);
-  const [detalhesResolucaoInput, setDetalhesResolucaoInput] = useState('');
-
-  const [mostrarPopupAlerta, setMostrarPopupAlerta] = useState(false);
-  const [tarefasUrgentesUsuario, setTarefasUrgentesUsuario] = useState([]);
-  const [popupJaExibido, setPopupJaExibido] = useState(false);
 
   const [expandidoIds, setExpandidoIds] = useState(() => {
     try {
@@ -273,7 +264,8 @@ function MainApp() {
       responsavel: tarefaPai.responsavel,
       prazo: tarefaPai.prazo,
       prioridade: tarefaPai.prioridade,
-      concluida: Boolean(sub.concluida)
+      concluida: Boolean(sub.concluida),
+      _colecao: tarefaPai._colecao
     };
     setPaginaLateral(subObj);
     setEditTituloLateral(sub.texto);
@@ -302,10 +294,8 @@ function MainApp() {
         try {
           if (user && user.email) {
             setUsuarioLogado(user.email);
-            setPopupJaExibido(false);
           } else {
             setUsuarioLogado(null);
-            setPopupJaExibido(false);
           }
         } catch (err) {
           console.error(err);
@@ -323,130 +313,52 @@ function MainApp() {
   const isGestor = nomeFormatadoGlobal.includes('DUANDYS');
 
   const emailLowerGlobal = usuarioLogado ? usuarioLogado.toLowerCase() : '';
-
   let nomeForcadoParaUsuario = null;
   if (emailLowerGlobal.includes('joao') || emailLowerGlobal.includes('joão') || nomeFormatadoGlobal.includes('JOAO') || nomeFormatadoGlobal.includes('JOÃO')) {
     nomeForcadoParaUsuario = 'João';
   }
 
+  // Carrega e une simultaneamente as tarefas de todas as coleções antigas e novas
   useEffect(() => {
     if (usuarioLogado && db) {
       try {
-        const unsub = onSnapshot(collection(db, 'tarefas_gerais'), (snapshot) => {
-          const lista = [];
-          snapshot.forEach((docSnap) => {
-            lista.push({ id: docSnap.id, ...docSnap.data() });
-          });
-          lista.sort((a, b) => b.criadoEm - a.criadoEm);
-          setTarefas(lista);
+        const colecoes = ['tarefas_gerais', 'niip_tarefas', 'noc_tarefas', 'nmr_tarefas'];
+        const dadosPorColecao = {};
 
-          if (paginaLateral) {
-            const atualizada = lista.find(t => t.id === paginaLateral.id);
-            if (atualizada) setPaginaLateral(atualizada);
-          }
-        }, (err) => console.error(err));
+        const unsubscribers = colecoes.map(colName => {
+          return onSnapshot(collection(db, colName), (snapshot) => {
+            const lista = [];
+            snapshot.forEach((docSnap) => {
+              lista.push({ id: docSnap.id, ...docSnap.data(), _colecao: colName });
+            });
+            dadosPorColecao[colName] = lista;
 
-        const unsubLogs = onSnapshot(collection(db, 'auditoria_geral'), (snapshot) => {
-          const logsLista = [];
-          snapshot.forEach((docSnap) => {
-            logsLista.push({ id: docSnap.id, ...docSnap.data() });
-          });
-          logsLista.sort((a, b) => b.timestamp - a.timestamp);
-          setLogsAuditoria(logsLista);
-        }, (err) => console.error(err));
+            const mapUnificado = new Map();
+            Object.values(dadosPorColecao).forEach(arr => {
+              if (arr) {
+                arr.forEach(t => mapUnificado.set(t.id, t));
+              }
+            });
+
+            const combinadas = Array.from(mapUnificado.values());
+            combinadas.sort((a, b) => (b.criadoEm || 0) - (a.criadoEm || 0));
+            setTarefas(combinadas);
+
+            if (paginaLateral) {
+              const atualizada = combinadas.find(t => t.id === paginaLateral.id);
+              if (atualizada) setPaginaLateral(atualizada);
+            }
+          }, (err) => console.error(err));
+        });
 
         return () => {
-          unsub();
-          unsubLogs();
+          unsubscribers.forEach(unsub => unsub());
         };
       } catch (e) {}
     }
   }, [usuarioLogado]);
 
-  const registrarLogAuditoria = async (acao, detalhes, tarefaTitulo) => {
-    try {
-      if (!db) return;
-      const logId = Date.now().toString() + "_" + Math.random().toString(36).substring(2, 7);
-      await setDoc(doc(db, 'auditoria_geral', logId), {
-        usuario: nomeFormatadoGlobal,
-        acao,
-        detalhes,
-        tarefaTitulo,
-        timestamp: Date.now(),
-        dataHoraFormatada: new Date().toLocaleString('pt-BR')
-      });
-    } catch (e) {}
-  };
-
-  const excluirLogIndividual = async (logId) => {
-    if (window.confirm("Deseja realmente excluir este registro de auditoria?")) {
-      try {
-        await deleteDoc(doc(db, 'auditoria_geral', logId));
-      } catch (e) {
-        alert("Erro ao excluir log: " + e.message);
-      }
-    }
-  };
-
-  const apagarTodoHistoricoAuditoria = async () => {
-    if (window.confirm("ATENÇÃO: Deseja realmente apagar TODO o histórico de auditoria?")) {
-      try {
-        const querySnapshot = await getDocs(collection(db, 'auditoria_geral'));
-        const promessas = querySnapshot.docs.map((d) => deleteDoc(d.ref));
-        await Promise.all(promessas);
-        alert("Histórico de auditoria limpo com sucesso!");
-      } catch (e) {
-        alert("Erro ao limpar histórico: " + e.message);
-      }
-    }
-  };
-
   const responsavelFinal = isGestor ? responsavelSelecionadoGestor : nomeForcadoParaUsuario || (TODOS_INTEGRANTES.find(n => nomeFormatadoGlobal.includes(n.toUpperCase())) || TODOS_INTEGRANTES[0]);
-
-  const adicionarTarefa = async (e) => {
-    e.preventDefault();
-    if (!titulo.trim()) {
-      alert("Preencha o título da página!");
-      return;
-    }
-
-    const novaTarefaId = Date.now().toString();
-    const hojeStr = new Date().toISOString().split('T')[0];
-
-    const subPendenciasIniciais = subPendenciasInput
-      .split('\n')
-      .map(s => s.trim())
-      .filter(s => s.length > 0)
-      .map(textoSub => ({
-        id: Date.now().toString() + "_" + Math.random().toString(36).substring(2, 5),
-        texto: textoSub,
-        concluida: false,
-        subTarefas: []
-      }));
-
-    const tarefaObj = {
-      titulo: titulo.trim(),
-      descricao: descricao.trim() || 'Particular',
-      responsavel: responsavelFinal,
-      prazo: prazo || hojeStr,
-      prioridade,
-      status: 'Pendente',
-      criadoPor: nomeFormatadoGlobal,
-      criadoEm: Date.now(),
-      subTarefas: subPendenciasIniciais
-    };
-
-    try {
-      await setDoc(doc(db, 'tarefas_gerais', novaTarefaId), tarefaObj);
-      await registrarLogAuditoria("CRIAÇÃO", `Criou a página para [${responsavelFinal}]`, titulo.trim());
-      setTitulo('');
-      setDescription('');
-      setPrazo('');
-      setSubPendenciasInput('');
-    } catch (err) {
-      alert("Erro ao salvar página: " + err.message);
-    }
-  };
 
   // Funções Árvore Recursiva Blindadas
   const insertNodeInTree = (lista, ids, newNode) => {
@@ -521,7 +433,7 @@ function MainApp() {
     });
   };
 
-  const promptAdicionarSub = (tarefaRaizId, caminhoIds) => {
+  const promptAdicionarSub = (tarefaRaizId, caminhoIds, tarefaObjPai) => {
     const subTexto = prompt("Digite o título da nova subtarefa:");
     if (!subTexto || !subTexto.trim()) return;
 
@@ -536,8 +448,9 @@ function MainApp() {
     };
 
     const novaSubTarefas = insertNodeInTree(tarefaRaiz.subTarefas || [], caminhoIds, novaSub);
+    const colecaoAlvo = tarefaRaiz._colecao || 'tarefas_gerais';
 
-    updateDoc(doc(db, 'tarefas_gerais', tarefaRaizId), {
+    updateDoc(doc(db, colecaoAlvo, tarefaRaizId), {
       subTarefas: novaSubTarefas
     }).then(() => {
       setExpandidoIds(prev => {
@@ -549,48 +462,43 @@ function MainApp() {
     }).catch(e => alert("Erro ao adicionar subtarefa: " + e.message));
   };
 
-  const alternarStatusTarefaPai = async (tarefaId) => {
+  const alternarStatusTarefaPai = async (tarefa) => {
     try {
-      const tarefa = tarefas.find(t => t.id === tarefaId);
-      if (!tarefa) return;
       const novoStatus = tarefa.status === 'Resolvida' ? 'Pendente' : 'Resolvida';
-      await updateDoc(doc(db, 'tarefas_gerais', tarefaId), {
+      const colecaoAlvo = tarefa._colecao || 'tarefas_gerais';
+      await updateDoc(doc(db, colecaoAlvo, tarefa.id), {
         status: novoStatus
       });
     } catch (e) {}
   };
 
-  const alternarStatusRecursivo = async (tarefaRaizId, caminhoIds) => {
+  const alternarStatusRecursivo = async (tarefaRaiz, caminhoIds) => {
     try {
-      const tarefaRaiz = tarefas.find(t => t.id === tarefaRaizId);
-      if (!tarefaRaiz) return;
-
       const novaSubTarefas = toggleNodeInTree(tarefaRaiz.subTarefas || [], caminhoIds);
+      const colecaoAlvo = tarefaRaiz._colecao || 'tarefas_gerais';
 
-      await updateDoc(doc(db, 'tarefas_gerais', tarefaRaizId), {
+      await updateDoc(doc(db, colecaoAlvo, tarefaRaiz.id), {
         subTarefas: novaSubTarefas
       });
     } catch (e) {}
   };
 
-  const excluirSubRecursivo = async (tarefaRaizId, caminhoIds) => {
+  const excluirSubRecursivo = async (tarefaRaiz, caminhoIds) => {
     if (!window.confirm("Deseja realmente excluir esta subtarefa?")) return;
     try {
-      const tarefaRaiz = tarefas.find(t => t.id === tarefaRaizId);
-      if (!tarefaRaiz) return;
-
       const novaSubTarefas = deleteNodeInTree(tarefaRaiz.subTarefas || [], caminhoIds);
+      const colecaoAlvo = tarefaRaiz._colecao || 'tarefas_gerais';
 
-      await updateDoc(doc(db, 'tarefas_gerais', tarefaRaizId), {
+      await updateDoc(doc(db, colecaoAlvo, tarefaRaiz.id), {
         subTarefas: novaSubTarefas
       });
     } catch (e) {}
   };
 
-  const salvarEdicaoInlineTarefa = async (tarefaId, novoTitulo) => {
+  const salvarEdicaoInlineTarefa = async (tarefaId, colecaoAlvo, novoTitulo) => {
     if (!novoTitulo.trim()) return;
     try {
-      await updateDoc(doc(db, 'tarefas_gerais', tarefaId), {
+      await updateDoc(doc(db, colecaoAlvo || 'tarefas_gerais', tarefaId), {
         titulo: novoTitulo.trim()
       });
       setEditandoId(null);
@@ -610,22 +518,21 @@ function MainApp() {
     if (!editTitulo.trim() || !editPrazo) return;
 
     try {
-      await updateDoc(doc(db, 'tarefas_gerais', tarefaEditando.id), {
+      const colecaoAlvo = tarefaEditando._colecao || 'tarefas_gerais';
+      await updateDoc(doc(db, colecaoAlvo, tarefaEditando.id), {
         titulo: editTitulo.trim(),
         descricao: editDescricao.trim(),
         prazo: editPrazo,
         prioridade: editPrioridade
       });
-
-      await registrarLogAuditoria("EDIÇÃO", `Atualizou a página "${editTitulo.trim()}"`, editTitulo.trim());
       setTarefaEditando(null);
     } catch (err) {}
   };
 
-  const excluirTarefa = async (id, tituloTarefa) => {
+  const excluirTarefa = async (id, colecaoAlvo, tituloTarefa) => {
     if (window.confirm("Deseja realmente excluir esta página?")) {
       try {
-        await deleteDoc(doc(db, 'tarefas_gerais', id));
+        await deleteDoc(doc(db, colecaoAlvo || 'tarefas_gerais', id));
         if (paginaLateral && paginaLateral.id === id) fecharPainelLateral();
       } catch (err) {}
     }
@@ -634,18 +541,19 @@ function MainApp() {
   const salvarAlteracoesPaginaLateral = async () => {
     if (!paginaLateral) return;
     try {
+      const colecaoAlvo = paginaLateral._colecao || 'tarefas_gerais';
       if (paginaLateral.isSub) {
         const tarefaRaiz = tarefas.find(t => t.id === paginaLateral.raizId);
         if (!tarefaRaiz) return;
 
         const novaSubTarefas = updateTextNodeInTree(tarefaRaiz.subTarefas || [], paginaLateral.caminhoIds, editTituloLateral.trim(), editDescricaoLateral.trim());
-        await updateDoc(doc(db, 'tarefas_gerais', paginaLateral.raizId), {
+        await updateDoc(doc(db, colecaoAlvo, paginaLateral.raizId), {
           subTarefas: novaSubTarefas
         });
         setPaginaLateral(prev => ({ ...prev, titulo: editTituloLateral.trim(), descricao: editDescricaoLateral.trim() }));
       } else {
         if (!editTituloLateral.trim()) return;
-        await updateDoc(doc(db, 'tarefas_gerais', paginaLateral.id), {
+        await updateDoc(doc(db, colecaoAlvo, paginaLateral.id), {
           titulo: editTituloLateral.trim(),
           descricao: editDescricaoLateral.trim()
         });
@@ -671,7 +579,7 @@ function MainApp() {
     treeLine: darkMode ? '#444440' : '#d3d3ce'
   };
 
-  const renderizarSubTarefasRecursivas = (subLista, tarefaRaizId, caminhoPai, nivel = 1, tarefaPaiObj) => {
+  const renderizarSubTarefasRecursivas = (subLista, tarefaRaizObj, caminhoPai, nivel = 1) => {
     if (!subLista || subLista.length === 0) return null;
 
     return (
@@ -703,10 +611,10 @@ function MainApp() {
                   <span onClick={() => alternarExpandido(sub.id)} style={{ cursor: 'pointer', fontSize: '10px', color: theme.textMuted, userSelect: 'none', padding: '2px', width: '12px', textAlign: 'center' }}>
                     {isExpandidoSub ? '▼' : '▶'}
                   </span>
-                  <input type="checkbox" checked={isConcluida} onChange={() => alternarStatusRecursivo(tarefaRaizId, caminhoAtual)} style={{ accentColor: '#27ae60', cursor: 'pointer' }} />
+                  <input type="checkbox" checked={isConcluida} onChange={() => alternarStatusRecursivo(tarefaRaizObj, caminhoAtual)} style={{ accentColor: '#27ae60', cursor: 'pointer' }} />
                   <span>📄</span>
                   <span 
-                    onClick={() => abrirPainelLateralSub(sub, tarefaRaizId, caminhoAtual, tarefaPaiObj)}
+                    onClick={() => abrirPainelLateralSub(sub, tarefaRaizObj.id, caminhoAtual, tarefaRaizObj)}
                     style={{ fontWeight: isConcluida ? '600' : '400', color: isConcluida ? '#27ae60' : theme.textMain, textDecoration: isConcluida ? 'line-through' : 'none', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', cursor: 'pointer' }}
                   >
                     {sub.texto}
@@ -714,7 +622,7 @@ function MainApp() {
                 </div>
 
                 <div style={{ color: isConcluida ? '#27ae60' : theme.textMuted, fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {tarefaPaiObj.responsavel || 'Junior Gonçalves'}
+                  {tarefaRaizObj.responsavel || 'Junior Gonçalves'}
                 </div>
 
                 <div style={{ color: isConcluida ? '#27ae60' : theme.textMuted, fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -727,21 +635,21 @@ function MainApp() {
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', color: theme.textMuted, fontSize: '13px', paddingRight: '10px' }}>
                   <button 
-                    onClick={() => alternarStatusRecursivo(tarefaRaizId, caminhoAtual)} 
+                    onClick={() => alternarStatusRecursivo(tarefaRaizObj, caminhoAtual)} 
                     style={{ background: isConcluida ? '#27ae60' : theme.cardInner, border: `1px solid ${isConcluida ? '#27ae60' : theme.border}`, color: isConcluida ? '#fff' : theme.textMain, padding: '3px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: '500' }}
                   >
                     {isConcluida ? '✔ Concluído' : 'Concluir'}
                   </button>
-                  <button onClick={() => excluirSubRecursivo(tarefaRaizId, caminhoAtual)} style={{ background: 'transparent', border: 'none', color: '#eb5757', cursor: 'pointer', fontSize: '11px' }}>Excluir</button>
+                  <button onClick={() => excluirSubRecursivo(tarefaRaizObj, caminhoAtual)} style={{ background: 'transparent', border: 'none', color: '#eb5757', cursor: 'pointer', fontSize: '11px' }}>Excluir</button>
                 </div>
               </div>
 
               {isExpandidoSub && (
                 <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-                  {renderizarSubTarefasRecursivas(sub.subTarefas, tarefaRaizId, caminhoAtual, nivel + 1, tarefaPaiObj)}
+                  {renderizarSubTarefasRecursivas(sub.subTarefas, tarefaRaizObj, caminhoAtual, nivel + 1, tarefaPaiObj)}
                   
                   <div 
-                    onClick={() => promptAdicionarSub(tarefaRaizId, caminhoAtual)}
+                    onClick={() => promptAdicionarSub(tarefaRaizObj.id, caminhoAtual, tarefaRaizObj)}
                     style={{ 
                       display: 'grid', 
                       gridTemplateColumns: '2.5fr 1.5fr 1.5fr 1fr 1fr', 
@@ -791,7 +699,7 @@ function MainApp() {
   return (
     <div className="workspace-layout" style={{ display: 'flex', minHeight: '100vh', backgroundColor: theme.bg, color: theme.textMain, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif', boxSizing: 'border-box' }}>
       
-      {/* SIDEBAR ESQUERDA NOTION - REMOVIDO "NÚCLEO" */}
+      {/* SIDEBAR ESQUERDA NOTION - CATEGORIAS/NÚCLEOS REMOVIDOS */}
       <div className="sidebar-notion" style={{ width: '240px', background: theme.sidebarBg, borderRight: `1px solid ${theme.border}`, display: 'flex', flexDirection: 'column', padding: '12px 8px', boxSizing: 'border-box', flexShrink: '0' }}>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 8px', borderRadius: '4px', marginBottom: '16px', background: theme.cardBg, border: `1px solid ${theme.border}` }}>
@@ -943,8 +851,8 @@ function MainApp() {
                               value={textoEditando}
                               autoFocus
                               onChange={(e) => setTextoEditando(e.target.value)}
-                              onBlur={() => salvarEdicaoInlineTarefa(t.id, textoEditando)}
-                              onKeyDown={(e) => { if (e.key === 'Enter') salvarEdicaoInlineTarefa(t.id, textoEditando); }}
+                              onBlur={() => salvarEdicaoInlineTarefa(t.id, t._colecao, textoEditando)}
+                              onKeyDown={(e) => { if (e.key === 'Enter') salvarEdicaoInlineTarefa(t.id, t._colecao, textoEditando); }}
                               style={{ background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, padding: '2px 6px', fontSize: '13px', borderRadius: '3px', width: '80%' }}
                             />
                           ) : (
@@ -971,16 +879,14 @@ function MainApp() {
 
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: theme.textMuted, fontSize: '13px', paddingRight: '10px' }}>
                           <button 
-                            onClick={() => alternarStatusTarefaPai(t.id)} 
+                            onClick={() => alternarStatusTarefaPai(t)} 
                             style={{ background: isConcluida ? '#27ae60' : theme.cardInner, border: `1px solid ${isConcluida ? '#27ae60' : theme.border}`, color: isConcluida ? '#fff' : theme.textMain, padding: '3px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: '500' }}
                           >
                             {isConcluida ? '✔ Concluído' : 'Concluir'}
                           </button>
                           <div style={{ display: 'flex', gap: '6px' }}>
                             <button onClick={() => abrirModalEdicao(t)} title="Editar" style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '11px' }}>✏️</button>
-                            {isGestor && (
-                              <button onClick={() => excluirTarefa(t.id, t.titulo)} title="Excluir" style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '11px' }}>🗑️</button>
-                            )}
+                            <button onClick={() => excluirTarefa(t.id, t._colecao, t.titulo)} title="Excluir" style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '11px' }}>🗑️</button>
                           </div>
                         </div>
 
@@ -989,9 +895,9 @@ function MainApp() {
                       {/* SUB-PÁGINAS RECURSIVAS E BOTÃO "+ Adicionar nova" */}
                       {isExpandido && (
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
-                          {renderizarSubTarefasRecursivas(subTarefas, t.id, [], 1, t)}
+                          {renderizarSubTarefasRecursivas(subTarefas, t, [], 1, t)}
                           <div 
-                            onClick={() => promptAdicionarSub(t.id, [])}
+                            onClick={() => promptAdicionarSub(t.id, [], t)}
                             style={{ 
                               display: 'grid', 
                               gridTemplateColumns: '2.5fr 1.5fr 1.5fr 1fr 1fr', 
@@ -1106,7 +1012,7 @@ function TelaLogin({ onLoginSucesso, darkMode, setDarkMode, theme }) {
       <form onSubmit={handleLogin} style={{ background: theme.cardBg, padding: '32px 24px', borderRadius: '6px', width: '100%', maxWidth: '360px', border: `1px solid ${theme.border}`, boxSizing: 'border-box' }}>
         <div style={{ textAlign: 'center', marginBottom: '24px' }}>
           <span style={{ fontSize: '14px', color: theme.textMain, fontWeight: 'bold', display: 'block' }}>Sistema Integrado</span>
-          <span style={{ fontSize: '11px', color: theme.textMuted, fontWeight: '500', display: 'block' }}>NOC • NMR • NIIP</span>
+          <span style={{ fontSize: '11px', color: theme.textMuted, fontWeight: '500', display: 'block' }}>Central de Tarefas</span>
         </div>
 
         {erro && <p style={{ color: '#eb5757', fontSize: '12px', marginBottom: '14px', background: darkMode ? '#3b1c1c' : '#fde8e8', padding: '8px', borderRadius: '4px' }}>{erro}</p>}
