@@ -484,16 +484,73 @@ function MainApp() {
     }
   };
 
-  const adicionarSubNaArvore = (lista, ids, novaSub) => {
-    if (ids.length === 0) {
-      return [...lista, novaSub];
+  // Funções Árvore Recursiva robustas (Insert, Toggle, Delete, Update)
+  const insertNodeInTree = (lista, ids, newNode) => {
+    if (!ids || ids.length === 0) {
+      return [...(lista || []), newNode];
     }
     return lista.map(item => {
       if (item.id === ids[0]) {
         if (ids.length === 1) {
-          return { ...item, subTarefas: [...(item.subTarefas || []), novaSub] };
+          return {
+            ...item,
+            subTarefas: [...(item.subTarefas || []), newNode]
+          };
         } else {
-          return { ...item, subTarefas: adicionarSubNaArvore(item.subTarefas || [], ids.slice(1), novaSub) };
+          return {
+            ...item,
+            subTarefas: insertNodeInTree(item.subTarefas || [], ids.slice(1), newNode)
+          };
+        }
+      }
+      return item;
+    });
+  };
+
+  const toggleNodeInTree = (lista, ids) => {
+    if (!ids || ids.length === 0) return lista;
+    return lista.map(item => {
+      if (item.id === ids[0]) {
+        if (ids.length === 1) {
+          return { ...item, concluida: !Boolean(item.concluida) };
+        } else {
+          return {
+            ...item,
+            subTarefas: toggleNodeInTree(item.subTarefas || [], ids.slice(1))
+          };
+        }
+      }
+      return item;
+    });
+  };
+
+  const deleteNodeInTree = (lista, ids) => {
+    if (!ids || ids.length === 0) return lista;
+    if (ids.length === 1) {
+      return lista.filter(item => item.id !== ids[0]);
+    }
+    return lista.map(item => {
+      if (item.id === ids[0]) {
+        return {
+          ...item,
+          subTarefas: deleteNodeInTree(item.subTarefas || [], ids.slice(1))
+        };
+      }
+      return item;
+    });
+  };
+
+  const updateTextNodeInTree = (lista, ids, newText, newDesc) => {
+    if (!ids || ids.length === 0) return lista;
+    return lista.map(item => {
+      if (item.id === ids[0]) {
+        if (ids.length === 1) {
+          return { ...item, texto: newText, ...(newDesc !== undefined && { descricao: newDesc }) };
+        } else {
+          return {
+            ...item,
+            subTarefas: updateTextNodeInTree(item.subTarefas || [], ids.slice(1), newText, newDesc)
+          };
         }
       }
       return item;
@@ -514,7 +571,7 @@ function MainApp() {
       subTarefas: []
     };
 
-    const novaSubTarefas = adicionarSubNaArvore(tarefaRaiz.subTarefas || [], caminhoIds, novaSub);
+    const novaSubTarefas = insertNodeInTree(tarefaRaiz.subTarefas || [], caminhoIds, novaSub);
 
     updateDoc(doc(db, `${setorSelecionado}_tarefas`, tarefaRaizId), {
       subTarefas: novaSubTarefas
@@ -539,42 +596,17 @@ function MainApp() {
     } catch (e) {}
   };
 
-  const alternarNaArvore = (lista, ids) => {
-    return lista.map(item => {
-      if (item.id === ids[0]) {
-        if (ids.length === 1) {
-          return { ...item, concluida: !Boolean(item.concluida) };
-        } else {
-          return { ...item, subTarefas: alternarNaArvore(item.subTarefas || [], ids.slice(1)) };
-        }
-      }
-      return item;
-    });
-  };
-
   const alternarStatusRecursivo = async (tarefaRaizId, caminhoIds) => {
     try {
       const tarefaRaiz = tarefas.find(t => t.id === tarefaRaizId);
       if (!tarefaRaiz) return;
 
-      const novaSubTarefas = alternarNaArvore(tarefaRaiz.subTarefas || [], caminhoIds);
+      const novaSubTarefas = toggleNodeInTree(tarefaRaiz.subTarefas || [], caminhoIds);
 
       await updateDoc(doc(db, `${setorSelecionado}_tarefas`, tarefaRaizId), {
         subTarefas: novaSubTarefas
       });
     } catch (e) {}
-  };
-
-  const excluirDaArvore = (lista, ids) => {
-    if (ids.length === 1) {
-      return lista.filter(item => item.id !== ids[0]);
-    }
-    return lista.map(item => {
-      if (item.id === ids[0]) {
-        return { ...item, subTarefas: excluirDaArvore(item.subTarefas || [], ids.slice(1)) };
-      }
-      return item;
-    });
   };
 
   const excluirSubRecursivo = async (tarefaRaizId, caminhoIds) => {
@@ -583,7 +615,7 @@ function MainApp() {
       const tarefaRaiz = tarefas.find(t => t.id === tarefaRaizId);
       if (!tarefaRaiz) return;
 
-      const novaSubTarefas = excluirDaArvore(tarefaRaiz.subTarefas || [], caminhoIds);
+      const novaSubTarefas = deleteNodeInTree(tarefaRaiz.subTarefas || [], caminhoIds);
 
       await updateDoc(doc(db, `${setorSelecionado}_tarefas`, tarefaRaizId), {
         subTarefas: novaSubTarefas
@@ -621,7 +653,6 @@ function MainApp() {
         prioridade: editPrioridade
       });
 
-      await registrarLogAuditoria("EDIÇÃO", `Atualizou a página "${editTitulo.trim()}"`, editTitulo.trim());
       setTarefaEditando(null);
     } catch (err) {}
   };
@@ -642,20 +673,7 @@ function MainApp() {
         const tarefaRaiz = tarefas.find(t => t.id === paginaLateral.raizId);
         if (!tarefaRaiz) return;
 
-        const atualizarTextoArvore = (lista, ids) => {
-          return lista.map(item => {
-            if (item.id === ids[0]) {
-              if (ids.length === 1) {
-                return { ...item, texto: editTituloLateral.trim(), descricao: editDescricaoLateral.trim() };
-              } else {
-                return { ...item, subTarefas: atualizarTextoArvore(item.subTarefas || [], ids.slice(1)) };
-              }
-            }
-            return item;
-          });
-        };
-
-        const novaSubTarefas = atualizarTextoArvore(tarefaRaiz.subTarefas || [], paginaLateral.caminhoIds);
+        const novaSubTarefas = updateTextNodeInTree(tarefaRaiz.subTarefas || [], paginaLateral.caminhoIds, editTituloLateral.trim(), editDescricaoLateral.trim());
         await updateDoc(doc(db, `${setorSelecionado}_tarefas`, paginaLateral.raizId), {
           subTarefas: novaSubTarefas
         });
@@ -720,6 +738,7 @@ function MainApp() {
                   <span onClick={() => alternarExpandido(sub.id)} style={{ cursor: 'pointer', fontSize: '10px', color: theme.textMuted, userSelect: 'none', padding: '2px', width: '12px', textAlign: 'center' }}>
                     {isExpandidoSub ? '▼' : '▶'}
                   </span>
+                  <input type="checkbox" checked={isConcluida} onChange={() => alternarStatusRecursivo(tarefaRaizId, caminhoAtual)} style={{ accentColor: '#27ae60', cursor: 'pointer' }} />
                   <span>📄</span>
                   <span 
                     onClick={() => abrirPainelLateralSub(sub, tarefaRaizId, caminhoAtual, tarefaPaiObj)}
