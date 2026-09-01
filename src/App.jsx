@@ -221,10 +221,32 @@ function MainApp() {
   const [tarefasUrgentesUsuario, setTarefasUrgentesUsuario] = useState([]);
   const [popupJaExibido, setPopupJaExibido] = useState(false);
 
-  const [expandidoIds, setExpandidoIds] = useState({});
+  // Inicializa expandidoIds persistindo no localStorage e forçando itens com filhos a ficarem abertos
+  const [expandidoIds, setExpandidoIds] = useState(() => {
+    try {
+      const salvo = localStorage.getItem('expandidoIds_fibralink');
+      return salvo ? JSON.parse(salvo) : {};
+    } catch (e) {
+      return {};
+    }
+  });
 
   const alternarExpandido = (id) => {
-    setExpandidoIds(prev => ({ ...prev, [id]: !prev[id] }));
+    setExpandidoIds(prev => {
+      const novo = { ...prev, [id]: !prev[id] };
+      try {
+        localStorage.setItem('expandidoIds_fibralink', JSON.stringify(novo));
+      } catch (e) {}
+      return novo;
+    });
+  };
+
+  const verificarExpandido = (id, temFilhos) => {
+    if (expandidoIds[id] !== undefined) {
+      return expandidoIds[id];
+    }
+    // Se tiver filhos e o usuário nunca mexeu, fica aberto por padrão
+    return temFilhos ? true : false;
   };
 
   useEffect(() => {
@@ -500,7 +522,6 @@ function MainApp() {
     }
   };
 
-  // Função recursiva para adicionar subtarefa em qualquer nível
   const adicionarSubPendenciaRecursiva = async (tarefaRaizId, caminhoAlvoIds, novoTexto) => {
     try {
       const tarefaRaiz = tarefas.find(t => t.id === tarefaRaizId);
@@ -532,7 +553,11 @@ function MainApp() {
         subTarefas: novaSubTarefas
       });
 
-      setExpandidoIds(prev => ({ ...prev, [caminhoAlvoIds[caminhoAlvoIds.length - 1]]: true }));
+      setExpandidoIds(prev => {
+        const novo = { ...prev, [caminhoAlvoIds[caminhoAlvoIds.length - 1]]: true };
+        try { localStorage.setItem('expandidoIds_fibralink', JSON.stringify(novo)); } catch(e){}
+        return novo;
+      });
     } catch (e) {
       alert("Erro ao adicionar subtarefa: " + e.message);
     }
@@ -696,7 +721,7 @@ function MainApp() {
     treeLine: darkMode ? '#444440' : '#d3d3ce'
   };
 
-  // Componente recursivo para renderizar subtarefas em qualquer nível COM SETA SEMPRE VISÍVEL
+  // Componente recursivo para renderizar subtarefas mantendo estado aberto por padrão se houver filhos
   const renderizarSubTarefasRecursivas = (subLista, tarefaRaizId, caminhoPai, nivel = 1) => {
     if (!subLista || subLista.length === 0) return null;
 
@@ -704,14 +729,14 @@ function MainApp() {
       <div style={{ display: 'flex', flexDirection: 'column', background: theme.cardInner, borderTop: `1px solid ${theme.border}` }}>
         {subLista.map((sub) => {
           const caminhoAtual = [...caminhoPai, sub.id];
-          const isExpandidoSub = expandidoIds[sub.id];
+          const temFilhos = sub.subTarefas && sub.subTarefas.length > 0;
+          const isExpandidoSub = verificarExpandido(sub.id, temFilhos);
           const paddingLeftPx = nivel * 24 + 6;
 
           return (
             <React.Fragment key={sub.id}>
               <div style={{ display: 'grid', gridTemplateColumns: '2.5fr 1.5fr 1.5fr 1fr 1fr', padding: `8px 0 8px ${paddingLeftPx}px`, alignItems: 'center', fontSize: '13px', borderTop: `1px solid ${theme.border}` }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden' }}>
-                  {/* Seta visível em TODA subtarefa para permitir ramificações infinitas */}
                   <span onClick={() => alternarExpandido(sub.id)} style={{ cursor: 'pointer', fontSize: '10px', color: theme.textMuted, userSelect: 'none', padding: '2px', width: '12px', textAlign: 'center' }}>
                     {isExpandidoSub ? '▼' : '▶'}
                   </span>
@@ -1004,7 +1029,8 @@ function MainApp() {
               <div style={{ display: 'flex', flexDirection: 'column', minWidth: '700px' }}>
                 {tarefasFiltradas.map(t => {
                   const subTarefas = t.subTarefas || [];
-                  const isExpandido = expandidoIds[t.id];
+                  const temFilhos = subTarefas.length > 0;
+                  const isExpandido = verificarExpandido(t.id, temFilhos);
 
                   return (
                     <React.Fragment key={t.id}>
