@@ -15,35 +15,6 @@ import {
   getDocs
 } from 'firebase/firestore';
 
-// Componente de Proteção contra Tela Preta (ErrorBoundary)
-class ErrorBoundary extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = { hasError: false, error: null };
-  }
-  static getDerivedStateFromError(error) {
-    return { hasError: true, error };
-  }
-  componentDidCatch(error, errorInfo) {
-    console.error("Erro crítico capturado:", error, errorInfo);
-  }
-  render() {
-    if (this.state.hasError) {
-      return (
-        <div style={{ padding: '40px', background: '#191919', color: '#eb5757', fontFamily: 'sans-serif', minHeight: '100vh', boxSizing: 'border-box' }}>
-          <h2>Ocorreu um erro ao carregar a aplicação.</h2>
-          <p>Detalhes técnicos:</p>
-          <pre style={{ background: '#262626', padding: '15px', borderRadius: '5px', overflowX: 'auto', color: '#dbdbd7' }}>
-            {this.state.error && this.state.error.toString()}
-          </pre>
-          <p style={{ color: '#9b9b95', marginTop: '20px' }}>Verifique se o seu arquivo <strong>firebase.js</strong> está configurado corretamente com as chaves do projeto.</p>
-        </div>
-      );
-    }
-    return this.props.children;
-  }
-}
-
 // Inserção dinâmica segura do Favicon
 try {
   const faviconSvg = `
@@ -161,6 +132,32 @@ const SETORES_DISPONIVEIS = [
   { id: 'nmr', nome: 'NMR - Núcleo de Monitoramento', descricao: 'Acompanhamento de alertas, métricas e supervisão contínua.' },
   { id: 'niip', nome: 'NIIP - Núcleo de Informática e Inspeção de POPs', descricao: 'Gestão de tarefas, prazos e manutenções da infraestrutura de POPs.' }
 ];
+
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error, errorInfo) {
+    console.error("Erro crítico capturado:", error, errorInfo);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ padding: '40px', background: '#191919', color: '#eb5757', fontFamily: 'sans-serif', minHeight: '100vh', boxSizing: 'border-box' }}>
+          <h2>Ocorreu um erro ao carregar a aplicação.</h2>
+          <pre style={{ background: '#262626', padding: '15px', borderRadius: '5px', overflowX: 'auto', color: '#dbdbd7' }}>
+            {this.state.error && this.state.error.toString()}
+          </pre>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 export default function AppWrapper() {
   return (
@@ -288,6 +285,31 @@ function MainApp() {
   const nomeFormatadoGlobal = usuarioLogado ? usuarioLogado.split('@')[0].replace('.', ' ').toUpperCase() : '';
   const isGestor = nomeFormatadoGlobal.includes('DUANDYS');
 
+  const emailLowerGlobal = usuarioLogado ? usuarioLogado.toLowerCase() : '';
+  const isGustavo = nomeFormatadoGlobal.includes('GUSTAVO');
+  const isDhennifer = nomeFormatadoGlobal.includes('DHENNIFER');
+  const isEspecialista = nomeFormatadoGlobal.includes('GILVAN') || nomeFormatadoGlobal.includes('STEVAN');
+  const isNocN1 = nomeFormatadoGlobal.includes('TOLENTINO') || nomeFormatadoGlobal.includes('KESSY') || nomeFormatadoGlobal.includes('JOAO') || nomeFormatadoGlobal.includes('JOÃO') || nomeFormatadoGlobal.includes('LUCAS') || emailLowerGlobal.includes('joao');
+  const isTecnicoN1 = nomeFormatadoGlobal.includes('FRANCISCO') || nomeFormatadoGlobal.includes('GABRIEL') || nomeFormatadoGlobal.includes('WALGNEY');
+   
+  const tipoCargo = isGestor 
+    ? 'Gestor' 
+    : isGustavo 
+    ? 'NOC N3' 
+    : isDhennifer 
+    ? 'Analista N1' 
+    : isEspecialista 
+    ? 'Especialista' 
+    : isNocN1 && setorSelecionado === 'noc'
+    ? 'NOC N1' 
+    : isTecnicoN1 && setorSelecionado === 'niip'
+    ? 'NIIP N1'
+    : isNocN1
+    ? 'NOC N1'
+    : isTecnicoN1
+    ? 'Técnico N1'
+    : 'Integrante';
+
   useEffect(() => {
     if (usuarioLogado && setorSelecionado && db) {
       try {
@@ -393,12 +415,6 @@ function MainApp() {
   };
 
   const integrantesAtuais = obterIntegrantesSetor();
-   
-  const emailLowerGlobal = usuarioLogado ? usuarioLogado.toLowerCase() : '';
-  let nomeForcadoParaUsuario = null;
-  if (emailLowerGlobal.includes('joao') || emailLowerGlobal.includes('joão') || nomeFormatadoGlobal.includes('JOAO') || nomeFormatadoGlobal.includes('JOÃO')) {
-    nomeForcadoParaUsuario = 'João';
-  }
 
   const responsavelFinal = isGestor 
     ? responsavelSelecionadoGestor 
