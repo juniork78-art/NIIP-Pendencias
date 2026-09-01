@@ -433,7 +433,7 @@ function MainApp() {
     });
   };
 
-  const promptAdicionarSub = (tarefaRaizId, caminhoIds, tarefaObjPai) => {
+  const promptAdicionarSub = (tarefaRaizId, caminhoIds) => {
     const subTexto = prompt("Digite o título da nova subtarefa:");
     if (!subTexto || !subTexto.trim()) return;
 
@@ -646,10 +646,10 @@ function MainApp() {
 
               {isExpandidoSub && (
                 <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-                  {renderizarSubTarefasRecursivas(sub.subTarefas, tarefaRaizObj, caminhoAtual, nivel + 1, tarefaPaiObj)}
+                  {renderizarSubTarefasRecursivas(sub.subTarefas, tarefaRaizObj, caminhoAtual, nivel + 1)}
                   
                   <div 
-                    onClick={() => promptAdicionarSub(tarefaRaizObj.id, caminhoAtual, tarefaRaizObj)}
+                    onClick={() => promptAdicionarSub(tarefaRaizObj.id, caminhoAtual)}
                     style={{ 
                       display: 'grid', 
                       gridTemplateColumns: '2.5fr 1.5fr 1.5fr 1fr 1fr', 
@@ -699,7 +699,7 @@ function MainApp() {
   return (
     <div className="workspace-layout" style={{ display: 'flex', minHeight: '100vh', backgroundColor: theme.bg, color: theme.textMain, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif', boxSizing: 'border-box' }}>
       
-      {/* SIDEBAR ESQUERDA NOTION - CATEGORIAS/NÚCLEOS REMOVIDOS */}
+      {/* SIDEBAR ESQUERDA NOTION - CATEGORIAS REMOVIDAS */}
       <div className="sidebar-notion" style={{ width: '240px', background: theme.sidebarBg, borderRight: `1px solid ${theme.border}`, display: 'flex', flexDirection: 'column', padding: '12px 8px', boxSizing: 'border-box', flexShrink: '0' }}>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 8px', borderRadius: '4px', marginBottom: '16px', background: theme.cardBg, border: `1px solid ${theme.border}` }}>
@@ -895,9 +895,9 @@ function MainApp() {
                       {/* SUB-PÁGINAS RECURSIVAS E BOTÃO "+ Adicionar nova" */}
                       {isExpandido && (
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
-                          {renderizarSubTarefasRecursivas(subTarefas, t, [], 1, t)}
+                          {renderizarSubTarefasRecursivas(subTarefas, t, [], 1)}
                           <div 
-                            onClick={() => promptAdicionarSub(t.id, [], t)}
+                            onClick={() => promptAdicionarSub(t.id, [])}
                             style={{ 
                               display: 'grid', 
                               gridTemplateColumns: '2.5fr 1.5fr 1.5fr 1fr 1fr', 
