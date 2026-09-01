@@ -668,7 +668,6 @@ function MainApp() {
         await updateDoc(doc(db, colecaoAlvo, paginaLateral.raizId), {
           subTarefas: novaSubTarefas
         });
-        const subItem = tarefaRaiz.subTarefas; // update local representation view if needed
         setPaginaLateral(prev => ({ ...prev, titulo: editTituloLateral.trim(), descricao: editDescricaoLateral.trim() }));
       } else {
         if (!editTituloLateral.trim()) return;
@@ -723,7 +722,7 @@ function MainApp() {
 
           const autorSub = sub.criadoPor || tarefaRaizObj.criadoPor || 'Usuário';
           const editorSub = sub.editadoPor;
-          const displayAutorSub = editorSub && editorSub.toUpperCase() !== autorSub.toUpperCase() ? `${autorSub} (${editorSub})` : autorSub;
+          const displayAutorSub = editorSub && editorSub.toUpperCase() !== autorSub.toUpperCase() ? `${autorSub} (Editado por: ${editorSub})` : autorSub;
 
           return (
             <React.Fragment key={sub.id}>
@@ -779,7 +778,6 @@ function MainApp() {
                     </button>
                   ) : <div></div>}
 
-                  {/* REMOVIDO BOTÃO DE ARQUIVAR DAS TAREFAS FILHAS */}
                   <div style={{ display: 'flex', gap: '6px' }}>
                     <button onClick={() => solicitarExclusaoSub(tarefaRaizObj, caminhoAtual)} style={{ background: 'transparent', border: 'none', color: '#eb5757', cursor: 'pointer', fontSize: '11px', fontWeight: '500' }}>
                       {isExcluido ? 'Restaurar' : 'Excluir'}
@@ -996,7 +994,7 @@ function MainApp() {
 
                   const creatorPai = t.criadoPor || 'Usuário';
                   const editorPai = t.editadoPor;
-                  const displayAutorPai = editorPai && editorPai.toUpperCase() !== creatorPai.toUpperCase() ? `${creatorPai} (${editorPai})` : creatorPai;
+                  const displayAutorPai = editorPai && editorPai.toUpperCase() !== creatorPai.toUpperCase() ? `${creatorPai} (Editado por: ${editorPai})` : creatorPai;
 
                   return (
                     <React.Fragment key={t.id}>
