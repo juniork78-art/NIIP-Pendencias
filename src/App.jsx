@@ -131,8 +131,7 @@ const tempoDecorrido = (timestamp) => {
 const GRUPOS_MEMBROS = {
   noc: ["ESTEVAN", "GILVAN", "GUSTAVO", "JOÃO", "LUCAS", "KESSY", "TOLENTINO"],
   niip: ["FRANCISCO", "GABRIEL", "WALGNEY"],
-  nmr: ["DHENNIFER"],
-  cgr: ["ESTEVAN", "GILVAN", "GUSTAVO", "JOÃO", "LUCAS", "KESSY", "TOLENTINO", "FRANCISCO", "GABRIEL", "WALGNEY", "DHENNIFER"]
+  nmr: ["DHENNIFER"]
 };
 
 const TODOS_INTEGRANTES = ["Dhennifer", "Duandys", "Francisco", "Gabriel", "Gilvan", "Gustavo", "João", "Kessy", "Lucas", "Stevan", "Tolentino", "Walgney"];
@@ -214,8 +213,7 @@ function MainApp() {
     Particular: true,
     NOC: false,
     NIIP: false,
-    NMR: false,
-    CGR: false
+    NMR: false
   });
 
   // Estados para Modal de Subtarefa
@@ -226,8 +224,7 @@ function MainApp() {
     Particular: true,
     NOC: false,
     NIIP: false,
-    NMR: false,
-    CGR: false
+    NMR: false
   });
 
   // Estado para Modal de Edição de Grupos da Fonte
@@ -391,9 +388,8 @@ function MainApp() {
     if (grupos.NOC && GRUPOS_MEMBROS.noc.includes(nomeFormatadoGlobal)) permitido = true;
     if (grupos.NIIP && GRUPOS_MEMBROS.niip.includes(nomeFormatadoGlobal)) permitido = true;
     if (grupos.NMR && GRUPOS_MEMBROS.nmr.includes(nomeFormatadoGlobal)) permitido = true;
-    if (grupos.CGR && GRUPOS_MEMBROS.cgr.includes(nomeFormatadoGlobal)) permitido = true;
 
-    if (!grupos.NOC && !grupos.NIIP && !grupos.NMR && !grupos.CGR && !grupos.Particular) {
+    if (!grupos.NOC && !grupos.NIIP && !grupos.NMR && !grupos.Particular) {
       return tarefaObj.criadoPor && tarefaObj.criadoPor.toUpperCase() === nomeFormatadoGlobal.toUpperCase();
     }
 
@@ -481,7 +477,7 @@ function MainApp() {
       setModalNovaPagina(false);
       setNovoTituloModal('');
       setNovaPrioridadeModal('Baixa');
-      setNovosGruposModal({ Particular: true, NOC: false, NIIP: false, NMR: false, CGR: false });
+      setNovosGruposModal({ Particular: true, NOC: false, NIIP: false, NMR: false });
     }).catch(e => alert("Erro ao criar página: " + e.message));
   };
 
@@ -529,7 +525,7 @@ function MainApp() {
       setModalNovaSub({ isOpen: false, tarefaRaizId: null, caminhoIds: null });
       setSubTituloModal('');
       setSubPrioridadeModal('Baixa');
-      setSubGruposModal({ Particular: true, NOC: false, NIIP: false, NMR: false, CGR: false });
+      setSubGruposModal({ Particular: true, NOC: false, NIIP: false, NMR: false });
     }).catch(e => alert("Erro ao adicionar subtarefa: " + e.message));
   };
 
@@ -1010,7 +1006,7 @@ function MainApp() {
     );
   };
 
-  // Renderização recursiva com cores por nível hierárquico (Pai: preto/principal negrito, Filhas (nivel 1): azul, Netas (nivel >= 2): verde)
+  // Renderização recursiva com cores por nível hierárquico (Pai: preto/branco em negrito, Filhas (nivel 1): azul, Netas (nivel >= 2): verde)
   const renderizarSubTarefasRecursivas = (subLista, tarefaRaizObj, caminhoPai, nivel = 1) => {
     if (!subLista || subLista.length === 0) return null;
 
@@ -1037,7 +1033,7 @@ function MainApp() {
           const editorSub = sub.editadoPor;
           const displayAutorSub = editorSub && editorSub.toUpperCase() !== autorSub.toUpperCase() ? `${autorSub} (Editado por: ${editorSub})` : autorSub;
 
-          // Regra de cores por nível: Nível 1 (Filha) = Azul (#2383e2), Nível 2+ (Neta) = Verde (#27ae60)
+          // Cores por nível: Nível 1 = Azul, Nível 2+ = Verde
           const corTextoSub = isConcluida ? '#27ae60' : (nivel === 1 ? '#2383e2' : '#27ae60');
 
           return (
@@ -1116,7 +1112,7 @@ function MainApp() {
                       isSub: true,
                       tarefaId: tarefaRaizObj.id,
                       caminhoIds: caminhoAtual,
-                      gruposAtuais: sub.gruposSelecionados || { Particular: true, NOC: false, NIIP: false, NMR: false, CGR: false }
+                      gruposAtuais: sub.gruposSelecionados || { Particular: true, NOC: false, NIIP: false, NMR: false }
                     });
                   }}
                   title="Clique para alterar os grupos"
@@ -1460,7 +1456,7 @@ function MainApp() {
                               isSub: false,
                               tarefaId: t.id,
                               caminhoIds: null,
-                              gruposAtuais: t.gruposSelecionados || { Particular: true, NOC: false, NIIP: false, NMR: false, CGR: false }
+                              gruposAtuais: t.gruposSelecionados || { Particular: true, NOC: false, NIIP: false, NMR: false }
                             });
                           }}
                           title="Clique para alterar os grupos"
@@ -1608,8 +1604,7 @@ function MainApp() {
                       {grupo === 'NOC' && '👥 Grupo do NOC'}
                       {grupo === 'NIIP' && '👥 Grupo do NIIP'}
                       {grupo === 'NMR' && '👥 Grupo do NMR'}
-                      {grupo === 'CGR' && '👥 Todos Grupo do CGR'}
-                      {grupo !== 'NOC' && grupo !== 'NIIP' && grupo !== 'NMR' && grupo !== 'CGR' && grupo}
+                      {grupo !== 'NOC' && grupo !== 'NIIP' && grupo !== 'NMR' && grupo}
                     </label>
                   ))}
                 </div>
@@ -1669,8 +1664,7 @@ function MainApp() {
                       {grupo === 'NOC' && '👥 Grupo do NOC'}
                       {grupo === 'NIIP' && '👥 Grupo do NIIP'}
                       {grupo === 'NMR' && '👥 Grupo do NMR'}
-                      {grupo === 'CGR' && '👥 Todos Grupo do CGR'}
-                      {grupo !== 'NOC' && grupo !== 'NIIP' && grupo !== 'NMR' && grupo !== 'CGR' && grupo}
+                      {grupo !== 'NOC' && grupo !== 'NIIP' && grupo !== 'NMR' && grupo}
                     </label>
                   ))}
                 </div>
@@ -1763,7 +1757,7 @@ function MainApp() {
 // Componente auxiliar para o modal de alteração de grupos da fonte
 function ModalEditarGruposFonte({ modalState, onClose, onSave, theme }) {
   const [gruposSelecionados, setGruposSelecionados] = useState(
-    modalState.gruposAtuais || { Particular: true, NOC: false, NIIP: false, NMR: false, CGR: false }
+    modalState.gruposAtuais || { Particular: true, NOC: false, NIIP: false, NMR: false }
   );
 
   return (
@@ -1786,8 +1780,7 @@ function ModalEditarGruposFonte({ modalState, onClose, onSave, theme }) {
                 {grupo === 'NOC' && '👥 Grupo do NOC'}
                 {grupo === 'NIIP' && '👥 Grupo do NIIP'}
                 {grupo === 'NMR' && '👥 Grupo do NMR'}
-                {grupo === 'CGR' && '👥 Todos Grupo do CGR'}
-                {grupo !== 'NOC' && grupo !== 'NIIP' && grupo !== 'NMR' && grupo !== 'CGR' && grupo}
+                {grupo !== 'NOC' && grupo !== 'NIIP' && grupo !== 'NMR' && grupo}
               </label>
             ))}
           </div>
