@@ -261,11 +261,12 @@ function MainApp() {
     });
   };
 
+  // Alterado para retornar 'true' por padrão (abertas ao logar/carregar)
   const verificarExpandido = (id) => {
     if (expandidoIds[id] !== undefined) {
       return expandidoIds[id];
     }
-    return false;
+    return true;
   };
 
   useEffect(() => {
@@ -1002,7 +1003,7 @@ function MainApp() {
                   {displayAutorSub}
                 </div>
 
-                {/* Coluna Fonte com restrição de permissão */}
+                {/* Coluna Fonte da subtarefa com verificação estrita de permissão */}
                 <div 
                   onClick={() => {
                     if (!usuarioTemPermissaoTarefa(tarefaRaizObj)) {
@@ -1318,7 +1319,7 @@ function MainApp() {
                           {displayAutorPai}
                         </div>
 
-                        {/* Coluna Fonte com restrição de permissão estrita */}
+                        {/* Coluna Fonte com verificação estrita de permissão */}
                         <div 
                           onClick={() => {
                             if (!usuarioTemPermissaoTarefa(t)) {
