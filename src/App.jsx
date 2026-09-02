@@ -206,7 +206,7 @@ function MainApp() {
   const [editandoId, setEditandoId] = useState(null);
   const [textoEditando, setTextoEditando] = useState('');
 
-  // Estados para Modal de Nova Página Principal (sem a opção Pública)
+  // Estados para Modal de Nova Página Principal
   const [modalNovaPagina, setModalNovaPagina] = useState(false);
   const [novoTituloModal, setNovoTituloModal] = useState('');
   const [novaPrioridadeModal, setNovaPrioridadeModal] = useState('Baixa');
@@ -218,7 +218,7 @@ function MainApp() {
     CGR: false
   });
 
-  // Estados para Modal de Subtarefa (sem a opção Pública)
+  // Estados para Modal de Subtarefa
   const [modalNovaSub, setModalNovaSub] = useState({ isOpen: false, tarefaRaizId: null, caminhoIds: null });
   const [subTituloModal, setSubTituloModal] = useState('');
   const [subPrioridadeModal, setSubPrioridadeModal] = useState('Baixa');
@@ -228,6 +228,15 @@ function MainApp() {
     NIIP: false,
     NMR: false,
     CGR: false
+  });
+
+  // Estado para Modal de Edição de Grupos da Fonte
+  const [modalEditarGruposFonte, setModalEditarGruposFonte] = useState({
+    isOpen: false,
+    isSub: false,
+    tarefaId: null,
+    caminhoIds: null,
+    gruposAtuais: {}
   });
 
   // Estado para Exclusão
@@ -512,6 +521,52 @@ function MainApp() {
       setSubPrioridadeModal('Baixa');
       setSubGruposModal({ Particular: true, NOC: false, NIIP: false, NMR: false, CGR: false });
     }).catch(e => alert("Erro ao adicionar subtarefa: " + e.message));
+  };
+
+  // Função para salvar a alteração de grupos feita ao clicar na fonte
+  const salvarEdicaoGruposFonte = async (novosGrupos) => {
+    const { isSub, tarefaId, caminhoIds } = modalEditarGruposFonte;
+    const tarefaObj = tarefas.find(t => t.id === tarefaId);
+    if (!tarefaObj) return;
+
+    if (!usuarioTemPermissaoTarefa(tarefaObj) && !isGestor) {
+      alert("Você não tem permissão para alterar os grupos desta tarefa.");
+      return;
+    }
+
+    const novaFonteStr = formatarFonteGrupos(novosGrupos);
+    const colecaoAlvo = tarefaObj._colecao || 'tarefas_gerais';
+
+    try {
+      if (isSub) {
+        // Atualização recursiva dos grupos da subtarefa
+        const atualizarGruposSubNaArvore = (lista, ids) => {
+          return (lista || []).map(item => {
+            if (item.id === ids[0]) {
+              if (ids.length === 1) {
+                return { ...item, gruposSelecionados: novosGrupos, fonteGrupos: novaFonteStr };
+              } else {
+                return { ...item, subTarefas: atualizarGruposSubNaArvore(item.subTarefas || [], ids.slice(1)) };
+              }
+            }
+            return item;
+          });
+        };
+
+        const novasSubs = atualizarGruposSubNaArvore(tarefaObj.subTarefas || [], caminhoIds);
+        await updateDoc(doc(db, colecaoAlvo, tarefaId), { subTarefas: novasSubs });
+      } else {
+        // Atualização da tarefa principal
+        await updateDoc(doc(db, colecaoAlvo, tarefaId), {
+          gruposSelecionados: novosGrupos,
+          fonteGrupos: novaFonteStr
+        });
+      }
+      setModalEditarGruposFonte({ isOpen: false, isSub: false, tarefaId: null, caminhoIds: null, gruposAtuais: {} });
+      alert("Atribuição de grupos atualizada com sucesso!");
+    } catch (e) {
+      alert("Erro ao atualizar grupos: " + e.message);
+    }
   };
 
   const setTrashRecursiveProp = (lista, val) => {
@@ -949,8 +1004,19 @@ function MainApp() {
                   {displayAutorSub}
                 </div>
 
-                <div style={{ color: isConcluida ? '#27ae60' : theme.textMuted, fontSize: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  📄 {sub.fonteGrupos || 'Sub-tarefa'}
+                {/* Coluna Fonte clicable para alterar grupos da subtarefa */}
+                <div 
+                  onClick={() => setModalEditarGruposFonte({
+                    isOpen: true,
+                    isSub: true,
+                    tarefaId: tarefaRaizObj.id,
+                    caminhoIds: caminhoAtual,
+                    gruposAtuais: sub.gruposSelecionados || { Particular: true, NOC: false, NIIP: false, NMR: false, CGR: false }
+                  })}
+                  title="Clique para alterar os grupos"
+                  style={{ color: isConcluida ? '#27ae60' : theme.textMuted, fontSize: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', cursor: 'pointer', textDecoration: 'underline dotted' }}
+                >
+                  🔒 {sub.fonteGrupos || 'Sub-tarefa'}
                 </div>
 
                 <div style={{ color: isConcluida ? '#27ae60' : theme.textMuted, fontSize: '14px' }}>
@@ -1248,7 +1314,18 @@ function MainApp() {
                           {displayAutorPai}
                         </div>
 
-                        <div style={{ color: isConcluida ? '#27ae60' : theme.textMain, fontSize: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: '600' }}>
+                        {/* Coluna Fonte clicável para alterar os grupos da tarefa principal */}
+                        <div 
+                          onClick={() => setModalEditarGruposFonte({
+                            isOpen: true,
+                            isSub: false,
+                            tarefaId: t.id,
+                            caminhoIds: null,
+                            gruposAtuais: t.gruposSelecionados || { Particular: true, NOC: false, NIIP: false, NMR: false, CGR: false }
+                          })}
+                          title="Clique para alterar os grupos"
+                          style={{ color: isConcluida ? '#27ae60' : theme.textMain, fontSize: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: '600', cursor: 'pointer', textDecoration: 'underline dotted' }}
+                        >
                           🔒 {t.fonteGrupos || 'Particular'}
                         </div>
 
@@ -1334,7 +1411,7 @@ function MainApp() {
 
         </div>
 
-        {/* MODAL DE CRIAÇÃO DE NOVA PÁGINA PRINCIPAL (SEM PÚBLICA) */}
+        {/* MODAL DE CRIAÇÃO DE NOVA PÁGINA PRINCIPAL */}
         {modalNovaPagina && (
           <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, padding: '15px', boxSizing: 'border-box' }}>
             <div style={{ background: theme.cardBg, padding: '28px', borderRadius: '8px', width: '100%', maxWidth: '420px', border: `1px solid ${theme.border}`, boxShadow: '0 10px 30px rgba(0,0,0,0.3)', textAlign: 'left', maxHeight: '90vh', overflowY: 'auto' }}>
@@ -1395,7 +1472,7 @@ function MainApp() {
           </div>
         )}
 
-        {/* MODAL DE CRIAÇÃO DE SUBTAREFA (SEM PÚBLICA) */}
+        {/* MODAL DE CRIAÇÃO DE SUBTAREFA */}
         {modalNovaSub.isOpen && (
           <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, padding: '15px', boxSizing: 'border-box' }}>
             <div style={{ background: theme.cardBg, padding: '28px', borderRadius: '8px', width: '100%', maxWidth: '420px', border: `1px solid ${theme.border}`, boxShadow: '0 10px 30px rgba(0,0,0,0.3)', textAlign: 'left', maxHeight: '90vh', overflowY: 'auto' }}>
@@ -1456,6 +1533,16 @@ function MainApp() {
           </div>
         )}
 
+        {/* MODAL DE EDIÇÃO DE GRUPOS DA FONTE */}
+        {modalEditarGruposFonte.isOpen && (
+          <ModalEditarGruposFonte 
+            modalState={modalEditarGruposFonte}
+            onClose={() => setModalEditarGruposFonte({ isOpen: false, isSub: false, tarefaId: null, caminhoIds: null, gruposAtuais: {} })}
+            onSave={salvarEdicaoGruposFonte}
+            theme={theme}
+          />
+        )}
+
         {/* POP-UP DE CONFIRMAÇÃO DE EXCLUSÃO */}
         {modalExclusao.isOpen && (
           <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, padding: '15px', boxSizing: 'border-box' }}>
@@ -1508,6 +1595,48 @@ function MainApp() {
 
       </div>
 
+    </div>
+  );
+}
+
+// Componente auxiliar para o modal de alteração de grupos da fonte
+function ModalEditarGruposFonte({ modalState, onClose, onSave, theme }) {
+  const [gruposSelecionados, setGruposSelecionados] = useState(
+    modalState.gruposAtuais || { Particular: true, NOC: false, NIIP: false, NMR: false, CGR: false }
+  );
+
+  return (
+    <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, padding: '15px', boxSizing: 'border-box' }}>
+      <div style={{ background: theme.cardBg, padding: '28px', borderRadius: '8px', width: '100%', maxWidth: '420px', border: `1px solid ${theme.border}`, boxShadow: '0 10px 30px rgba(0,0,0,0.3)', textAlign: 'left', maxHeight: '90vh', overflowY: 'auto' }}>
+        <h3 style={{ margin: '0 0 16px 0', color: theme.textMain, fontSize: '18px', fontWeight: '700' }}>Alterar Atribuição de Grupos</h3>
+        
+        <div style={{ marginBottom: '24px' }}>
+          <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '8px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Selecione os Grupos</label>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: theme.cardInner, padding: '12px', borderRadius: '6px', border: `1px solid ${theme.border}` }}>
+            {Object.keys(gruposSelecionados).map((grupo) => (
+              <label key={grupo} style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '14px', fontWeight: '500', cursor: 'pointer', color: theme.textMain }}>
+                <input 
+                  type="checkbox" 
+                  checked={Boolean(gruposSelecionados[grupo])} 
+                  onChange={(e) => setGruposSelecionados({ ...gruposSelecionados, [grupo]: e.target.checked })}
+                  style={{ accentColor: '#2383e2', width: '16px', height: '16px', cursor: 'pointer' }}
+                />
+                {grupo === 'Particular' && '🔒 '}
+                {grupo === 'NOC' && '👥 Grupo do NOC'}
+                {grupo === 'NIIP' && '👥 Grupo do NIIP'}
+                {grupo === 'NMR' && '👥 Grupo do NMR'}
+                {grupo === 'CGR' && '👥 Todos Grupo do CGR'}
+                {grupo !== 'NOC' && grupo !== 'NIIP' && grupo !== 'NMR' && grupo !== 'CGR' && grupo}
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <button onClick={onClose} style={{ flex: 1, padding: '10px', background: theme.cardInner, color: theme.textMain, border: `1px solid ${theme.border}`, borderRadius: '6px', fontWeight: '600', cursor: 'pointer', fontSize: '14px' }}>Cancelar</button>
+          <button onClick={() => onSave(gruposSelecionados)} style={{ flex: 1, padding: '10px', background: '#2383e2', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: '600', cursor: 'pointer', fontSize: '14px' }}>Salvar</button>
+        </div>
+      </div>
     </div>
   );
 }
