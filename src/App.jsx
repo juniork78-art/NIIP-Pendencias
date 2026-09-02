@@ -1327,7 +1327,8 @@ function TelaLogin({ onLoginSucesso, darkMode, setDarkMode, theme }) {
 
       <form onSubmit={handleLogin} style={{ background: theme.cardBg, padding: '36px 28px', borderRadius: '8px', width: '100%', maxWidth: '380px', border: `1px solid ${theme.border}`, boxSizing: 'border-box', boxShadow: '0 10px 30px rgba(0,0,0,0.2)' }}>
         <div style={{ textAlign: 'center', marginBottom: '28px' }}>
-          <span style={{ fontSize: '16px', color: theme.textMain, fontWeight: '800', display: 'block' }}>Sistema Integrado</span>
+          <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#2eaadc', color: '#fff', fontSize: '26px', fontWeight: '900', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px auto', boxShadow: '0 4px 12px rgba(46,170,220,0.3)' }}>P</div>
+          <span style={{ fontSize: '18px', color: theme.textMain, fontWeight: '800', display: 'block' }}>Sistema Integrado</span>
           <span style={{ fontSize: '12px', color: theme.textMuted, fontWeight: '600', display: 'block', marginTop: '4px' }}>Central de Tarefas</span>
         </div>
 
