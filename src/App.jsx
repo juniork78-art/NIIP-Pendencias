@@ -189,6 +189,7 @@ function MainApp() {
   const [responsavelSelecionadoGestor, setResponsavelSelecionadoGestor] = useState(TODOS_INTEGRANTES[0]);
   
   const [filtroResponsavel, setFiltroResponsavel] = useState('todos');
+  const [filtroPalavraChave, setFiltroPalavraChave] = useState('');
 
   const [paginaLateral, setPaginaLateral] = useState(null); 
   const [editTituloLateral, setEditTituloLateral] = useState('');
@@ -558,23 +559,18 @@ function MainApp() {
     } catch (e) {}
   };
 
-  // Funções de clique no botão Excluir/Restaurar
   const tratarCliqueExcluirOuRestaurarPai = (tarefa) => {
     if (tarefa.excluido) {
-      // Restaurar diretamente sem pop-up
       executarRestaurarDiretoPai(tarefa);
     } else {
-      // Excluir -> Abre o pop-up de confirmação obrigatório
       setModalExclusao({ isOpen: true, tipo: 'pai', tarefa, caminhoIds: null });
     }
   };
 
   const tratarCliqueExcluirOuRestaurarSub = (tarefaRaiz, caminhoIds, isSubExcluido) => {
     if (isSubExcluido) {
-      // Restaurar diretamente sem pop-up
       executarRestaurarDiretoSub(tarefaRaiz, caminhoIds);
     } else {
-      // Excluir -> Abre o pop-up de confirmação obrigatório
       setModalExclusao({ isOpen: true, tipo: 'sub', tarefa: tarefaRaiz, caminhoIds });
     }
   };
@@ -608,10 +604,11 @@ function MainApp() {
     try {
       if (modalExclusao.tipo === 'pai') {
         const tarefa = modalExclusao.tarefa;
-        const novasSubs = setTrashRecursiveProp(tarefa.subTarefas, true);
+        const novoExcluido = !Boolean(tarefa.excluido);
+        const novasSubs = setTrashRecursiveProp(tarefa.subTarefas, novoExcluido);
         const colecaoAlvo = tarefa._colecao || 'tarefas_gerais';
         await updateDoc(doc(db, colecaoAlvo, tarefa.id), {
-          excluido: true,
+          excluido: novoExcluido,
           subTarefas: novasSubs
         });
         if (paginaLateral && paginaLateral.id === tarefa.id) fecharPainelLateral();
@@ -883,6 +880,24 @@ function MainApp() {
     if (paginaAtual === 'arquivados' && (!isArquivada || isExcluido)) return false;
     if (paginaAtual === 'andamento' && (isArquivada || isExcluido)) return false;
     if (filtroResponsavel !== 'todos' && t.responsavel !== filtroResponsavel) return false;
+
+    // Filtro por palavra-chave
+    if (filtroPalavraChave.trim() !== '') {
+      const termo = filtroPalavraChave.toLowerCase();
+      const tituloMatch = t.titulo && t.titulo.toLowerCase().includes(termo);
+      const descMatch = t.descricao && t.descricao.toLowerCase().includes(termo);
+      const respMatch = t.responsavel && t.responsavel.toLowerCase().includes(termo);
+      
+      const matchSub = (subs) => {
+        if (!subs) return false;
+        return subs.some(s => (s.texto && s.texto.toLowerCase().includes(termo)) || (s.subTarefas && matchSub(s.subTarefas)));
+      };
+
+      if (!tituloMatch && !descMatch && !respMatch && !matchSub(t.subTarefas)) {
+        return false;
+      }
+    }
+
     return true;
   });
 
@@ -988,7 +1003,7 @@ function MainApp() {
             </div>
           </div>
 
-          {/* ABAS SUPERIORES */}
+          {/* ABAS SUPERIORES COM CAMPO DE BUSCA POR PALAVRA-CHAVE */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `1px solid ${theme.border}`, paddingBottom: '10px', marginBottom: '20px', fontSize: '13px', flexWrap: 'wrap', gap: '12px' }}>
             <div style={{ display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap', color: theme.textMuted }}>
               <span onClick={() => mudarPagina('andamento')} style={{ fontWeight: paginaAtual === 'andamento' ? '600' : '400', color: paginaAtual === 'andamento' ? theme.textMain : theme.textMuted, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>🕒 Recentes</span>
@@ -999,6 +1014,13 @@ function MainApp() {
             </div>
 
             <div style={{ display: 'flex', gap: '12px', alignItems: 'center', color: theme.textMuted }}>
+              <input 
+                type="text" 
+                value={filtroPalavraChave} 
+                onChange={(e) => setFiltroPalavraChave(e.target.value)}
+                placeholder="Filtrar por palavra-chave..." 
+                style={{ padding: '5px 10px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '4px', fontSize: '12px', outline: 'none', width: '180px' }}
+              />
               <select value={filtroResponsavel} onChange={(e) => setFiltroResponsavel(e.target.value)} style={{ padding: '4px 8px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '4px', fontSize: '12px' }}>
                 <option value="todos">Responsável: Todos</option>
                 {TODOS_INTEGRANTES.map(n => <option key={n} value={n}>{n}</option>)}
