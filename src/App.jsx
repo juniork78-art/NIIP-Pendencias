@@ -280,7 +280,7 @@ function MainApp() {
   const abrirPainelLateral = (t) => {
     setPaginaLateral(t);
     setEditTituloLateral(t.titulo);
-    setEditDescricaoLateral(t.descricao || '');
+    setEditDescricaoLateral(t.blocoNotas || ''); // Carrega apenas o bloco de notas independente
     window.history.pushState({ view: paginaAtual, lateralAberta: true }, '');
   };
 
@@ -291,7 +291,7 @@ function MainApp() {
       caminhoIds,
       id: sub.id,
       titulo: sub.texto,
-      descricao: sub.descricao || 'Sub-tarefa',
+      blocoNotas: sub.blocoNotas || '',
       responsavel: tarefaPai.responsavel,
       concluida: Boolean(sub.concluida),
       arquivada: Boolean(sub.arquivada),
@@ -303,7 +303,7 @@ function MainApp() {
     };
     setPaginaLateral(subObj);
     setEditTituloLateral(sub.texto);
-    setEditDescricaoLateral(sub.descricao || '');
+    setEditDescricaoLateral(sub.blocoNotas || '');
     window.history.pushState({ view: paginaAtual, lateralAberta: true }, '');
   };
 
@@ -428,7 +428,7 @@ function MainApp() {
 
   const responsavelFinal = isGestor ? responsavelSelecionadoGestor : nomeForcadoParaUsuario || (TODOS_INTEGRANTES.find(n => nomeFormatadoGlobal.includes(n.toUpperCase())) || TODOS_INTEGRANTES[0]);
 
-  const formatarDescricaoGrupos = (objGrupos) => {
+  const formatarFonteGrupos = (objGrupos) => {
     const selecionados = Object.keys(objGrupos).filter(k => objGrupos[k]);
     if (selecionados.length === 0) return 'Particular';
     if (selecionados.length === 1) {
@@ -439,7 +439,7 @@ function MainApp() {
 
   const confirmarCriacaoNovaPagina = () => {
     if (!novoTituloModal.trim()) {
-      alert("Digite um título para a página.");
+      alert("Digite um título para la página.");
       return;
     }
     const novaId = Date.now().toString();
@@ -452,7 +452,8 @@ function MainApp() {
 
     setDoc(doc(db, colecaoAlvo, novaId), {
       titulo: novoTituloModal.trim(),
-      descricao: formatarDescricaoGrupos(novosGruposModal),
+      fonteGrupos: formatarFonteGrupos(novosGruposModal), // Coluna fonte fixa
+      blocoNotas: '', // Bloco de notas inicia em branco
       gruposSelecionados: novosGruposModal,
       responsavel: responsavelFinal,
       prazo: dataHoje,
@@ -489,7 +490,8 @@ function MainApp() {
       id: Date.now().toString() + "_" + Math.random().toString(36).substring(2, 5),
       texto: subTituloModal.trim(),
       prioridade: subPrioridadeModal,
-      descricao: formatarDescricaoGrupos(subGruposModal),
+      fonteGrupos: formatarFonteGrupos(subGruposModal),
+      blocoNotas: '', // Inicia em branco
       gruposSelecionados: subGruposModal,
       concluida: false,
       arquivada: false,
@@ -606,7 +608,30 @@ function MainApp() {
     });
   };
 
-  const updateTextNodeInTree = (lista, ids, newText, editorName) => {
+  const updateSubNoteInTree = (lista, ids, novaNota, editorName) => {
+    if (!ids || ids.length === 0) return lista;
+    return (lista || []).map(item => {
+      if (item.id === ids[0]) {
+        if (ids.length === 1) {
+          const creator = item.criadoPor || '';
+          const needsEditor = creator && creator.toUpperCase() !== editorName.toUpperCase();
+          return { 
+            ...item, 
+            blocoNotas: novaNota, 
+            ...(needsEditor && { editadoPor: editorName })
+          };
+        } else {
+          return {
+            ...item,
+            subTarefas: updateSubNoteInTree(item.subTarefas || [], ids.slice(1), novaNota, editorName)
+          };
+        }
+      }
+      return item;
+    });
+  };
+
+  const updateSubTextInTree = (lista, ids, newText, editorName) => {
     if (!ids || ids.length === 0) return lista;
     return (lista || []).map(item => {
       if (item.id === ids[0]) {
@@ -621,7 +646,7 @@ function MainApp() {
         } else {
           return {
             ...item,
-            subTarefas: updateTextNodeInTree(item.subTarefas || [], ids.slice(1), newText, editorName)
+            subTarefas: updateSubTextInTree(item.subTarefas || [], ids.slice(1), newText, editorName)
           };
         }
       }
@@ -638,14 +663,6 @@ function MainApp() {
       }
     }
     return true;
-  };
-
-  const encontrarSubNaArvore = (subLista, caminhoIds) => {
-    if (!subLista || caminhoIds.length === 0) return null;
-    const atual = subLista.find(s => s.id === caminhoIds[0]);
-    if (!atual) return null;
-    if (caminhoIds.length === 1) return atual;
-    return encontrarSubNaArvore(atual.subTarefas, caminhoIds.slice(1));
   };
 
   const alternarStatusTarefaPai = async (tarefa) => {
@@ -807,7 +824,7 @@ function MainApp() {
     }
   };
 
-  // Bloco de notas atualiza apenas a descrição/conteúdo sem alterar os grupos atribuídos
+  // Bloco de notas atualiza APENAS o campo 'blocoNotas', mantendo a fonte intacta
   const salvarAlteracoesPaginaLateral = async () => {
     if (!paginaLateral) return;
     if (!usuarioTemPermissaoTarefa(paginaLateral) && !isGestor) {
@@ -820,23 +837,25 @@ function MainApp() {
         const tarefaRaiz = tarefas.find(t => t.id === paginaLateral.raizId);
         if (!tarefaRaiz) return;
 
-        const novaSubTarefas = updateTextNodeInTree(tarefaRaiz.subTarefas || [], paginaLateral.caminhoIds, editTituloLateral.trim(), nomeFormatadoGlobal);
+        const novaSubTarefas = updateSubNoteInTree(tarefaRaiz.subTarefas || [], paginaLateral.caminhoIds, editDescricaoLateral.trim(), nomeFormatadoGlobal);
+        const subAtualizada = updateSubTextInTree(novaSubTarefas, paginaLateral.caminhoIds, editTituloLateral.trim(), nomeFormatadoGlobal);
+
         await updateDoc(doc(db, colecaoAlvo, paginaLateral.raizId), {
-          subTarefas: novaSubTarefas
+          subTarefas: subAtualizada
         });
-        setPaginaLateral(prev => ({ ...prev, titulo: editTituloLateral.trim() }));
+        setPaginaLateral(prev => ({ ...prev, titulo: editTituloLateral.trim(), blocoNotas: editDescricaoLateral.trim() }));
       } else {
         if (!editTituloLateral.trim()) return;
         const creator = paginaLateral.criadoPor || '';
         const needsEditor = creator && creator.toUpperCase() !== nomeFormatadoGlobal.toUpperCase();
         const updates = {
           titulo: editTituloLateral.trim(),
-          descricao: editDescricaoLateral.trim() // Atualiza notas sem tocar nos grupos
+          blocoNotas: editDescricaoLateral.trim() // Salva APENAS no bloco de notas
         };
         if (needsEditor) updates.editadoPor = nomeFormatadoGlobal;
 
         await updateDoc(doc(db, colecaoAlvo, paginaLateral.id), updates);
-        setPaginaLateral(prev => ({ ...prev, titulo: editTituloLateral.trim(), descricao: editDescricaoLateral.trim() }));
+        setPaginaLateral(prev => ({ ...prev, titulo: editTituloLateral.trim(), blocoNotas: editDescricaoLateral.trim() }));
       }
       alert("Alterações salvas com sucesso!");
     } catch (e) {
@@ -937,7 +956,7 @@ function MainApp() {
                 </div>
 
                 <div style={{ color: isConcluida ? '#27ae60' : theme.textMuted, fontSize: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  📄 {sub.descricao || 'Sub-tarefa'}
+                  📄 {sub.fonteGrupos || 'Sub-tarefa'}
                 </div>
 
                 <div style={{ color: isConcluida ? '#27ae60' : theme.textMuted, fontSize: '14px' }}>
@@ -1036,7 +1055,7 @@ function MainApp() {
     if (filtroPalavraChave.trim() !== '') {
       const termo = filtroPalavraChave.toLowerCase();
       const tituloMatch = t.titulo && t.titulo.toLowerCase().includes(termo);
-      const descMatch = t.descricao && t.descricao.toLowerCase().includes(termo);
+      const descMatch = t.blocoNotas && t.blocoNotas.toLowerCase().includes(termo);
       const respMatch = t.responsavel && t.responsavel.toLowerCase().includes(termo);
       
       const matchSub = (subs) => {
@@ -1236,7 +1255,7 @@ function MainApp() {
                         </div>
 
                         <div style={{ color: isConcluida ? '#27ae60' : theme.textMain, fontSize: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: '600' }}>
-                          🔒 {t.descricao || 'Particular'}
+                          🔒 {t.fonteGrupos || 'Particular'}
                         </div>
 
                         <div style={{ color: isConcluida ? '#27ae60' : theme.textMuted, fontSize: '14px', fontWeight: '500' }}>
@@ -1460,7 +1479,7 @@ function MainApp() {
           </div>
         )}
 
-        {/* PAINEL LATERAL DIREITO (SPLIT-VIEW) */}
+        {/* PAINEL LATERAL DIREITO (SPLIT-VIEW) - BLOCO DE NOTAS LIMPO E INDEPENDENTE */}
         {paginaLateral && (
           <div className="lateral-panel" style={{ width: '450px', background: theme.cardBg, borderLeft: `1px solid ${theme.border}`, display: 'flex', flexDirection: 'column', padding: '36px', boxSizing: 'border-box', height: '100vh', overflowY: 'auto', flexShrink: '0', boxShadow: '-5px 0 25px rgba(0,0,0,0.1)' }}>
             
@@ -1581,7 +1600,7 @@ function TelaLogin({ onLoginSucesso, darkMode, setDarkMode, theme }) {
               <input type="password" value={senhaAtual} onChange={(e) => setSenhaAtual(e.target.value)} required style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: `1px solid ${theme.border}`, background: theme.inputBg, color: theme.inputText, boxSizing: 'border-box', fontSize: '14px', fontWeight: '500' }} />
             </div>
 
-            <div style={{ marginBottom: '20px' }}>
+            <div style={{ marginBottom: '20px' >
               <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Nova Senha</label>
               <input type="password" value={novaSenha} onChange={(e) => setNovaSenha(e.target.value)} required style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: `1px solid ${theme.border}`, background: theme.inputBg, color: theme.inputText, boxSizing: 'border-box', fontSize: '14px', fontWeight: '500' }} />
             </div>
