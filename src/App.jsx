@@ -558,23 +558,60 @@ function MainApp() {
     } catch (e) {}
   };
 
-  const solicitarExclusaoTarefaPai = (tarefa) => {
-    setModalExclusao({ isOpen: true, tipo: 'pai', tarefa, caminhoIds: null });
+  // Funções de clique no botão Excluir/Restaurar
+  const tratarCliqueExcluirOuRestaurarPai = (tarefa) => {
+    if (tarefa.excluido) {
+      // Restaurar diretamente sem pop-up
+      executarRestaurarDiretoPai(tarefa);
+    } else {
+      // Excluir -> Abre o pop-up de confirmação obrigatório
+      setModalExclusao({ isOpen: true, tipo: 'pai', tarefa, caminhoIds: null });
+    }
   };
 
-  const solicitarExclusaoSub = (tarefaRaiz, caminhoIds) => {
-    setModalExclusao({ isOpen: true, tipo: 'sub', tarefa: tarefaRaiz, caminhoIds });
+  const tratarCliqueExcluirOuRestaurarSub = (tarefaRaiz, caminhoIds, isSubExcluido) => {
+    if (isSubExcluido) {
+      // Restaurar diretamente sem pop-up
+      executarRestaurarDiretoSub(tarefaRaiz, caminhoIds);
+    } else {
+      // Excluir -> Abre o pop-up de confirmação obrigatório
+      setModalExclusao({ isOpen: true, tipo: 'sub', tarefa: tarefaRaiz, caminhoIds });
+    }
+  };
+
+  const executarRestaurarDiretoPai = async (tarefa) => {
+    try {
+      const novasSubs = setTrashRecursiveProp(tarefa.subTarefas, false);
+      const colecaoAlvo = tarefa._colecao || 'tarefas_gerais';
+      await updateDoc(doc(db, colecaoAlvo, tarefa.id), {
+        excluido: false,
+        subTarefas: novasSubs
+      });
+    } catch (e) {
+      alert("Erro ao restaurar: " + e.message);
+    }
+  };
+
+  const executarRestaurarDiretoSub = async (tarefaRaiz, caminhoIds) => {
+    try {
+      const novaSubTarefas = trashNodeInTree(tarefaRaiz.subTarefas || [], caminhoIds);
+      const colecaoAlvo = tarefaRaiz._colecao || 'tarefas_gerais';
+      await updateDoc(doc(db, colecaoAlvo, tarefaRaiz.id), {
+        subTarefas: novaSubTarefas
+      });
+    } catch (e) {
+      alert("Erro ao restaurar subtarefa: " + e.message);
+    }
   };
 
   const executarExclusaoConfirmada = async () => {
     try {
       if (modalExclusao.tipo === 'pai') {
         const tarefa = modalExclusao.tarefa;
-        const novoExcluido = !Boolean(tarefa.excluido);
-        const novasSubs = setTrashRecursiveProp(tarefa.subTarefas, novoExcluido);
+        const novasSubs = setTrashRecursiveProp(tarefa.subTarefas, true);
         const colecaoAlvo = tarefa._colecao || 'tarefas_gerais';
         await updateDoc(doc(db, colecaoAlvo, tarefa.id), {
-          excluido: novoExcluido,
+          excluido: true,
           subTarefas: novasSubs
         });
         if (paginaLateral && paginaLateral.id === tarefa.id) fecharPainelLateral();
@@ -779,7 +816,7 @@ function MainApp() {
                   ) : <div></div>}
 
                   <div style={{ display: 'flex', gap: '6px' }}>
-                    <button onClick={() => solicitarExclusaoSub(tarefaRaizObj, caminhoAtual)} style={{ background: 'transparent', border: 'none', color: '#eb5757', cursor: 'pointer', fontSize: '11px', fontWeight: '500' }}>
+                    <button onClick={() => tratarCliqueExcluirOuRestaurarSub(tarefaRaizObj, caminhoAtual, isExcluido)} style={{ background: 'transparent', border: 'none', color: '#eb5757', cursor: 'pointer', fontSize: '11px', fontWeight: '500' }}>
                       {isExcluido ? 'Restaurar' : 'Excluir'}
                     </button>
                   </div>
@@ -1068,7 +1105,7 @@ function MainApp() {
                                 {isArquivada ? 'Desarquivar' : 'Arquivar'}
                               </button>
                             )}
-                            <button onClick={() => solicitarExclusaoTarefaPai(t)} title="Lixeira" style={{ background: 'transparent', border: 'none', color: '#eb5757', cursor: 'pointer', fontSize: '11px', fontWeight: '500' }}>
+                            <button onClick={() => tratarCliqueExcluirOuRestaurarPai(t)} title="Lixeira" style={{ background: 'transparent', border: 'none', color: '#eb5757', cursor: 'pointer', fontSize: '11px', fontWeight: '500' }}>
                               {isExcluido ? 'Restaurar' : 'Excluir'}
                             </button>
                             {isGestor && paginaAtual === 'lixeira' && (
