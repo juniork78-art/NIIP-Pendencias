@@ -239,6 +239,15 @@ function MainApp() {
     gruposAtuais: {}
   });
 
+  // Estado para Modal de Edição de Prioridade via Pop-up
+  const [modalEditarPrioridade, setModalEditarPrioridade] = useState({
+    isOpen: false,
+    isSub: false,
+    tarefaId: null,
+    caminhoIds: null,
+    prioridadeAtual: 'Baixa'
+  });
+
   // Estado para Exclusão
   const [modalExclusao, setModalExclusao] = useState({ isOpen: false, tipo: null, tarefa: null, caminhoIds: null });
 
@@ -441,70 +450,6 @@ function MainApp() {
     return `Grupos: ${selecionados.join(', ')}`;
   };
 
-  const proximaPrioridade = (atual) => {
-    if (atual === 'Baixa') return 'Média';
-    if (atual === 'Média') return 'Alta';
-    return 'Baixa';
-  };
-
-  const alterarPrioridadePai = async (tarefa) => {
-    if (!usuarioTemPermissaoTarefa(tarefa)) {
-      alert("Você não tem permissão para alterar a prioridade desta tarefa!");
-      return;
-    }
-    const novaPrio = proximaPrioridade(tarefa.prioridade || 'Baixa');
-    const colecaoAlvo = tarefa._colecao || 'tarefas_gerais';
-    try {
-      await updateDoc(doc(db, colecaoAlvo, tarefa.id), {
-        prioridade: novaPrio
-      });
-    } catch (e) {
-      alert("Erro ao alterar prioridade: " + e.message);
-    }
-  };
-
-  const alterarPrioridadeSub = async (tarefaRaiz, caminhoIds) => {
-    if (!usuarioTemPermissaoTarefa(tarefaRaiz)) {
-      alert("Você não tem permissão para alterar a prioridade desta subtarefa!");
-      return;
-    }
-
-    const encontrarSubNaArvore = (subLista, ids) => {
-      if (!subLista || ids.length === 0) return null;
-      const atual = subLista.find(s => s.id === ids[0]);
-      if (!atual) return null;
-      if (ids.length === 1) return atual;
-      return encontrarSubNaArvore(atual.subTarefas, ids.slice(1));
-    };
-
-    const subAlvo = encontrarSubNaArvore(tarefaRaiz.subTarefas, caminhoIds);
-    if (!subAlvo) return;
-    const novaPrio = proximaPrioridade(subAlvo.prioridade || 'Baixa');
-
-    const atualizarPrioridadeSubNaArvore = (lista, ids) => {
-      return (lista || []).map(item => {
-        if (item.id === ids[0]) {
-          if (ids.length === 1) {
-            return { ...item, prioridade: novaPrio };
-          } else {
-            return { ...item, subTarefas: atualizarPrioridadeSubNaArvore(item.subTarefas || [], ids.slice(1)) };
-          }
-        }
-        return item;
-      });
-    };
-
-    const novasSubs = atualizarPrioridadeSubNaArvore(tarefaRaiz.subTarefas || [], caminhoIds);
-    const colecaoAlvo = tarefaRaiz._colecao || 'tarefas_gerais';
-    try {
-      await updateDoc(doc(db, colecaoAlvo, tarefaRaiz.id), {
-        subTarefas: novasSubs
-      });
-    } catch (e) {
-      alert("Erro ao alterar prioridade da subtarefa: " + e.message);
-    }
-  };
-
   const confirmarCriacaoNovaPagina = () => {
     if (!novoTituloModal.trim()) {
       alert("Digite um título para a página.");
@@ -628,6 +573,47 @@ function MainApp() {
       alert("Atribuição de grupos atualizada com sucesso!");
     } catch (e) {
       alert("Erro ao atualizar grupos: " + e.message);
+    }
+  };
+
+  const salvarEdicaoPrioridade = async (novaPrio) => {
+    const { isSub, tarefaId, caminhoIds } = modalEditarPrioridade;
+    const tarefaObj = tarefas.find(t => t.id === tarefaId);
+    if (!tarefaObj) return;
+
+    if (!usuarioTemPermissaoTarefa(tarefaObj) && !isGestor) {
+      alert("Você não tem permissão para alterar a prioridade.");
+      return;
+    }
+
+    const colecaoAlvo = tarefaObj._colecao || 'tarefas_gerais';
+
+    try {
+      if (isSub) {
+        const atualizarPrioridadeSubNaArvore = (lista, ids) => {
+          return (lista || []).map(item => {
+            if (item.id === ids[0]) {
+              if (ids.length === 1) {
+                return { ...item, prioridade: novaPrio };
+              } else {
+                return { ...item, subTarefas: atualizarPrioridadeSubNaArvore(item.subTarefas || [], ids.slice(1)) };
+              }
+            }
+            return item;
+          });
+        };
+
+        const novasSubs = atualizarPrioridadeSubNaArvore(tarefaObj.subTarefas || [], caminhoIds);
+        await updateDoc(doc(db, colecaoAlvo, tarefaId), { subTarefas: novasSubs });
+      } else {
+        await updateDoc(doc(db, colecaoAlvo, tarefaId), {
+          prioridade: novaPrio
+        });
+      }
+      setModalEditarPrioridade({ isOpen: false, isSub: false, tarefaId: null, caminhoIds: null, prioridadeAtual: 'Baixa' });
+      alert("Prioridade atualizada com sucesso!");
+    } catch (e) {
+      alert("Erro ao atualizar prioridade: " + e.message);
     }
   };
 
@@ -1024,7 +1010,7 @@ function MainApp() {
     );
   };
 
-  // Renderização recursiva limpa de subtarefas com linhas de árvore e prioridade clicável
+  // Renderização recursiva limpa de subtarefas sem checkboxes e com prioridade clicável
   const renderizarSubTarefasRecursivas = (subLista, tarefaRaizObj, caminhoPai, nivel = 1) => {
     if (!subLista || subLista.length === 0) return null;
 
@@ -1096,7 +1082,19 @@ function MainApp() {
                     >
                       {sub.texto}
                     </span>
-                    {renderizarPrioridadeBadge(sub.prioridade || 'Baixa', () => alterarPrioridadeSub(tarefaRaizObj, caminhoAtual))}
+                    {renderizarPrioridadeBadge(sub.prioridade || 'Baixa', () => {
+                      if (!usuarioTemPermissaoTarefa(tarefaRaizObj)) {
+                        alert("Você não tem permissão para alterar a prioridade desta subtarefa.");
+                        return;
+                      }
+                      setModalEditarPrioridade({
+                        isOpen: true,
+                        isSub: true,
+                        tarefaId: tarefaRaizObj.id,
+                        caminhoIds: caminhoAtual,
+                        prioridadeAtual: sub.prioridade || 'Baixa'
+                      });
+                    })}
                   </div>
                 </div>
 
@@ -1426,7 +1424,19 @@ function MainApp() {
                               >
                                 {t.titulo}
                               </span>
-                              {renderizarPrioridadeBadge(t.prioridade || 'Baixa', () => alterarPrioridadePai(t))}
+                              {renderizarPrioridadeBadge(t.prioridade || 'Baixa', () => {
+                                if (!usuarioTemPermissaoTarefa(t)) {
+                                  alert("Você não tem permissão para alterar a prioridade desta tarefa.");
+                                  return;
+                                }
+                                setModalEditarPrioridade({
+                                  isOpen: true,
+                                  isSub: false,
+                                  tarefaId: t.id,
+                                  caminhoIds: null,
+                                  prioridadeAtual: t.prioridade || 'Baixa'
+                                });
+                              })}
                             </div>
                           )}
                         </div>
@@ -1681,6 +1691,16 @@ function MainApp() {
           />
         )}
 
+        {/* MODAL DE EDIÇÃO DE PRIORIDADE */}
+        {modalEditarPrioridade.isOpen && (
+          <ModalEditarPrioridade 
+            modalState={modalEditarPrioridade}
+            onClose={() => setModalEditarPrioridade({ isOpen: false, isSub: false, tarefaId: null, caminhoIds: null, prioridadeAtual: 'Baixa' })}
+            onSave={salvarEdicaoPrioridade}
+            theme={theme}
+          />
+        )}
+
         {/* POP-UP DE CONFIRMAÇÃO DE EXCLUSÃO */}
         {modalExclusao.isOpen && (
           <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, padding: '15px', boxSizing: 'border-box' }}>
@@ -1773,6 +1793,44 @@ function ModalEditarGruposFonte({ modalState, onClose, onSave, theme }) {
         <div style={{ display: 'flex', gap: '12px' }}>
           <button onClick={onClose} style={{ flex: 1, padding: '10px', background: theme.cardInner, color: theme.textMain, border: `1px solid ${theme.border}`, borderRadius: '6px', fontWeight: '600', cursor: 'pointer', fontSize: '14px' }}>Cancelar</button>
           <button onClick={() => onSave(gruposSelecionados)} style={{ flex: 1, padding: '10px', background: '#2383e2', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: '600', cursor: 'pointer', fontSize: '14px' }}>Salvar</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Componente auxiliar para o modal de alteração de prioridade
+function ModalEditarPrioridade({ modalState, onClose, onSave, theme }) {
+  const [prioridadeSelecionada, setPrioridadeSelecionada] = useState(modalState.prioridadeAtual || 'Baixa');
+
+  return (
+    <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, padding: '15px', boxSizing: 'border-box' }}>
+      <div style={{ background: theme.cardBg, padding: '28px', borderRadius: '8px', width: '100%', maxWidth: '380px', border: `1px solid ${theme.border}`, boxShadow: '0 10px 30px rgba(0,0,0,0.3)', textAlign: 'left' }}>
+        <h3 style={{ margin: '0 0 16px 0', color: theme.textMain, fontSize: '18px', fontWeight: '700' }}>Alterar Prioridade</h3>
+        
+        <div style={{ marginBottom: '24px' }}>
+          <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '8px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Selecione o Nível</label>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: theme.cardInner, padding: '12px', borderRadius: '6px', border: `1px solid ${theme.border}` }}>
+            {['Baixa', 'Média', 'Alta'].map((item) => (
+              <label key={item} style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', color: theme.textMain }}>
+                <input 
+                  type="radio" 
+                  name="prioridadeModalRadio" 
+                  checked={prioridadeSelecionada === item} 
+                  onChange={() => setPrioridadeSelecionada(item)}
+                  style={{ accentColor: '#2383e2', width: '16px', height: '16px', cursor: 'pointer' }}
+                />
+                {item === 'Baixa' && '🟢 Baixa'}
+                {item === 'Média' && '🟠 Média'}
+                {item === 'Alta' && '🔴 Alta'}
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <button onClick={onClose} style={{ flex: 1, padding: '10px', background: theme.cardInner, color: theme.textMain, border: `1px solid ${theme.border}`, borderRadius: '6px', fontWeight: '600', cursor: 'pointer', fontSize: '14px' }}>Cancelar</button>
+          <button onClick={() => onSave(prioridadeSelecionada)} style={{ flex: 1, padding: '10px', background: '#2383e2', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: '600', cursor: 'pointer', fontSize: '14px' }}>Salvar</button>
         </div>
       </div>
     </div>
