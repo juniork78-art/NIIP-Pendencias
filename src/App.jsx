@@ -141,7 +141,7 @@ class ErrorBoundary extends React.Component {
       return (
         <div style={{ padding: '40px', background: '#191919', color: '#eb5757', fontFamily: 'sans-serif', minHeight: '100vh', boxSizing: 'border-box' }}>
           <h2>Ocorreu um erro ao carregar a aplicação.</h2>
-          <pre style={{ background: '#262626', padding: '15px', borderRadius: '5px', overflowX: 'auto', color: '#dbdbd7' }}>
+          <pre style={{ background: '#262626', padding: '15px', borderRadius: '5px', overflowX: 'auto', color: '#f4f4f0' }}>
             {this.state.error && this.state.error.toString()}
           </pre>
         </div>
@@ -722,18 +722,19 @@ function MainApp() {
     }
   };
 
+  // Cores mais vivas e fontes levemente aumentadas
   const theme = {
-    bg: darkMode ? '#191919' : '#fbfbfa',
-    sidebarBg: darkMode ? '#202020' : '#f7f6f3',
-    cardBg: darkMode ? '#202020' : '#ffffff',
-    cardInner: darkMode ? '#262626' : '#f7f6f3',
-    textMain: darkMode ? '#dbdbd7' : '#37352f',
-    textMuted: darkMode ? '#9b9b95' : '#787774',
-    border: darkMode ? '#2f2f2f' : '#e9e9e7',
-    inputBg: darkMode ? '#262626' : '#ffffff',
-    inputText: darkMode ? '#dbdbd7' : '#37352f',
+    bg: darkMode ? '#141414' : '#f7f6f2',
+    sidebarBg: darkMode ? '#1c1c1c' : '#eeedeb',
+    cardBg: darkMode ? '#1c1c1c' : '#ffffff',
+    cardInner: darkMode ? '#242424' : '#f2f1ed',
+    textMain: darkMode ? '#f4f4f0' : '#1a1a18',
+    textMuted: darkMode ? '#b0b0a8' : '#555552',
+    border: darkMode ? '#2e2e2e' : '#e0dfdb',
+    inputBg: darkMode ? '#242424' : '#ffffff',
+    inputText: darkMode ? '#f4f4f0' : '#1a1a18',
     primary: '#2eaadc',
-    treeLine: darkMode ? '#444440' : '#d3d3ce'
+    treeLine: darkMode ? '#555550' : '#c8c8c2'
   };
 
   const renderizarSubTarefasRecursivas = (subLista, tarefaRaizObj, caminhoPai, nivel = 1) => {
@@ -764,22 +765,22 @@ function MainApp() {
                 style={{ 
                   display: 'grid', 
                   gridTemplateColumns: '2.5fr 1.5fr 1.5fr 1fr 1fr', 
-                  padding: '10px 0', 
+                  padding: '12px 0', 
                   borderBottom: `1px solid ${theme.border}`, 
                   alignItems: 'center', 
-                  fontSize: '13px', 
+                  fontSize: '14px', 
                   transition: 'background 0.1s',
-                  backgroundColor: isConcluida ? (darkMode ? 'rgba(39, 174, 96, 0.2)' : 'rgba(39, 174, 96, 0.15)') : 'transparent'
+                  backgroundColor: isConcluida ? (darkMode ? 'rgba(39, 174, 96, 0.25)' : 'rgba(39, 174, 96, 0.18)') : 'transparent'
                 }}
                 onMouseEnter={(e) => { if (!isConcluida) e.currentTarget.style.background = theme.cardInner; }} 
                 onMouseLeave={(e) => { if (!isConcluida) e.currentTarget.style.background = 'transparent'; }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden', paddingLeft: `${paddingLeftPx}px`, paddingRight: '10px' }}>
-                  <span onClick={() => alternarExpandido(sub.id)} style={{ cursor: 'pointer', fontSize: '10px', color: theme.textMuted, userSelect: 'none', padding: '2px', width: '12px', textAlign: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden', paddingLeft: `${paddingLeftPx}px`, paddingRight: '10px' }}>
+                  <span onClick={() => alternarExpandido(sub.id)} style={{ cursor: 'pointer', fontSize: '11px', color: theme.textMain, userSelect: 'none', padding: '2px', width: '12px', textAlign: 'center', fontWeight: 'bold' }}>
                     {isExpandidoSub ? '▼' : '▶'}
                   </span>
                   {paginaAtual !== 'lixeira' && (
-                    <input type="checkbox" checked={isConcluida} onChange={() => alternarStatusRecursivo(tarefaRaizObj, caminhoAtual)} style={{ accentColor: '#27ae60', cursor: 'pointer' }} />
+                    <input type="checkbox" checked={isConcluida} onChange={() => alternarStatusRecursivo(tarefaRaizObj, caminhoAtual)} style={{ accentColor: '#27ae60', cursor: 'pointer', width: '16px', height: '16px' }} />
                   )}
                   <span>📄</span>
                   <span 
@@ -790,30 +791,30 @@ function MainApp() {
                   </span>
                 </div>
 
-                <div style={{ color: isConcluida ? '#27ae60' : theme.textMuted, fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <div style={{ color: isConcluida ? '#27ae60' : theme.textMain, fontSize: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: '500' }}>
                   {displayAutorSub}
                 </div>
 
-                <div style={{ color: isConcluida ? '#27ae60' : theme.textMuted, fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <div style={{ color: isConcluida ? '#27ae60' : theme.textMuted, fontSize: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   📄 Sub-tarefa
                 </div>
 
-                <div style={{ color: isConcluida ? '#27ae60' : theme.textMuted, fontSize: '13px' }}>
+                <div style={{ color: isConcluida ? '#27ae60' : theme.textMuted, fontSize: '14px' }}>
                   {isConcluida ? 'Concluída' : 'Agora há pouco'}
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', color: theme.textMuted, fontSize: '13px', paddingRight: '10px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: theme.textMuted, fontSize: '14px', paddingRight: '10px' }}>
                   {paginaAtual === 'andamento' ? (
                     <button 
                       onClick={() => alternarStatusRecursivo(tarefaRaizObj, caminhoAtual)} 
-                      style={{ background: isConcluida ? '#27ae60' : theme.cardInner, border: `1px solid ${isConcluida ? '#27ae60' : theme.border}`, color: isConcluida ? '#fff' : theme.textMain, padding: '3px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: '500' }}
+                      style={{ background: isConcluida ? '#27ae60' : theme.cardInner, border: `1px solid ${isConcluida ? '#27ae60' : theme.border}`, color: isConcluida ? '#fff' : theme.textMain, padding: '5px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}
                     >
                       {isConcluida ? '✔ Concluído' : 'Concluir'}
                     </button>
                   ) : <div></div>}
 
-                  <div style={{ display: 'flex', gap: '6px' }}>
-                    <button onClick={() => tratarCliqueExcluirOuRestaurarSub(tarefaRaizObj, caminhoAtual, isExcluido)} style={{ background: 'transparent', border: 'none', color: '#eb5757', cursor: 'pointer', fontSize: '11px', fontWeight: '500' }}>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button onClick={() => tratarCliqueExcluirOuRestaurarSub(tarefaRaizObj, caminhoAtual, isExcluido)} style={{ background: 'transparent', border: 'none', color: '#eb5757', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}>
                       {isExcluido ? 'Restaurar' : 'Excluir'}
                     </button>
                   </div>
@@ -830,18 +831,19 @@ function MainApp() {
                       style={{ 
                         display: 'grid', 
                         gridTemplateColumns: '2.5fr 1.5fr 1.5fr 1fr 1fr', 
-                        padding: '10px 0', 
+                        padding: '12px 0', 
                         borderBottom: `1px solid ${theme.border}`, 
                         alignItems: 'center', 
-                        fontSize: '13px', 
-                        color: theme.textMuted, 
+                        fontSize: '14px', 
+                        color: theme.textMain, 
                         cursor: 'pointer', 
-                        transition: 'background 0.1s' 
+                        transition: 'background 0.1s',
+                        fontWeight: '600' 
                       }}
                       onMouseEnter={(e) => e.currentTarget.style.background = theme.cardInner}
                       onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                     >
-                      <div style={{ paddingLeft: `${paddingLeftPx + 24}px`, display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '500' }}>
+                      <div style={{ paddingLeft: `${paddingLeftPx + 24}px`, display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <span>+</span> <span>Adicionar nova</span>
                       </div>
                       <div></div><div></div><div></div><div></div>
@@ -858,7 +860,7 @@ function MainApp() {
 
   if (loadingAuth) {
     return (
-      <div style={{ color: '#dbdbd7', backgroundColor: '#191919', textAlign: 'center', marginTop: '40vh', fontFamily: 'sans-serif', minHeight: '100vh', fontSize: '14px' }}>
+      <div style={{ color: '#f4f4f0', backgroundColor: '#141414', textAlign: 'center', marginTop: '40vh', fontFamily: 'sans-serif', minHeight: '100vh', fontSize: '16px', fontWeight: 'bold' }}>
         Carregando workspace...
       </div>
     );
@@ -905,50 +907,50 @@ function MainApp() {
     <div className="workspace-layout" style={{ display: 'flex', minHeight: '100vh', backgroundColor: theme.bg, color: theme.textMain, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif', boxSizing: 'border-box' }}>
       
       {/* SIDEBAR ESQUERDA NOTION */}
-      <div className="sidebar-notion" style={{ width: '240px', background: theme.sidebarBg, borderRight: `1px solid ${theme.border}`, display: 'flex', flexDirection: 'column', padding: '12px 8px', boxSizing: 'border-box', flexShrink: '0' }}>
+      <div className="sidebar-notion" style={{ width: '250px', background: theme.sidebarBg, borderRight: `1px solid ${theme.border}`, display: 'flex', flexDirection: 'column', padding: '16px 10px', boxSizing: 'border-box', flexShrink: '0' }}>
         
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 8px', borderRadius: '4px', marginBottom: '16px', background: theme.cardBg, border: `1px solid ${theme.border}` }}>
-          <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: '#2eaadc', color: '#fff', fontSize: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', borderRadius: '6px', marginBottom: '18px', background: theme.cardBg, border: `1px solid ${theme.border}` }}>
+          <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: '#2eaadc', color: '#fff', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
             {nomeFormatadoGlobal.charAt(0) || 'J'}
           </div>
-          <span style={{ fontSize: '13px', fontWeight: '500', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Espaço de {nomeFormatadoGlobal || 'Usuário'}</span>
+          <span style={{ fontSize: '14px', fontWeight: '600', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: theme.textMain }}>Espaço de {nomeFormatadoGlobal || 'Usuário'}</span>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontSize: '13px', marginBottom: '16px' }}>
-          <div onClick={() => mudarPagina('andamento')} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 8px', borderRadius: '4px', cursor: 'pointer', background: !paginaLateral && paginaAtual === 'andamento' ? theme.cardInner : 'transparent' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '14px', marginBottom: '20px', fontWeight: '500' }}>
+          <div onClick={() => mudarPagina('andamento')} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', borderRadius: '6px', cursor: 'pointer', background: !paginaLateral && paginaAtual === 'andamento' ? theme.cardInner : 'transparent', color: theme.textMain }}>
             <span>🏠</span> <span>Página inicial</span>
           </div>
-          <div onClick={() => mudarPagina('resolvidas')} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 8px', borderRadius: '4px', cursor: 'pointer', background: paginaAtual === 'resolvidas' ? theme.cardInner : 'transparent' }}>
+          <div onClick={() => mudarPagina('resolvidas')} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', borderRadius: '6px', cursor: 'pointer', background: paginaAtual === 'resolvidas' ? theme.cardInner : 'transparent', color: theme.textMain }}>
             <span>✅</span> <span>Resolvidas ({tarefasResolvidas.length})</span>
           </div>
-          <div onClick={() => mudarPagina('arquivados')} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 8px', borderRadius: '4px', cursor: 'pointer', background: paginaAtual === 'arquivados' ? theme.cardInner : 'transparent' }}>
+          <div onClick={() => mudarPagina('arquivados')} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', borderRadius: '6px', cursor: 'pointer', background: paginaAtual === 'arquivados' ? theme.cardInner : 'transparent', color: theme.textMain }}>
             <span>📁</span> <span>Arquivados ({tarefasArquivadas.length})</span>
           </div>
           
           {isGestor && (
-            <div onClick={() => mudarPagina('lixeira')} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 8px', borderRadius: '4px', cursor: 'pointer', background: paginaAtual === 'lixeira' ? theme.cardInner : 'transparent' }}>
+            <div onClick={() => mudarPagina('lixeira')} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', borderRadius: '6px', cursor: 'pointer', background: paginaAtual === 'lixeira' ? theme.cardInner : 'transparent', color: theme.textMain }}>
               <span>🗑️</span> <span>Lixeira ({tarefasLixeira.length})</span>
             </div>
           )}
         </div>
 
-        <div style={{ fontSize: '11px', fontWeight: '600', color: theme.textMuted, padding: '0 8px', marginBottom: '6px', textTransform: 'uppercase' }}>
+        <div style={{ fontSize: '12px', fontWeight: '700', color: theme.textMuted, padding: '0 10px', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
           Páginas Recentes
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontSize: '12px', overflowY: 'auto', maxHeight: '40vh', marginBottom: '20px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '14px', overflowY: 'auto', maxHeight: '40vh', marginBottom: '20px' }}>
           {tarefas.filter(t => !t.arquivada && !t.excluido).map(t => (
             <div 
               key={t.id} 
               onClick={() => abrirPainelLateral(t)}
-              style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 8px', borderRadius: '4px', cursor: 'pointer', background: paginaLateral?.id === t.id ? theme.cardInner : 'transparent', color: paginaLateral?.id === t.id ? theme.textMain : theme.textMuted }}
+              style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 10px', borderRadius: '6px', cursor: 'pointer', background: paginaLateral?.id === t.id ? theme.cardInner : 'transparent', color: paginaLateral?.id === t.id ? theme.textMain : theme.textMuted, fontWeight: '500' }}
             >
               <span>📄</span> <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.titulo}</span>
             </div>
           ))}
         </div>
 
-        <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '6px', borderTop: `1px solid ${theme.border}`, paddingTop: '10px' }}>
-          <button onClick={() => signOut(auth)} style={{ background: 'transparent', border: '1px solid #eb5757', color: '#eb5757', padding: '5px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', textAlign: 'left' }}>
+        <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '6px', borderTop: `1px solid ${theme.border}`, paddingTop: '12px' }}>
+          <button onClick={() => signOut(auth)} style={{ background: 'transparent', border: '1px solid #eb5757', color: '#eb5757', padding: '8px 10px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', textAlign: 'left' }}>
             Sair
           </button>
         </div>
@@ -958,16 +960,16 @@ function MainApp() {
       <div style={{ flex: 1, display: 'flex', width: '100%', boxSizing: 'border-box', overflow: 'hidden' }}>
         
         {/* CONTEÚDO DA BIBLIOTECA */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '32px 48px', boxSizing: 'border-box', overflowY: 'auto' }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '36px 52px', boxSizing: 'border-box', overflowY: 'auto' }}>
           
           {/* CABEÇALHO E BOTÃO NOVA PÁGINA */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
-            <h1 style={{ margin: 0, fontSize: '28px', fontWeight: '700', color: theme.textMain }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '16px' }}>
+            <h1 style={{ margin: 0, fontSize: '32px', fontWeight: '800', color: theme.textMain, letterSpacing: '-0.5px' }}>
               {paginaAtual === 'arquivados' ? '📁 Arquivados' : paginaAtual === 'lixeira' ? '🗑️ Lixeira' : 'Biblioteca'}
             </h1>
 
-            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-              <button onClick={alternarTema} style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, color: theme.textMain, padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: '500' }}>
+            <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
+              <button onClick={alternarTema} style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, color: theme.textMain, padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
                 {darkMode ? '☀️ Claro' : '🌙 Escuro'}
               </button>
               {paginaAtual === 'andamento' && (
@@ -995,7 +997,7 @@ function MainApp() {
                       }, 100);
                     }
                   }}
-                  style={{ background: '#2383e2', color: '#fff', border: 'none', padding: '6px 14px', borderRadius: '6px', fontWeight: '500', fontSize: '13px', cursor: 'pointer', boxShadow: '0 1px 2px rgba(0,0,0,0.1)' }}
+                  style={{ background: '#2383e2', color: '#fff', border: 'none', padding: '8px 18px', borderRadius: '6px', fontWeight: '600', fontSize: '14px', cursor: 'pointer', boxShadow: '0 1px 3px rgba(0,0,0,0.15)' }}
                 >
                   Nova página
                 </button>
@@ -1004,24 +1006,24 @@ function MainApp() {
           </div>
 
           {/* ABAS SUPERIORES COM CAMPO DE BUSCA POR PALAVRA-CHAVE */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `1px solid ${theme.border}`, paddingBottom: '10px', marginBottom: '20px', fontSize: '13px', flexWrap: 'wrap', gap: '12px' }}>
-            <div style={{ display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap', color: theme.textMuted }}>
-              <span onClick={() => mudarPagina('andamento')} style={{ fontWeight: paginaAtual === 'andamento' ? '600' : '400', color: paginaAtual === 'andamento' ? theme.textMain : theme.textMuted, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>🕒 Recentes</span>
-              <span onClick={() => mudarPagina('arquivados')} style={{ fontWeight: paginaAtual === 'arquivados' ? '600' : '400', color: paginaAtual === 'arquivados' ? theme.textMain : theme.textMuted, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>📁 Arquivados</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `2px solid ${theme.border}`, paddingBottom: '12px', marginBottom: '24px', fontSize: '14px', flexWrap: 'wrap', gap: '16px', fontWeight: '600' }}>
+            <div style={{ display: 'flex', gap: '24px', alignItems: 'center', flexWrap: 'wrap', color: theme.textMuted }}>
+              <span onClick={() => mudarPagina('andamento')} style={{ fontWeight: paginaAtual === 'andamento' ? '700' : '500', color: paginaAtual === 'andamento' ? theme.textMain : theme.textMuted, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>🕒 Recentes</span>
+              <span onClick={() => mudarPagina('arquivados')} style={{ fontWeight: paginaAtual === 'arquivados' ? '700' : '500', color: paginaAtual === 'arquivados' ? theme.textMain : theme.textMuted, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>📁 Arquivados</span>
               {isGestor && (
-                <span onClick={() => mudarPagina('lixeira')} style={{ fontWeight: paginaAtual === 'lixeira' ? '600' : '400', color: paginaAtual === 'lixeira' ? theme.textMain : theme.textMuted, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>🗑️ Lixeira</span>
+                <span onClick={() => mudarPagina('lixeira')} style={{ fontWeight: paginaAtual === 'lixeira' ? '700' : '500', color: paginaAtual === 'lixeira' ? theme.textMain : theme.textMuted, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>🗑️ Lixeira</span>
               )}
             </div>
 
-            <div style={{ display: 'flex', gap: '12px', alignItems: 'center', color: theme.textMuted }}>
+            <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
               <input 
                 type="text" 
                 value={filtroPalavraChave} 
                 onChange={(e) => setFiltroPalavraChave(e.target.value)}
                 placeholder="Filtrar por palavra-chave..." 
-                style={{ padding: '5px 10px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '4px', fontSize: '12px', outline: 'none', width: '180px' }}
+                style={{ padding: '7px 12px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '6px', fontSize: '13px', outline: 'none', width: '200px', fontWeight: '500' }}
               />
-              <select value={filtroResponsavel} onChange={(e) => setFiltroResponsavel(e.target.value)} style={{ padding: '4px 8px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '4px', fontSize: '12px' }}>
+              <select value={filtroResponsavel} onChange={(e) => setFiltroResponsavel(e.target.value)} style={{ padding: '7px 12px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '6px', fontSize: '13px', fontWeight: '500' }}>
                 <option value="todos">Responsável: Todos</option>
                 {TODOS_INTEGRANTES.map(n => <option key={n} value={n}>{n}</option>)}
               </select>
@@ -1031,16 +1033,16 @@ function MainApp() {
           {/* TABELA DE DADOS ESTILO NOTION */}
           <div style={{ width: '100%', boxSizing: 'border-box' }}>
             
-            <div style={{ display: 'grid', gridTemplateColumns: '2.5fr 1.5fr 1.5fr 1fr 1fr', padding: '8px 0', borderBottom: `1px solid ${theme.border}`, fontSize: '12px', fontWeight: '500', color: theme.textMuted, minWidth: '700px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>📄 Nome da página</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>👤 Criado por</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>📑 Fonte</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>🕒 Última edição</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>Ações</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '2.5fr 1.5fr 1.5fr 1fr 1fr', padding: '10px 0', borderBottom: `2px solid ${theme.border}`, fontSize: '13px', fontWeight: '700', color: theme.textMuted, minWidth: '700px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>📄 Nome da página</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>👤 Criado por</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>📑 Fonte</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>🕒 Última edição</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>Ações</div>
             </div>
 
             {tarefasFiltradas.length === 0 ? (
-              <div style={{ padding: '40px', textAlign: 'center', color: theme.textMuted, fontSize: '13px' }}>Nenhuma página encontrada.</div>
+              <div style={{ padding: '50px', textAlign: 'center', color: theme.textMuted, fontSize: '15px', fontWeight: '500' }}>Nenhuma página encontrada.</div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', minWidth: '700px' }}>
                 {tarefasFiltradas.map(t => {
@@ -1057,26 +1059,26 @@ function MainApp() {
 
                   return (
                     <React.Fragment key={t.id}>
-                      {/* LINHA PRINCIPAL DA PÁGINA PAI */}
+                      {/* LINHA PRINCIPAL DA PÁGINA PAI (EM NEGRITO FORTE) */}
                       <div 
                         onDoubleClick={() => { setEditandoId(t.id); setTextoEditando(t.titulo); }}
                         style={{ 
                           display: 'grid', 
                           gridTemplateColumns: '2.5fr 1.5fr 1.5fr 1fr 1fr', 
-                          padding: '10px 0', 
+                          padding: '12px 0', 
                           borderBottom: `1px solid ${theme.border}`, 
                           alignItems: 'center', 
-                          fontSize: '13px', 
+                          fontSize: '14px', 
                           transition: 'background 0.1s',
-                          backgroundColor: isConcluida ? (darkMode ? 'rgba(39, 174, 96, 0.2)' : 'rgba(39, 174, 96, 0.15)') : 'transparent'
+                          backgroundColor: isConcluida ? (darkMode ? 'rgba(39, 174, 96, 0.25)' : 'rgba(39, 174, 96, 0.18)') : 'transparent'
                         }} 
                         onMouseEnter={(e) => { if (!isConcluida) e.currentTarget.style.background = theme.cardInner; }} 
                         onMouseLeave={(e) => { if (!isConcluida) e.currentTarget.style.background = 'transparent'; }}
                       >
                         
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden', paddingRight: '10px' }}>
-                          <span onClick={() => alternarExpandido(t.id)} style={{ cursor: 'pointer', fontSize: '10px', color: theme.textMuted, userSelect: 'none', padding: '2px', width: '12px', textAlign: 'center' }}>
-                            {isExpandido ? '▼' : '▶'}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden', paddingRight: '10px' }}>
+                          <span onClick={() => alternarExpandido(t.id)} style={{ cursor: 'pointer', fontSize: '11px', color: theme.textMain, userSelect: 'none', padding: '2px', width: '12px', textAlign: 'center', fontWeight: 'bold' }}>
+                            {temFilhos ? (isExpandido ? '▼' : '▶') : ''}
                           </span>
                           <span>📄</span>
                           {editandoId === t.id ? (
@@ -1087,51 +1089,51 @@ function MainApp() {
                               onChange={(e) => setTextoEditando(e.target.value)}
                               onBlur={() => salvarEdicaoInlineTarefa(t.id, t._colecao, textoEditando, t)}
                               onKeyDown={(e) => { if (e.key === 'Enter') salvarEdicaoInlineTarefa(t.id, t._colecao, textoEditando, t); }}
-                              style={{ background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, padding: '2px 6px', fontSize: '13px', borderRadius: '3px', width: '80%' }}
+                              style={{ background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, padding: '4px 8px', fontSize: '14px', borderRadius: '4px', width: '80%', fontWeight: '700' }}
                             />
                           ) : (
                             <span 
                               onClick={() => abrirPainelLateral(t)}
-                              style={{ fontWeight: isConcluida ? '600' : '400', color: isConcluida ? '#27ae60' : theme.textMain, textDecoration: isConcluida ? 'line-through' : 'none', cursor: 'pointer', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                              style={{ fontWeight: '700', color: isConcluida ? '#27ae60' : theme.textMain, textDecoration: isConcluida ? 'line-through' : 'none', cursor: 'pointer', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
                             >
                               {t.titulo}
                             </span>
                           )}
                         </div>
 
-                        <div style={{ color: isConcluida ? '#27ae60' : theme.textMuted, fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        <div style={{ color: isConcluida ? '#27ae60' : theme.textMain, fontSize: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: '600' }}>
                           {displayAutorPai}
                         </div>
 
-                        <div style={{ color: isConcluida ? '#27ae60' : theme.textMuted, fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        <div style={{ color: isConcluida ? '#27ae60' : theme.textMain, fontSize: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: '600' }}>
                           🔒 {t.descricao || 'Particular'}
                         </div>
 
-                        <div style={{ color: isConcluida ? '#27ae60' : theme.textMuted, fontSize: '13px' }}>
+                        <div style={{ color: isConcluida ? '#27ae60' : theme.textMuted, fontSize: '14px', fontWeight: '500' }}>
                           {isConcluida ? 'Concluída' : 'Agora há pouco'}
                         </div>
 
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: theme.textMuted, fontSize: '13px', paddingRight: '10px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: theme.textMuted, fontSize: '14px', paddingRight: '10px' }}>
                           {paginaAtual === 'andamento' ? (
                             <button 
                               onClick={() => alternarStatusTarefaPai(t)} 
-                              style={{ background: isConcluida ? '#27ae60' : theme.cardInner, border: `1px solid ${isConcluida ? '#27ae60' : theme.border}`, color: isConcluida ? '#fff' : theme.textMain, padding: '3px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: '500' }}
+                              style={{ background: isConcluida ? '#27ae60' : theme.cardInner, border: `1px solid ${isConcluida ? '#27ae60' : theme.border}`, color: isConcluida ? '#fff' : theme.textMain, padding: '5px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}
                             >
                               {isConcluida ? '✔ Concluído' : 'Concluir'}
                             </button>
                           ) : <div></div>}
 
-                          <div style={{ display: 'flex', gap: '6px' }}>
+                          <div style={{ display: 'flex', gap: '10px' }}>
                             {paginaAtual !== 'lixeira' && (
-                              <button onClick={() => arquivarTarefaPai(t)} title="Arquivar / Desarquivar" style={{ background: 'transparent', border: 'none', color: '#d97706', cursor: 'pointer', fontSize: '11px', fontWeight: '500' }}>
+                              <button onClick={() => arquivarTarefaPai(t)} title="Arquivar / Desarquivar" style={{ background: 'transparent', border: 'none', color: '#d97706', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}>
                                 {isArquivada ? 'Desarquivar' : 'Arquivar'}
                               </button>
                             )}
-                            <button onClick={() => tratarCliqueExcluirOuRestaurarPai(t)} title="Lixeira" style={{ background: 'transparent', border: 'none', color: '#eb5757', cursor: 'pointer', fontSize: '11px', fontWeight: '500' }}>
+                            <button onClick={() => solicitarExclusaoTarefaPai(t)} title="Lixeira" style={{ background: 'transparent', border: 'none', color: '#eb5757', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}>
                               {isExcluido ? 'Restaurar' : 'Excluir'}
                             </button>
                             {isGestor && paginaAtual === 'lixeira' && (
-                              <button onClick={() => excluirTarefaDefinitivo(t.id, t._colecao)} title="Excluir Definitivo" style={{ background: 'transparent', border: 'none', color: '#dc2626', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}>Destruir</button>
+                              <button onClick={() => excluirTarefaDefinitivo(t.id, t._colecao)} title="Excluir Definitivo" style={{ background: 'transparent', border: 'none', color: '#dc2626', cursor: 'pointer', fontSize: '13px', fontWeight: 'bold' }}>Destruir</button>
                             )}
                           </div>
                         </div>
@@ -1148,19 +1150,20 @@ function MainApp() {
                               style={{ 
                                 display: 'grid', 
                                 gridTemplateColumns: '2.5fr 1.5fr 1.5fr 1fr 1fr', 
-                                padding: '10px 0', 
+                                padding: '12px 0', 
                                 borderBottom: `1px solid ${theme.border}`, 
                                 alignItems: 'center', 
-                                fontSize: '13px', 
-                                color: theme.textMuted, 
+                                fontSize: '14px', 
+                                color: theme.textMain, 
                                 cursor: 'pointer', 
                                 transition: 'background 0.1s',
-                                background: theme.cardInner
+                                background: theme.cardInner,
+                                fontWeight: '600'
                               }}
                               onMouseEnter={(e) => e.currentTarget.style.background = theme.cardInner}
-                              onMouseLeave={(e) => e.currentTarget.style.background = theme.cardInner}
+                              onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                             >
-                              <div style={{ paddingLeft: '40px', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '500' }}>
+                              <div style={{ paddingLeft: '40px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 <span>+</span> <span>Adicionar nova</span>
                               </div>
                               <div></div><div></div><div></div><div></div>
@@ -1182,13 +1185,13 @@ function MainApp() {
         {/* POP-UP DE CONFIRMAÇÃO DE EXCLUSÃO */}
         {modalExclusao.isOpen && (
           <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, padding: '15px', boxSizing: 'border-box' }}>
-            <div style={{ background: theme.cardBg, padding: '24px', borderRadius: '6px', width: '100%', maxWidth: '400px', border: `1px solid ${theme.border}`, boxShadow: '0 8px 24px rgba(0,0,0,0.2)', textAlign: 'center' }}>
-              <div style={{ fontSize: '28px', marginBottom: '8px' }}>⚠️</div>
-              <h3 style={{ margin: '0 0 10px 0', color: theme.textMain, fontSize: '16px', fontWeight: '600' }}>Confirmação de Exclusão</h3>
-              <p style={{ fontSize: '13px', color: theme.textMuted, marginBottom: '20px' }}>Tem certeza de que deseja excluir este item?</p>
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <button onClick={() => setModalExclusao({ isOpen: false, tipo: null, tarefa: null, caminhoIds: null })} style={{ flex: 1, padding: '10px', background: theme.cardInner, color: theme.textMain, border: `1px solid ${theme.border}`, borderRadius: '4px', fontWeight: '500', cursor: 'pointer' }}>Cancelar</button>
-                <button onClick={executarExclusaoConfirmada} style={{ flex: 1, padding: '10px', background: '#eb5757', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: '500', cursor: 'pointer' }}>Sim, excluir</button>
+            <div style={{ background: theme.cardBg, padding: '28px', borderRadius: '8px', width: '100%', maxWidth: '420px', border: `1px solid ${theme.border}`, boxShadow: '0 10px 30px rgba(0,0,0,0.3)', textAlign: 'center' }}>
+              <div style={{ fontSize: '32px', marginBottom: '10px' }}>⚠️</div>
+              <h3 style={{ margin: '0 0 10px 0', color: theme.textMain, fontSize: '18px', fontWeight: '700' }}>Confirmação de Exclusão</h3>
+              <p style={{ fontSize: '14px', color: theme.textMuted, marginBottom: '24px', fontWeight: '500' }}>Tem certeza de que deseja excluir este item?</p>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button onClick={() => setModalExclusao({ isOpen: false, tipo: null, tarefa: null, caminhoIds: null })} style={{ flex: 1, padding: '10px', background: theme.cardInner, color: theme.textMain, border: `1px solid ${theme.border}`, borderRadius: '6px', fontWeight: '600', cursor: 'pointer', fontSize: '14px' }}>Cancelar</button>
+                <button onClick={executarExclusaoConfirmada} style={{ flex: 1, padding: '10px', background: '#eb5757', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: '600', cursor: 'pointer', fontSize: '14px' }}>Sim, excluir</button>
               </div>
             </div>
           </div>
@@ -1196,15 +1199,15 @@ function MainApp() {
 
         {/* PAINEL LATERAL DIREITO (SPLIT-VIEW) */}
         {paginaLateral && (
-          <div style={{ width: '450px', background: theme.cardBg, borderLeft: `1px solid ${theme.border}`, display: 'flex', flexDirection: 'column', padding: '32px', boxSizing: 'border-box', height: '100vh', overflowY: 'auto', flexShrink: '0', boxShadow: '-5px 0 25px rgba(0,0,0,0.1)' }}>
+          <div style={{ width: '450px', background: theme.cardBg, borderLeft: `1px solid ${theme.border}`, display: 'flex', flexDirection: 'column', padding: '36px', boxSizing: 'border-box', height: '100vh', overflowY: 'auto', flexShrink: '0', boxShadow: '-5px 0 25px rgba(0,0,0,0.1)' }}>
             
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <div style={{ fontSize: '12px', color: theme.textMuted }}>
+              <div style={{ fontSize: '13px', color: theme.textMuted, fontWeight: '600' }}>
                 Biblioteca / {paginaLateral.titulo}
               </div>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button onClick={salvarAlteracoesPaginaLateral} title="Salvar Alterações" style={{ background: '#27ae60', border: 'none', color: '#fff', padding: '6px 14px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '500' }}>✓ Concluir</button>
-                <button onClick={fecharPainelLateral} style={{ background: 'transparent', border: `1px solid ${theme.border}`, color: theme.textMain, padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}>✕ Fechar</button>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button onClick={salvarAlteracoesPaginaLateral} title="Salvar Alterações" style={{ background: '#27ae60', border: 'none', color: '#fff', padding: '7px 16px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}>✓ Concluir</button>
+                <button onClick={fecharPainelLateral} style={{ background: 'transparent', border: `1px solid ${theme.border}`, color: theme.textMain, padding: '7px 14px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}>✕ Fechar</button>
               </div>
             </div>
 
@@ -1212,32 +1215,32 @@ function MainApp() {
               type="text" 
               value={editTituloLateral} 
               onChange={(e) => setEditTituloLateral(e.target.value)}
-              style={{ fontSize: '28px', fontWeight: '700', color: theme.textMain, background: 'transparent', border: 'none', outline: 'none', width: '100%', marginBottom: '20px' }}
+              style={{ fontSize: '28px', fontWeight: '800', color: theme.textMain, background: 'transparent', border: 'none', outline: 'none', width: '100%', marginBottom: '24px' }}
             />
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', borderTop: `1px solid ${theme.border}`, paddingTop: '16px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: theme.textMuted }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', borderTop: `1px solid ${theme.border}`, paddingTop: '18px', fontSize: '14px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: theme.textMuted, fontWeight: '500' }}>
                 <span>Atribuído a:</span>
-                <strong style={{ color: theme.textMain }}>{paginaLateral.responsavel}</strong>
+                <strong style={{ color: theme.textMain, fontWeight: '700' }}>{paginaLateral.responsavel}</strong>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: theme.textMuted }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: theme.textMuted, fontWeight: '500' }}>
                 <span>Prazo:</span>
-                <strong style={{ color: theme.textMain }}>{formatarDataParaBr(paginaLateral.prazo)}</strong>
+                <strong style={{ color: theme.textMain, fontWeight: '700' }}>{formatarDataParaBr(paginaLateral.prazo)}</strong>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: theme.textMuted }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: theme.textMuted, fontWeight: '500' }}>
                 <span>Prioridade:</span>
-                <strong style={{ color: theme.textMain }}>{paginaLateral.prioridade}</strong>
+                <strong style={{ color: theme.textMain, fontWeight: '700' }}>{paginaLateral.prioridade}</strong>
               </div>
             </div>
 
-            <div style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <label style={{ fontSize: '12px', color: theme.textMuted, fontWeight: '500' }}>Conteúdo / Bloco de Notas</label>
+            <div style={{ marginTop: '28px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <label style={{ fontSize: '13px', color: theme.textMuted, fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Conteúdo / Bloco de Notas</label>
               <textarea 
                 rows="10"
                 value={editDescricaoLateral}
                 onChange={(e) => setEditDescricaoLateral(e.target.value)}
                 placeholder="Escreva suas anotações aqui..."
-                style={{ width: '100%', padding: '12px', background: theme.cardInner, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '6px', fontSize: '13px', resize: 'vertical', lineHeight: '1.6' }}
+                style={{ width: '100%', padding: '14px', background: theme.cardInner, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '6px', fontSize: '14px', resize: 'vertical', lineHeight: '1.6', fontWeight: '500' }}
               />
             </div>
 
@@ -1268,29 +1271,29 @@ function TelaLogin({ onLoginSucesso, darkMode, setDarkMode, theme }) {
 
   return (
     <div style={{ backgroundColor: theme.bg, color: theme.textMain, minHeight: '100vh', width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif', boxSizing: 'border-box', padding: '20px', position: 'relative' }}>
-      <button type="button" onClick={setDarkMode} style={{ position: 'absolute', top: '20px', right: '20px', background: theme.cardBg, border: `1px solid ${theme.border}`, color: theme.textMain, padding: '6px 14px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>
+      <button type="button" onClick={setDarkMode} style={{ position: 'absolute', top: '20px', right: '20px', background: theme.cardBg, border: `1px solid ${theme.border}`, color: theme.textMain, padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}>
         {darkMode ? '☀️ Claro' : '🌙 Escuro'}
       </button>
 
-      <form onSubmit={handleLogin} style={{ background: theme.cardBg, padding: '32px 24px', borderRadius: '6px', width: '100%', maxWidth: '360px', border: `1px solid ${theme.border}`, boxSizing: 'border-box' }}>
-        <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-          <span style={{ fontSize: '14px', color: theme.textMain, fontWeight: 'bold', display: 'block' }}>Sistema Integrado</span>
-          <span style={{ fontSize: '11px', color: theme.textMuted, fontWeight: '500', display: 'block' }}>Central de Tarefas</span>
+      <form onSubmit={handleLogin} style={{ background: theme.cardBg, padding: '36px 28px', borderRadius: '8px', width: '100%', maxWidth: '380px', border: `1px solid ${theme.border}`, boxSizing: 'border-box', boxShadow: '0 10px 30px rgba(0,0,0,0.2)' }}>
+        <div style={{ textAlign: 'center', marginBottom: '28px' }}>
+          <span style={{ fontSize: '16px', color: theme.textMain, fontWeight: '800', display: 'block' }}>Sistema Integrado</span>
+          <span style={{ fontSize: '12px', color: theme.textMuted, fontWeight: '600', display: 'block', marginTop: '4px' }}>Central de Tarefas</span>
         </div>
 
-        {erro && <p style={{ color: '#eb5757', fontSize: '12px', marginBottom: '14px', background: darkMode ? '#3b1c1c' : '#fde8e8', padding: '8px', borderRadius: '4px' }}>{erro}</p>}
+        {erro && <p style={{ color: '#eb5757', fontSize: '13px', marginBottom: '16px', background: darkMode ? '#3b1c1c' : '#fde8e8', padding: '10px', borderRadius: '6px', fontWeight: '600' }}>{erro}</p>}
           
-        <div style={{ marginBottom: '14px' }}>
-          <label style={{ display: 'block', fontSize: '11px', fontWeight: '500', marginBottom: '4px', color: theme.textMuted }}>E-mail</label>
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="seu.email@fibralink.net.br" style={{ width: '100%', padding: '8px 10px', borderRadius: '4px', border: `1px solid ${theme.border}`, background: theme.inputBg, color: theme.inputText, boxSizing: 'border-box', fontSize: '13px' }} />
+        <div style={{ marginBottom: '16px' }}>
+          <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>E-mail</label>
+          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="seu.email@fibralink.net.br" style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: `1px solid ${theme.border}`, background: theme.inputBg, color: theme.inputText, boxSizing: 'border-box', fontSize: '14px', fontWeight: '500' }} />
         </div>
 
-        <div style={{ marginBottom: '14px' }}>
-          <label style={{ display: 'block', fontSize: '11px', fontWeight: '500', marginBottom: '4px', color: theme.textMuted }}>Senha</label>
-          <input type="password" value={senha} onChange={(e) => setSenha(e.target.value)} required style={{ width: '100%', padding: '8px 10px', borderRadius: '4px', border: `1px solid ${theme.border}`, background: theme.inputBg, color: theme.inputText, boxSizing: 'border-box', fontSize: '13px' }} />
+        <div style={{ marginBottom: '20px' }}>
+          <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Senha</label>
+          <input type="password" value={senha} onChange={(e) => setSenha(e.target.value)} required style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: `1px solid ${theme.border}`, background: theme.inputBg, color: theme.inputText, boxSizing: 'border-box', fontSize: '14px', fontWeight: '500' }} />
         </div>
 
-        <button type="submit" style={{ width: '100%', padding: '10px', background: '#37352f', border: 'none', color: '#fff', fontWeight: '500', borderRadius: '4px', cursor: 'pointer', marginBottom: '12px', fontSize: '13px' }}>
+        <button type="submit" style={{ width: '100%', padding: '12px', background: '#2383e2', border: 'none', color: '#fff', fontWeight: '700', borderRadius: '6px', cursor: 'pointer', marginBottom: '12px', fontSize: '14px', boxShadow: '0 2px 5px rgba(0,0,0,0.15)' }}>
           Entrar
         </button>
       </form>
