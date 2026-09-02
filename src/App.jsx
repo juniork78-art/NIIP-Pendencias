@@ -280,7 +280,7 @@ function MainApp() {
   const abrirPainelLateral = (t) => {
     setPaginaLateral(t);
     setEditTituloLateral(t.titulo);
-    setEditDescricaoLateral(t.blocoNotas || ''); // Carrega apenas o bloco de notas independente
+    setEditDescricaoLateral(t.blocoNotas || '');
     window.history.pushState({ view: paginaAtual, lateralAberta: true }, '');
   };
 
@@ -357,7 +357,6 @@ function MainApp() {
     nomeForcadoParaUsuario = 'João';
   }
 
-  // Validação de Permissão por Grupo com base na coluna Fonte / Grupos Selecionados
   const usuarioTemPermissaoTarefa = (tarefaObj) => {
     if (isGestor) return true;
     const grupos = tarefaObj.gruposSelecionados;
@@ -439,7 +438,7 @@ function MainApp() {
 
   const confirmarCriacaoNovaPagina = () => {
     if (!novoTituloModal.trim()) {
-      alert("Digite um título para la página.");
+      alert("Digite um título para a página.");
       return;
     }
     const novaId = Date.now().toString();
@@ -452,8 +451,8 @@ function MainApp() {
 
     setDoc(doc(db, colecaoAlvo, novaId), {
       titulo: novoTituloModal.trim(),
-      fonteGrupos: formatarFonteGrupos(novosGruposModal), // Coluna fonte fixa
-      blocoNotas: '', // Bloco de notas inicia em branco
+      fonteGrupos: formatarFonteGrupos(novosGruposModal),
+      blocoNotas: '',
       gruposSelecionados: novosGruposModal,
       responsavel: responsavelFinal,
       prazo: dataHoje,
@@ -491,7 +490,7 @@ function MainApp() {
       texto: subTituloModal.trim(),
       prioridade: subPrioridadeModal,
       fonteGrupos: formatarFonteGrupos(subGruposModal),
-      blocoNotas: '', // Inicia em branco
+      blocoNotas: '',
       gruposSelecionados: subGruposModal,
       concluida: false,
       arquivada: false,
@@ -1600,7 +1599,7 @@ function TelaLogin({ onLoginSucesso, darkMode, setDarkMode, theme }) {
               <input type="password" value={senhaAtual} onChange={(e) => setSenhaAtual(e.target.value)} required style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: `1px solid ${theme.border}`, background: theme.inputBg, color: theme.inputText, boxSizing: 'border-box', fontSize: '14px', fontWeight: '500' }} />
             </div>
 
-            <div style={{ marginBottom: '20px' >
+            <div style={{ marginBottom: '20px' }}>
               <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Nova Senha</label>
               <input type="password" value={novaSenha} onChange={(e) => setNovaSenha(e.target.value)} required style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: `1px solid ${theme.border}`, background: theme.inputBg, color: theme.inputText, boxSizing: 'border-box', fontSize: '14px', fontWeight: '500' }} />
             </div>
