@@ -3,7 +3,8 @@ import { auth, db } from './firebase';
 import { 
   signInWithEmailAndPassword, 
   signOut, 
-  onAuthStateChanged 
+  onAuthStateChanged,
+  updatePassword 
 } from 'firebase/auth';
 import { 
   collection, 
@@ -1306,16 +1307,38 @@ function MainApp() {
 function TelaLogin({ onLoginSucesso, darkMode, setDarkMode, theme }) {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
+  const [senhaAtual, setSenhaAtual] = useState('');
+  const [novaSenha, setNovaSenha] = useState('');
+  const [isTrocarSenha, setIsTrocarSenha] = useState(false);
   const [erro, setErro] = useState('');
+  const [sucesso, setSucesso] = useState('');
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setErro('');
+    setSucesso('');
     try {
       const result = await signInWithEmailAndPassword(auth, email, senha);
       onLoginSucesso(result.user.email);
     } catch (e) {
       setErro(`Erro ao entrar: Verifique seu e-mail e senha.`);
+    }
+  };
+
+  const handleTrocarSenha = async (e) => {
+    e.preventDefault();
+    setErro('');
+    setSucesso('');
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, senhaAtual);
+      await updatePassword(userCredential.user, novaSenha);
+      setSucesso('Senha alterada com sucesso! Faça login com a nova senha.');
+      setIsTrocarSenha(false);
+      setSenhaAtual('');
+      setNovaSenha('');
+      setSenha('');
+    } catch (e) {
+      setErro(`Erro ao alterar senha: Verifique se o e-mail e a senha atual estão corretos.`);
     }
   };
 
@@ -1325,28 +1348,55 @@ function TelaLogin({ onLoginSucesso, darkMode, setDarkMode, theme }) {
         {darkMode ? '☀️ Claro' : '🌙 Escuro'}
       </button>
 
-      <form onSubmit={handleLogin} style={{ background: theme.cardBg, padding: '36px 28px', borderRadius: '8px', width: '100%', maxWidth: '380px', border: `1px solid ${theme.border}`, boxSizing: 'border-box', boxShadow: '0 10px 30px rgba(0,0,0,0.2)' }}>
+      <form onSubmit={isTrocarSenha ? handleTrocarSenha : handleLogin} style={{ background: theme.cardBg, padding: '36px 28px', borderRadius: '8px', width: '100%', maxWidth: '380px', border: `1px solid ${theme.border}`, boxSizing: 'border-box', boxShadow: '0 10px 30px rgba(0,0,0,0.2)' }}>
         <div style={{ textAlign: 'center', marginBottom: '28px' }}>
-          <img src="/logo.png" alt="Logo" style={{ width: '130px', height: 'auto', objectFit: 'contain', margin: '0 auto 14px auto', display: 'block' }} onError={(e) => { e.target.style.display = 'none'; }} />
+          <img src="/logo.png" alt="Logo" style={{ width: '160px', height: 'auto', objectFit: 'contain', margin: '0 auto 16px auto', display: 'block' }} onError={(e) => { e.target.style.display = 'none'; }} />
           <span style={{ fontSize: '18px', color: theme.textMain, fontWeight: '800', display: 'block' }}>Sistema Integrado</span>
           <span style={{ fontSize: '12px', color: theme.textMuted, fontWeight: '600', display: 'block', marginTop: '4px' }}>Central de Tarefas</span>
         </div>
 
         {erro && <p style={{ color: '#eb5757', fontSize: '13px', marginBottom: '16px', background: darkMode ? '#3b1c1c' : '#fde8e8', padding: '10px', borderRadius: '6px', fontWeight: '600' }}>{erro}</p>}
+        {sucesso && <p style={{ color: '#27ae60', fontSize: '13px', marginBottom: '16px', background: darkMode ? '#1c3b27' : '#e8fdf0', padding: '10px', borderRadius: '6px', fontWeight: '600' }}>{sucesso}</p>}
           
         <div style={{ marginBottom: '16px' }}>
           <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>E-mail</label>
           <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="seu.email@fibralink.net.br" style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: `1px solid ${theme.border}`, background: theme.inputBg, color: theme.inputText, boxSizing: 'border-box', fontSize: '14px', fontWeight: '500' }} />
         </div>
 
-        <div style={{ marginBottom: '20px' }}>
-          <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Senha</label>
-          <input type="password" value={senha} onChange={(e) => setSenha(e.target.value)} required style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: `1px solid ${theme.border}`, background: theme.inputBg, color: theme.inputText, boxSizing: 'border-box', fontSize: '14px', fontWeight: '500' }} />
-        </div>
+        {!isTrocarSenha ? (
+          <>
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Senha</label>
+              <input type="password" value={senha} onChange={(e) => setSenha(e.target.value)} required style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: `1px solid ${theme.border}`, background: theme.inputBg, color: theme.inputText, boxSizing: 'border-box', fontSize: '14px', fontWeight: '500' }} />
+            </div>
 
-        <button type="submit" style={{ width: '100%', padding: '12px', background: '#2383e2', border: 'none', color: '#fff', fontWeight: '700', borderRadius: '6px', cursor: 'pointer', marginBottom: '12px', fontSize: '14px', boxShadow: '0 2px 5px rgba(0,0,0,0.15)' }}>
-          Entrar
-        </button>
+            <button type="submit" style={{ width: '100%', padding: '12px', background: '#2383e2', border: 'none', color: '#fff', fontWeight: '700', borderRadius: '6px', cursor: 'pointer', marginBottom: '10px', fontSize: '14px', boxShadow: '0 2px 5px rgba(0,0,0,0.15)' }}>
+              Entrar
+            </button>
+            <button type="button" onClick={() => { setIsTrocarSenha(true); setErro(''); setSucesso(''); }} style={{ background: 'transparent', border: 'none', color: '#2383e2', cursor: 'pointer', fontSize: '13px', fontWeight: '700', width: '100%', textAlign: 'center', padding: '6px' }}>
+              Trocar senha
+            </button>
+          </>
+        ) : (
+          <>
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Senha Atual</label>
+              <input type="password" value={senhaAtual} onChange={(e) => setSenhaAtual(e.target.value)} required style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: `1px solid ${theme.border}`, background: theme.inputBg, color: theme.inputText, boxSizing: 'border-box', fontSize: '14px', fontWeight: '500' }} />
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Nova Senha</label>
+              <input type="password" value={novaSenha} onChange={(e) => setNovaSenha(e.target.value)} required style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: `1px solid ${theme.border}`, background: theme.inputBg, color: theme.inputText, boxSizing: 'border-box', fontSize: '14px', fontWeight: '500' }} />
+            </div>
+
+            <button type="submit" style={{ width: '100%', padding: '12px', background: '#27ae60', border: 'none', color: '#fff', fontWeight: '700', borderRadius: '6px', cursor: 'pointer', marginBottom: '10px', fontSize: '14px', boxShadow: '0 2px 5px rgba(0,0,0,0.15)' }}>
+              Atualizar Senha
+            </button>
+            <button type="button" onClick={() => { setIsTrocarSenha(false); setErro(''); setSucesso(''); }} style={{ background: 'transparent', border: 'none', color: theme.textMuted, cursor: 'pointer', fontSize: '13px', fontWeight: '600', width: '100%', textAlign: 'center', padding: '6px' }}>
+              Voltar ao Login
+            </button>
+          </>
+        )}
       </form>
     </div>
   );
