@@ -496,6 +496,7 @@ function MainApp() {
       prioridade: subPrioridadeModal,
       fonteGrupos: formatarFonteGrupos(subGruposModal),
       blocoNotas: '',
+      criadoEm: Date.now(), // timestamp próprio da subtarefa para mostrar o tempo correto
       gruposSelecionados: subGruposModal,
       concluida: false,
       arquivada: false,
@@ -954,7 +955,6 @@ function MainApp() {
           const isArquivada = Boolean(sub.arquivada);
           const isExcluido = Boolean(sub.excluido);
 
-          // Correção de exibição por aba: se aba for 'resolvidas', só mostra se estiver concluída
           if (paginaAtual === 'resolvidas' && !isConcluida) return null;
           if (paginaAtual === 'andamento' && (isConcluida || isArquivada || isExcluido)) return null;
           if (paginaAtual === 'arquivados' && (isExcluido || !isArquivada)) return null;
@@ -1023,8 +1023,9 @@ function MainApp() {
                   🔒 {sub.fonteGrupos || 'Sub-tarefa'}
                 </div>
 
+                {/* Usa o criadoEm individual da subtarefa se houver, senão o da raiz */}
                 <div style={{ color: isConcluida ? '#27ae60' : theme.textMuted, fontSize: '14px' }}>
-                  {tempoDecorrido(tarefaRaizObj.criadoEm)}
+                  {tempoDecorrido(sub.criadoEm || tarefaRaizObj.criadoEm)}
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', color: theme.textMuted, fontSize: '14px', paddingRight: '10px' }}>
@@ -1115,7 +1116,6 @@ function MainApp() {
     if (paginaAtual === 'lixeira' && !isExcluido) return false;
     if (paginaAtual === 'arquivados' && (!isArquivada || isExcluido)) return false;
     
-    // CORREÇÃO CRUCIAL AQUI: Filtro exato para a aba Resolvidas vs Andamento
     if (paginaAtual === 'resolvidas' && (!isConcluida || isArquivada || isExcluido)) return false;
     if (paginaAtual === 'andamento' && (isConcluida || isArquivada || isExcluido)) return false;
 
