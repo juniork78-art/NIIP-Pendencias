@@ -1010,7 +1010,7 @@ function MainApp() {
     );
   };
 
-  // Renderização recursiva limpa de subtarefas sem checkboxes e com prioridade clicável
+  // Renderização recursiva com cores por nível hierárquico (Pai: preto/principal negrito, Filhas (nivel 1): azul, Netas (nivel >= 2): verde)
   const renderizarSubTarefasRecursivas = (subLista, tarefaRaizObj, caminhoPai, nivel = 1) => {
     if (!subLista || subLista.length === 0) return null;
 
@@ -1036,6 +1036,9 @@ function MainApp() {
           const autorSub = sub.criadoPor || tarefaRaizObj.criadoPor || 'Usuário';
           const editorSub = sub.editadoPor;
           const displayAutorSub = editorSub && editorSub.toUpperCase() !== autorSub.toUpperCase() ? `${autorSub} (Editado por: ${editorSub})` : autorSub;
+
+          // Regra de cores por nível: Nível 1 (Filha) = Azul (#2383e2), Nível 2+ (Neta) = Verde (#27ae60)
+          const corTextoSub = isConcluida ? '#27ae60' : (nivel === 1 ? '#2383e2' : '#27ae60');
 
           return (
             <React.Fragment key={sub.id}>
@@ -1078,7 +1081,7 @@ function MainApp() {
                   <div style={{ display: 'flex', alignItems: 'center', overflow: 'hidden' }}>
                     <span 
                       onClick={() => abrirPainelLateralSub(sub, tarefaRaizObj.id, caminhoAtual, tarefaRaizObj)}
-                      style={{ fontWeight: isConcluida ? '600' : '400', color: isConcluida ? '#27ae60' : theme.textMain, textDecoration: isConcluida ? 'line-through' : 'none', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', cursor: 'pointer' }}
+                      style={{ fontWeight: isConcluida ? '600' : '400', color: corTextoSub, textDecoration: isConcluida ? 'line-through' : 'none', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', cursor: 'pointer' }}
                     >
                       {sub.texto}
                     </span>
@@ -1384,7 +1387,7 @@ function MainApp() {
 
                   return (
                     <React.Fragment key={t.id}>
-                      {/* LINHA PRINCIPAL DA PÁGINA PAI (EM NEGRITO FORTE) */}
+                      {/* LINHA PRINCIPAL DA PÁGINA PAI (EM NEGRITO FORTE - PAI) */}
                       <div 
                         onDoubleClick={() => { setEditandoId(t.id); setTextoEditando(t.titulo); }}
                         style={{ 
