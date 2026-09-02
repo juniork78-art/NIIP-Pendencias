@@ -199,17 +199,20 @@ function MainApp() {
   const [editandoId, setEditandoId] = useState(null);
   const [textoEditando, setTextoEditando] = useState('');
 
-  const [tarefaEditando, setTarefaEditando] = useState(null);
-  const [editTitulo, setEditTitulo] = useState('');
-  const [editDescricao, setEditDescricao] = useState('');
-  const [editPrazo, setEditPrazo] = useState('');
-  const [editPrioridade, setEditPrioridade] = useState('');
-
-  // Estados para modais
-  const [modalExclusao, setModalExclusao] = useState({ isOpen: false, tipo: null, tarefa: null, caminhoIds: null });
+  // Estados para Modal de Nova Página Principal
   const [modalNovaPagina, setModalNovaPagina] = useState(false);
   const [novoTituloModal, setNovoTituloModal] = useState('');
   const [novaPrioridadeModal, setNovaPrioridadeModal] = useState('Baixa');
+  const [novoGrupoModal, setNovoGrupoModal] = useState('Particular');
+
+  // Estados para Modal de Subtarefa
+  const [modalNovaSub, setModalNovaSub] = useState({ isOpen: false, tarefaRaizId: null, caminhoIds: null });
+  const [subTituloModal, setSubTituloModal] = useState('');
+  const [subPrioridadeModal, setSubPrioridadeModal] = useState('Baixa');
+  const [subGrupoModal, setSubGrupoModal] = useState('Particular');
+
+  // Estado para Exclusão
+  const [modalExclusao, setModalExclusao] = useState({ isOpen: false, tipo: null, tarefa: null, caminhoIds: null });
 
   const [expandidoIds, setExpandidoIds] = useState(() => {
     try {
@@ -373,6 +376,14 @@ function MainApp() {
 
   const responsavelFinal = isGestor ? responsavelSelecionadoGestor : nomeForcadoParaUsuario || (TODOS_INTEGRANTES.find(n => nomeFormatadoGlobal.includes(n.toUpperCase())) || TODOS_INTEGRANTES[0]);
 
+  // Função auxiliar para mapear a escolha de grupo à coleção do Firestore correta
+  const obterColecaoPorGrupo = (grupo) => {
+    if (grupo === 'noc') return 'noc_tarefas';
+    if (grupo === 'niip') return 'niip_tarefas';
+    if (grupo === 'nmr') return 'nmr_tarefas';
+    return 'tarefas_gerais'; // Particular, Pública ou CGR vão para gerais
+  };
+
   const confirmarCriacaoNovaPagina = () => {
     if (!novoTituloModal.trim()) {
       alert("Digite um título para a página.");
@@ -380,10 +391,11 @@ function MainApp() {
     }
     const novaId = Date.now().toString();
     const dataHoje = new Date().toISOString().split('T')[0];
+    const colecaoAlvo = obterColecaoPorGrupo(novoGrupoModal);
 
-    setDoc(doc(db, 'tarefas_gerais', novaId), {
+    setDoc(doc(db, colecaoAlvo, novaId), {
       titulo: novoTituloModal.trim(),
-      descricao: 'Particular',
+      descricao: novoGrupoModal === 'Particular' ? 'Particular' : `Grupo: ${novoGrupoModal.toUpperCase()}`,
       responsavel: responsavelFinal,
       prazo: dataHoje,
       prioridade: novaPrioridadeModal,
@@ -397,7 +409,48 @@ function MainApp() {
       setModalNovaPagina(false);
       setNovoTituloModal('');
       setNovaPrioridadeModal('Baixa');
+      setNovoGrupoModal('Particular');
     }).catch(e => alert("Erro ao criar página: " + e.message));
+  };
+
+  const confirmarCriacaoSubtarefa = () => {
+    if (!subTituloModal.trim()) {
+      alert("Digite o título da subtarefa.");
+      return;
+    }
+    const { tarefaRaizId, caminhoIds } = modalNovaSub;
+    const tarefaRaiz = tarefas.find(t => t.id === tarefaRaizId);
+    if (!tarefaRaiz) return;
+
+    const novaSub = {
+      id: Date.now().toString() + "_" + Math.random().toString(36).substring(2, 5),
+      texto: subTituloModal.trim(),
+      prioridade: subPrioridadeModal,
+      descricao: subGrupoModal === 'Particular' ? 'Sub-tarefa' : `Grupo: ${subGrupoModal.toUpperCase()}`,
+      concluida: false,
+      arquivada: false,
+      excluido: false,
+      criadoPor: nomeFormatadoGlobal || 'Usuário',
+      subTarefas: []
+    };
+
+    const novaSubTarefas = insertNodeInTree(tarefaRaiz.subTarefas || [], caminhoIds, novaSub);
+    const colecaoAlvo = tarefaRaiz._colecao || 'tarefas_gerais';
+
+    updateDoc(doc(db, colecaoAlvo, tarefaRaizId), {
+      subTarefas: novaSubTarefas
+    }).then(() => {
+      setExpandidoIds(prev => {
+        const targetId = caminhoIds.length > 0 ? caminhoIds[caminhoIds.length - 1] : tarefaRaizId;
+        const novo = { ...prev, [targetId]: true };
+        try { localStorage.setItem('expandidoIds_fibralink', JSON.stringify(novo)); } catch(e){}
+        return novo;
+      });
+      setModalNovaSub({ isOpen: false, tarefaRaizId: null, caminhoIds: null });
+      setSubTituloModal('');
+      setSubPrioridadeModal('Baixa');
+      setSubGrupoModal('Particular');
+    }).catch(e => alert("Erro ao adicionar subtarefa: " + e.message));
   };
 
   const setTrashRecursiveProp = (lista, val) => {
@@ -522,38 +575,6 @@ function MainApp() {
       }
     }
     return true;
-  };
-
-  const promptAdicionarSub = (tarefaRaizId, caminhoIds) => {
-    const subTexto = prompt("Digite o título da nova subtarefa:");
-    if (!subTexto || !subTexto.trim()) return;
-
-    const tarefaRaiz = tarefas.find(t => t.id === tarefaRaizId);
-    if (!tarefaRaiz) return;
-
-    const novaSub = {
-      id: Date.now().toString() + "_" + Math.random().toString(36).substring(2, 5),
-      texto: subTexto.trim(),
-      concluida: false,
-      arquivada: false,
-      excluido: false,
-      criadoPor: nomeFormatadoGlobal || 'Usuário',
-      subTarefas: []
-    };
-
-    const novaSubTarefas = insertNodeInTree(tarefaRaiz.subTarefas || [], caminhoIds, novaSub);
-    const colecaoAlvo = tarefaRaiz._colecao || 'tarefas_gerais';
-
-    updateDoc(doc(db, colecaoAlvo, tarefaRaizId), {
-      subTarefas: novaSubTarefas
-    }).then(() => {
-      setExpandidoIds(prev => {
-        const targetId = caminhoIds.length > 0 ? caminhoIds[caminhoIds.length - 1] : tarefaRaizId;
-        const novo = { ...prev, [targetId]: true };
-        try { localStorage.setItem('expandidoIds_fibralink', JSON.stringify(novo)); } catch(e){}
-        return novo;
-      });
-    }).catch(e => alert("Erro ao adicionar subtarefa: " + e.message));
   };
 
   const tarefaPertenceAoUsuario = (criadoPor) => {
@@ -824,12 +845,15 @@ function MainApp() {
                     <input type="checkbox" checked={isConcluida} onChange={() => alternarStatusRecursivo(tarefaRaizObj, caminhoAtual)} style={{ accentColor: '#27ae60', cursor: 'pointer', width: '16px', height: '16px' }} />
                   )}
                   <span>📄</span>
-                  <span 
-                    onClick={() => abrirPainelLateralSub(sub, tarefaRaizObj.id, caminhoAtual, tarefaRaizObj)}
-                    style={{ fontWeight: isConcluida ? '600' : '400', color: isConcluida ? '#27ae60' : theme.textMain, textDecoration: isConcluida ? 'line-through' : 'none', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', cursor: 'pointer' }}
-                  >
-                    {sub.texto}
-                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', overflow: 'hidden' }}>
+                    <span 
+                      onClick={() => abrirPainelLateralSub(sub, tarefaRaizObj.id, caminhoAtual, tarefaRaizObj)}
+                      style={{ fontWeight: isConcluida ? '600' : '400', color: isConcluida ? '#27ae60' : theme.textMain, textDecoration: isConcluida ? 'line-through' : 'none', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', cursor: 'pointer' }}
+                    >
+                      {sub.texto}
+                    </span>
+                    {sub.prioridade && renderizarPrioridadeBadge(sub.prioridade)}
+                  </div>
                 </div>
 
                 <div style={{ color: isConcluida ? '#27ae60' : theme.textMain, fontSize: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: '500' }}>
@@ -837,7 +861,7 @@ function MainApp() {
                 </div>
 
                 <div style={{ color: isConcluida ? '#27ae60' : theme.textMuted, fontSize: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  📄 Sub-tarefa
+                  📄 {sub.descricao || 'Sub-tarefa'}
                 </div>
 
                 <div style={{ color: isConcluida ? '#27ae60' : theme.textMuted, fontSize: '14px' }}>
@@ -870,7 +894,7 @@ function MainApp() {
                   
                   {paginaAtual === 'andamento' && !isExcluido && (
                     <div 
-                      onClick={() => promptAdicionarSub(tarefaRaizObj.id, caminhoAtual)}
+                      onClick={() => setModalNovaSub({ isOpen: true, tarefaRaizId: tarefaRaizObj.id, caminhoIds: caminhoAtual })}
                       style={{ 
                         display: 'grid', 
                         gridTemplateColumns: '2.5fr 1.5fr 1.5fr 1fr 1fr', 
@@ -1172,7 +1196,7 @@ function MainApp() {
                           {renderizarSubTarefasRecursivas(subTarefas, t, [], 1)}
                           {paginaAtual === 'andamento' && !isExcluido && (
                             <div 
-                              onClick={() => promptAdicionarSub(t.id, [])}
+                              onClick={() => setModalNovaSub({ isOpen: true, tarefaRaizId: t.id, caminhoIds: [] })}
                               style={{ 
                                 display: 'grid', 
                                 gridTemplateColumns: '2.5fr 1.5fr 1.5fr 1fr 1fr', 
@@ -1209,7 +1233,7 @@ function MainApp() {
 
         </div>
 
-        {/* MODAL DE CRIAÇÃO DE NOVA PÁGINA */}
+        {/* MODAL DE CRIAÇÃO DE NOVA PÁGINA PRINCIPAL */}
         {modalNovaPagina && (
           <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, padding: '15px', boxSizing: 'border-box' }}>
             <div style={{ background: theme.cardBg, padding: '28px', borderRadius: '8px', width: '100%', maxWidth: '420px', border: `1px solid ${theme.border}`, boxShadow: '0 10px 30px rgba(0,0,0,0.3)', textAlign: 'left' }}>
@@ -1227,7 +1251,7 @@ function MainApp() {
                 />
               </div>
 
-              <div style={{ marginBottom: '24px' }}>
+              <div style={{ marginBottom: '16px' }}>
                 <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Prioridade</label>
                 <select 
                   value={novaPrioridadeModal} 
@@ -1240,9 +1264,80 @@ function MainApp() {
                 </select>
               </div>
 
+              <div style={{ marginBottom: '24px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Visibilidade / Grupo</label>
+                <select 
+                  value={novoGrupoModal} 
+                  onChange={(e) => setNovoGrupoModal(e.target.value)} 
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: `1px solid ${theme.border}`, background: theme.inputBg, color: theme.inputText, boxSizing: 'border-box', fontSize: '14px', fontWeight: '600', outline: 'none' }}
+                >
+                  <option value="Particular">🔒 Particular</option>
+                  <option value="Pública">🌐 Pública</option>
+                  <option value="noc">👥 Grupo do NOC</option>
+                  <option value="niip">👥 Grupo do NIIP</option>
+                  <option value="nmr">👥 Grupo do NMR</option>
+                  <option value="cgr">👥 Todos Grupo do CGR</option>
+                </select>
+              </div>
+
               <div style={{ display: 'flex', gap: '12px' }}>
                 <button onClick={() => setModalNovaPagina(false)} style={{ flex: 1, padding: '10px', background: theme.cardInner, color: theme.textMain, border: `1px solid ${theme.border}`, borderRadius: '6px', fontWeight: '600', cursor: 'pointer', fontSize: '14px' }}>Cancelar</button>
                 <button onClick={confirmarCriacaoNovaPagina} style={{ flex: 1, padding: '10px', background: '#2383e2', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: '600', cursor: 'pointer', fontSize: '14px' }}>Criar</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL DE CRIAÇÃO DE SUBTAREFA */}
+        {modalNovaSub.isOpen && (
+          <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, padding: '15px', boxSizing: 'border-box' }}>
+            <div style={{ background: theme.cardBg, padding: '28px', borderRadius: '8px', width: '100%', maxWidth: '420px', border: `1px solid ${theme.border}`, boxShadow: '0 10px 30px rgba(0,0,0,0.3)', textAlign: 'left' }}>
+              <h3 style={{ margin: '0 0 16px 0', color: theme.textMain, fontSize: '18px', fontWeight: '700' }}>Adicionar Subtarefa</h3>
+              
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Título da Subtarefa</label>
+                <input 
+                  type="text" 
+                  value={subTituloModal}
+                  onChange={(e) => setSubTituloModal(e.target.value)}
+                  placeholder="Digite o título..."
+                  autoFocus
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: `1px solid ${theme.border}`, background: theme.inputBg, color: theme.inputText, boxSizing: 'border-box', fontSize: '14px', fontWeight: '500', outline: 'none' }}
+                />
+              </div>
+
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Prioridade</label>
+                <select 
+                  value={subPrioridadeModal} 
+                  onChange={(e) => setSubPrioridadeModal(e.target.value)} 
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: `1px solid ${theme.border}`, background: theme.inputBg, color: theme.inputText, boxSizing: 'border-box', fontSize: '14px', fontWeight: '600', outline: 'none' }}
+                >
+                  <option value="Baixa" style={{ color: '#27ae60' }}>🟢 Baixa</option>
+                  <option value="Média" style={{ color: '#d97706' }}>🟠 Média</option>
+                  <option value="Alta" style={{ color: '#eb5757' }}>🔴 Alta</option>
+                </select>
+              </div>
+
+              <div style={{ marginBottom: '24px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Visibilidade / Grupo</label>
+                <select 
+                  value={subGrupoModal} 
+                  onChange={(e) => setSubGrupoModal(e.target.value)} 
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: `1px solid ${theme.border}`, background: theme.inputBg, color: theme.inputText, boxSizing: 'border-box', fontSize: '14px', fontWeight: '600', outline: 'none' }}
+                >
+                  <option value="Particular">🔒 Particular</option>
+                  <option value="Pública">🌐 Pública</option>
+                  <option value="noc">👥 Grupo do NOC</option>
+                  <option value="niip">👥 Grupo do NIIP</option>
+                  <option value="nmr">👥 Grupo do NMR</option>
+                  <option value="cgr">👥 Todos Grupo do CGR</option>
+                </select>
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button onClick={() => setModalNovaSub({ isOpen: false, tarefaRaizId: null, caminhoIds: null })} style={{ flex: 1, padding: '10px', background: theme.cardInner, color: theme.textMain, border: `1px solid ${theme.border}`, borderRadius: '6px', fontWeight: '600', cursor: 'pointer', fontSize: '14px' }}>Cancelar</button>
+                <button onClick={confirmarCriacaoSubtarefa} style={{ flex: 1, padding: '10px', background: '#2383e2', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: '600', cursor: 'pointer', fontSize: '14px' }}>Adicionar</button>
               </div>
             </div>
           </div>
