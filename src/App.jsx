@@ -921,7 +921,7 @@ function MainApp() {
     inputBg: darkMode ? '#242424' : '#ffffff',
     inputText: darkMode ? '#f4f4f0' : '#1a1a18',
     primary: '#2eaadc',
-    treeLine: darkMode ? '#555550' : '#c8c8c2'
+    treeLine: darkMode ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)'
   };
 
   const renderizarPrioridadeBadge = (prio) => {
@@ -941,20 +941,21 @@ function MainApp() {
     );
   };
 
-  // Organização limpa de colunas de hierarquia para subtarefas
   const renderizarSubTarefasRecursivas = (subLista, tarefaRaizObj, caminhoPai, nivel = 1) => {
     if (!subLista || subLista.length === 0) return null;
 
+    // Cálculo exato de alinhamento com linha guia vertical estilo Notion
+    const basePadding = 18;
+    const stepPadding = 26;
+    const currentPaddingLeft = basePadding + (nivel * stepPadding);
+
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-        {subLista.map((sub) => {
+      <div style={{ display: 'flex', flexDirection: 'column', width: '100%', position: 'relative' }}>
+        {subLista.map((sub, index) => {
           const caminhoAtual = [...caminhoPai, sub.id];
           const temFilhos = sub.subTarefas && sub.subTarefas.length > 0;
           const isExpandidoSub = verificarExpandido(sub.id);
           
-          // Ajuste preciso do padding para manter perfeitamente alinhado na coluna de hierarquia
-          const paddingLeftPx = nivel * 28 + 12; 
-
           const isConcluida = Boolean(sub.concluida);
           const isArquivada = Boolean(sub.arquivada);
           const isExcluido = Boolean(sub.excluido);
@@ -979,12 +980,24 @@ function MainApp() {
                   alignItems: 'center', 
                   fontSize: '14px', 
                   transition: 'background 0.1s',
+                  position: 'relative',
                   backgroundColor: isConcluida ? (darkMode ? 'rgba(39, 174, 96, 0.25)' : 'rgba(39, 174, 96, 0.18)') : 'transparent'
                 }}
                 onMouseEnter={(e) => { if (!isConcluida) e.currentTarget.style.background = theme.cardInner; }} 
                 onMouseLeave={(e) => { if (!isConcluida) e.currentTarget.style.background = 'transparent'; }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden', paddingLeft: `${paddingLeftPx}px`, paddingRight: '10px' }}>
+                {/* Linha guia vertical conectora de hierarquia */}
+                <div style={{
+                  position: 'absolute',
+                  top: 0,
+                  bottom: 0,
+                  left: `${currentPaddingLeft - 8}px`,
+                  width: '1px',
+                  backgroundColor: theme.treeLine,
+                  pointerEvents: 'none'
+                }} />
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden', paddingLeft: `${currentPaddingLeft}px`, paddingRight: '10px', position: 'relative' }}>
                   <span onClick={() => alternarExpandido(sub.id)} style={{ cursor: 'pointer', fontSize: '11px', color: theme.textMain, userSelect: 'none', padding: '2px', width: '12px', textAlign: 'center', fontWeight: 'bold' }}>
                     {isExpandidoSub ? '▼' : '▶'}
                   </span>
@@ -1052,7 +1065,7 @@ function MainApp() {
               </div>
 
               {isExpandidoSub && (
-                <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', width: '100%', position: 'relative' }}>
                   {renderizarSubTarefasRecursivas(sub.subTarefas, tarefaRaizObj, caminhoAtual, nivel + 1)}
                   
                   {paginaAtual === 'andamento' && !isExcluido && (
@@ -1075,12 +1088,23 @@ function MainApp() {
                         cursor: 'pointer', 
                         transition: 'background 0.1s',
                         background: theme.cardInner,
-                        fontWeight: '600' 
+                        fontWeight: '600',
+                        position: 'relative'
                       }}
                       onMouseEnter={(e) => e.currentTarget.style.background = theme.cardInner}
                       onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                     >
-                      <div style={{ paddingLeft: `${paddingLeftPx + 24}px`, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      {/* Linha guia vertical contínua no botão Adicionar Nova */}
+                      <div style={{
+                        position: 'absolute',
+                        top: 0,
+                        bottom: 0,
+                        left: `${currentPaddingLeft + 16}px`,
+                        width: '1px',
+                        backgroundColor: theme.treeLine,
+                        pointerEvents: 'none'
+                      }} />
+                      <div style={{ paddingLeft: `${currentPaddingLeft + 24}px`, display: 'flex', alignItems: 'center', gap: '8px', position: 'relative' }}>
                         <span>+</span> <span>Adicionar nova</span>
                       </div>
                       <div></div><div></div><div></div><div></div>
@@ -1383,7 +1407,7 @@ function MainApp() {
 
                       {/* SUB-PÁGINAS RECURSIVAS E BOTÃO "+ Adicionar nova" */}
                       {isExpandido && (
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', position: 'relative' }}>
                           {renderizarSubTarefasRecursivas(subTarefas, t, [], 1)}
                           {paginaAtual === 'andamento' && !isExcluido && (
                             <div 
@@ -1406,12 +1430,22 @@ function MainApp() {
                                 cursor: 'pointer', 
                                 transition: 'background 0.1s',
                                 background: theme.cardInner,
-                                fontWeight: '600'
+                                fontWeight: '600',
+                                position: 'relative'
                               }}
                               onMouseEnter={(e) => e.currentTarget.style.background = theme.cardInner}
                               onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                             >
-                              <div style={{ paddingLeft: '40px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <div style={{
+                                position: 'absolute',
+                                top: 0,
+                                bottom: 0,
+                                left: '10px',
+                                width: '1px',
+                                backgroundColor: theme.treeLine,
+                                pointerEvents: 'none'
+                              }} />
+                              <div style={{ paddingLeft: '18px', display: 'flex', alignItems: 'center', gap: '8px', position: 'relative' }}>
                                 <span>+</span> <span>Adicionar nova</span>
                               </div>
                               <div></div><div></div><div></div><div></div>
