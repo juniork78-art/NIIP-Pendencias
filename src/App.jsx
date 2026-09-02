@@ -716,15 +716,14 @@ function MainApp() {
     treeLine: darkMode ? '#555550' : '#c8c8c2'
   };
 
-  // Retorna a cor e o estilo para a prioridade solicitada
   const renderizarPrioridadeBadge = (prio) => {
-    let cor = '#27ae60'; // Baixa (Verde)
+    let cor = '#27ae60'; 
     let texto = 'Baixa';
     if (prio === 'Média') {
-      cor = '#d97706'; // Média (Laranja)
+      cor = '#d97706'; 
       texto = 'Média';
     } else if (prio === 'Alta') {
-      cor = '#eb5757'; // Alta (Vermelha)
+      cor = '#eb5757'; 
       texto = 'Alta';
     }
     return (
@@ -960,7 +959,7 @@ function MainApp() {
         {/* CONTEÚDO DA BIBLIOTECA */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '36px 52px', boxSizing: 'border-box', overflowY: 'auto' }}>
           
-          {/* CABEÇALHO E BOTÃO NOVA PÁGINA */}
+          {/* CABEÇALHO E BOTÃO NOVA PÁGINA (VISÍVEL EM ANDAMENTO, RESOLVIDAS, ARQUIVADOS) */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '16px' }}>
             <h1 style={{ margin: 0, fontSize: '32px', fontWeight: '800', color: theme.textMain, letterSpacing: '-0.5px' }}>
               {paginaAtual === 'arquivados' ? '📁 Arquivados' : paginaAtual === 'lixeira' ? '🗑️ Lixeira' : 'Biblioteca'}
@@ -970,7 +969,7 @@ function MainApp() {
               <button onClick={alternarTema} style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, color: theme.textMain, padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
                 {darkMode ? '☀️ Claro' : '🌙 Escuro'}
               </button>
-              {paginaAtual === 'andamento' && (
+              {paginaAtual !== 'lixeira' && (
                 <button 
                   onClick={() => setModalNovaPagina(true)}
                   style={{ background: '#2383e2', color: '#fff', border: 'none', padding: '8px 18px', borderRadius: '6px', fontWeight: '600', fontSize: '14px', cursor: 'pointer', boxShadow: '0 1px 3px rgba(0,0,0,0.15)' }}
