@@ -261,12 +261,11 @@ function MainApp() {
     });
   };
 
-  // Alterado para retornar 'true' por padrão (abertas ao logar/carregar)
   const verificarExpandido = (id) => {
     if (expandidoIds[id] !== undefined) {
       return expandidoIds[id];
     }
-    return true;
+    return true; // Abertas por padrão
   };
 
   useEffect(() => {
@@ -524,7 +523,6 @@ function MainApp() {
     }).catch(e => alert("Erro ao adicionar subtarefa: " + e.message));
   };
 
-  // Salvar alteração de grupos feita ao clicar na fonte
   const salvarEdicaoGruposFonte = async (novosGrupos) => {
     const { isSub, tarefaId, caminhoIds } = modalEditarGruposFonte;
     const tarefaObj = tarefas.find(t => t.id === tarefaId);
@@ -956,7 +954,9 @@ function MainApp() {
           const isArquivada = Boolean(sub.arquivada);
           const isExcluido = Boolean(sub.excluido);
 
-          if (paginaAtual === 'andamento' && (isArquivada || isExcluido)) return null;
+          // Correção de exibição por aba: se aba for 'resolvidas', só mostra se estiver concluída
+          if (paginaAtual === 'resolvidas' && !isConcluida) return null;
+          if (paginaAtual === 'andamento' && (isConcluida || isArquivada || isExcluido)) return null;
           if (paginaAtual === 'arquivados' && (isExcluido || !isArquivada)) return null;
           if (paginaAtual === 'lixeira' && !isExcluido) return null;
 
@@ -1003,7 +1003,6 @@ function MainApp() {
                   {displayAutorSub}
                 </div>
 
-                {/* Coluna Fonte da subtarefa com verificação estrita de permissão */}
                 <div 
                   onClick={() => {
                     if (!usuarioTemPermissaoTarefa(tarefaRaizObj)) {
@@ -1029,7 +1028,7 @@ function MainApp() {
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', color: theme.textMuted, fontSize: '14px', paddingRight: '10px' }}>
-                  {paginaAtual === 'andamento' ? (
+                  {paginaAtual !== 'lixeira' ? (
                     <button 
                       onClick={() => alternarStatusRecursivo(tarefaRaizObj, caminhoAtual)} 
                       style={{ background: isConcluida ? '#27ae60' : theme.cardInner, border: `1px solid ${isConcluida ? '#27ae60' : theme.border}`, color: isConcluida ? '#fff' : theme.textMain, padding: '5px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}
@@ -1111,10 +1110,15 @@ function MainApp() {
   const tarefasFiltradas = tarefas.filter(t => {
     const isArquivada = Boolean(t.arquivada);
     const isExcluido = Boolean(t.excluido);
+    const isConcluida = t.status === 'Resolvida';
 
     if (paginaAtual === 'lixeira' && !isExcluido) return false;
     if (paginaAtual === 'arquivados' && (!isArquivada || isExcluido)) return false;
-    if (paginaAtual === 'andamento' && (isArquivada || isExcluido)) return false;
+    
+    // CORREÇÃO CRUCIAL AQUI: Filtro exato para a aba Resolvidas vs Andamento
+    if (paginaAtual === 'resolvidas' && (!isConcluida || isArquivada || isExcluido)) return false;
+    if (paginaAtual === 'andamento' && (isConcluida || isArquivada || isExcluido)) return false;
+
     if (filtroResponsavel !== 'todos' && t.responsavel !== filtroResponsavel) return false;
 
     if (filtroPalavraChave.trim() !== '') {
@@ -1198,7 +1202,7 @@ function MainApp() {
           {/* CABEÇALHO E BOTÃO NOVA PÁGINA */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '16px' }}>
             <h1 style={{ margin: 0, fontSize: '32px', fontWeight: '800', color: theme.textMain, letterSpacing: '-0.5px' }}>
-              {paginaAtual === 'arquivados' ? '📁 Arquivados' : paginaAtual === 'lixeira' ? '🗑️ Lixeira' : 'Biblioteca'}
+              {paginaAtual === 'resolvidas' ? '✅ Resolvidas' : paginaAtual === 'arquivados' ? '📁 Arquivados' : paginaAtual === 'lixeira' ? '🗑️ Lixeira' : 'Biblioteca'}
             </h1>
 
             <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
@@ -1220,6 +1224,7 @@ function MainApp() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `2px solid ${theme.border}`, paddingBottom: '12px', marginBottom: '24px', fontSize: '14px', flexWrap: 'wrap', gap: '16px', fontWeight: '600' }}>
             <div style={{ display: 'flex', gap: '24px', alignItems: 'center', flexWrap: 'wrap', color: theme.textMuted }}>
               <span onClick={() => mudarPagina('andamento')} style={{ fontWeight: paginaAtual === 'andamento' ? '700' : '500', color: paginaAtual === 'andamento' ? theme.textMain : theme.textMuted, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>🕒 Recentes</span>
+              <span onClick={() => mudarPagina('resolvidas')} style={{ fontWeight: paginaAtual === 'resolvidas' ? '700' : '500', color: paginaAtual === 'resolvidas' ? theme.textMain : theme.textMuted, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>✅ Resolvidas</span>
               <span onClick={() => mudarPagina('arquivados')} style={{ fontWeight: paginaAtual === 'arquivados' ? '700' : '500', color: paginaAtual === 'arquivados' ? theme.textMain : theme.textMuted, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>📁 Arquivados</span>
               {isGestor && (
                 <span onClick={() => mudarPagina('lixeira')} style={{ fontWeight: paginaAtual === 'lixeira' ? '700' : '500', color: paginaAtual === 'lixeira' ? theme.textMain : theme.textMuted, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>🗑️ Lixeira</span>
@@ -1345,7 +1350,7 @@ function MainApp() {
                         </div>
 
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: theme.textMuted, fontSize: '14px', paddingRight: '10px' }}>
-                          {paginaAtual === 'andamento' ? (
+                          {paginaAtual !== 'lixeira' ? (
                             <button 
                               onClick={() => alternarStatusTarefaPai(t)} 
                               style={{ background: isConcluida ? '#27ae60' : theme.cardInner, border: `1px solid ${isConcluida ? '#27ae60' : theme.border}`, color: isConcluida ? '#fff' : theme.textMain, padding: '5px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}
