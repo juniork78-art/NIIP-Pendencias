@@ -206,26 +206,24 @@ function MainApp() {
   const [editandoId, setEditandoId] = useState(null);
   const [textoEditando, setTextoEditando] = useState('');
 
-  // Estados para Modal de Nova Página Principal (Grupos múltiplos)
+  // Estados para Modal de Nova Página Principal (sem a opção Pública)
   const [modalNovaPagina, setModalNovaPagina] = useState(false);
   const [novoTituloModal, setNovoTituloModal] = useState('');
   const [novaPrioridadeModal, setNovaPrioridadeModal] = useState('Baixa');
   const [novosGruposModal, setNovosGruposModal] = useState({
     Particular: true,
-    Pública: false,
     NOC: false,
     NIIP: false,
     NMR: false,
     CGR: false
   });
 
-  // Estados para Modal de Subtarefa (Grupos múltiplos)
+  // Estados para Modal de Subtarefa (sem a opção Pública)
   const [modalNovaSub, setModalNovaSub] = useState({ isOpen: false, tarefaRaizId: null, caminhoIds: null });
   const [subTituloModal, setSubTituloModal] = useState('');
   const [subPrioridadeModal, setSubPrioridadeModal] = useState('Baixa');
   const [subGruposModal, setSubGruposModal] = useState({
     Particular: true,
-    Pública: false,
     NOC: false,
     NIIP: false,
     NMR: false,
@@ -357,6 +355,7 @@ function MainApp() {
     nomeForcadoParaUsuario = 'João';
   }
 
+  // Validação de Permissão por Grupo
   const usuarioTemPermissaoTarefa = (tarefaObj) => {
     if (isGestor) return true;
     const grupos = tarefaObj.gruposSelecionados;
@@ -369,9 +368,6 @@ function MainApp() {
     if (grupos.Particular) {
       return tarefaObj.criadoPor && tarefaObj.criadoPor.toUpperCase() === nomeFormatadoGlobal.toUpperCase();
     }
-    if (grupos.Pública) {
-      return true;
-    }
 
     let permitido = false;
     if (grupos.NOC && GRUPOS_MEMBROS.noc.includes(nomeFormatadoGlobal)) permitido = true;
@@ -379,7 +375,7 @@ function MainApp() {
     if (grupos.NMR && GRUPOS_MEMBROS.nmr.includes(nomeFormatadoGlobal)) permitido = true;
     if (grupos.CGR && GRUPOS_MEMBROS.cgr.includes(nomeFormatadoGlobal)) permitido = true;
 
-    if (!grupos.NOC && !grupos.NIIP && !grupos.NMR && !grupos.CGR && !grupos.Pública && !grupos.Particular) {
+    if (!grupos.NOC && !grupos.NIIP && !grupos.NMR && !grupos.CGR && !grupos.Particular) {
       return tarefaObj.criadoPor && tarefaObj.criadoPor.toUpperCase() === nomeFormatadoGlobal.toUpperCase();
     }
 
@@ -467,7 +463,7 @@ function MainApp() {
       setModalNovaPagina(false);
       setNovoTituloModal('');
       setNovaPrioridadeModal('Baixa');
-      setNovosGruposModal({ Particular: true, Pública: false, NOC: false, NIIP: false, NMR: false, CGR: false });
+      setNovosGruposModal({ Particular: true, NOC: false, NIIP: false, NMR: false, CGR: false });
     }).catch(e => alert("Erro ao criar página: " + e.message));
   };
 
@@ -514,7 +510,7 @@ function MainApp() {
       setModalNovaSub({ isOpen: false, tarefaRaizId: null, caminhoIds: null });
       setSubTituloModal('');
       setSubPrioridadeModal('Baixa');
-      setSubGruposModal({ Particular: true, Pública: false, NOC: false, NIIP: false, NMR: false, CGR: false });
+      setSubGruposModal({ Particular: true, NOC: false, NIIP: false, NMR: false, CGR: false });
     }).catch(e => alert("Erro ao adicionar subtarefa: " + e.message));
   };
 
@@ -823,7 +819,6 @@ function MainApp() {
     }
   };
 
-  // Bloco de notas atualiza APENAS o campo 'blocoNotas', mantendo a fonte intacta
   const salvarAlteracoesPaginaLateral = async () => {
     if (!paginaLateral) return;
     if (!usuarioTemPermissaoTarefa(paginaLateral) && !isGestor) {
@@ -849,7 +844,7 @@ function MainApp() {
         const needsEditor = creator && creator.toUpperCase() !== nomeFormatadoGlobal.toUpperCase();
         const updates = {
           titulo: editTituloLateral.trim(),
-          blocoNotas: editDescricaoLateral.trim() // Salva APENAS no bloco de notas
+          blocoNotas: editDescricaoLateral.trim()
         };
         if (needsEditor) updates.editadoPor = nomeFormatadoGlobal;
 
@@ -1339,7 +1334,7 @@ function MainApp() {
 
         </div>
 
-        {/* MODAL DE CRIAÇÃO DE NOVA PÁGINA PRINCIPAL (MULTIPLOS GRUPOS) */}
+        {/* MODAL DE CRIAÇÃO DE NOVA PÁGINA PRINCIPAL (SEM PÚBLICA) */}
         {modalNovaPagina && (
           <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, padding: '15px', boxSizing: 'border-box' }}>
             <div style={{ background: theme.cardBg, padding: '28px', borderRadius: '8px', width: '100%', maxWidth: '420px', border: `1px solid ${theme.border}`, boxShadow: '0 10px 30px rgba(0,0,0,0.3)', textAlign: 'left', maxHeight: '90vh', overflowY: 'auto' }}>
@@ -1382,7 +1377,6 @@ function MainApp() {
                         style={{ accentColor: '#2383e2', width: '16px', height: '16px', cursor: 'pointer' }}
                       />
                       {grupo === 'Particular' && '🔒 '}
-                      {grupo === 'Pública' && '🌐 '}
                       {grupo === 'NOC' && '👥 Grupo do NOC'}
                       {grupo === 'NIIP' && '👥 Grupo do NIIP'}
                       {grupo === 'NMR' && '👥 Grupo do NMR'}
@@ -1401,7 +1395,7 @@ function MainApp() {
           </div>
         )}
 
-        {/* MODAL DE CRIAÇÃO DE SUBTAREFA (MULTIPLOS GRUPOS) */}
+        {/* MODAL DE CRIAÇÃO DE SUBTAREFA (SEM PÚBLICA) */}
         {modalNovaSub.isOpen && (
           <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, padding: '15px', boxSizing: 'border-box' }}>
             <div style={{ background: theme.cardBg, padding: '28px', borderRadius: '8px', width: '100%', maxWidth: '420px', border: `1px solid ${theme.border}`, boxShadow: '0 10px 30px rgba(0,0,0,0.3)', textAlign: 'left', maxHeight: '90vh', overflowY: 'auto' }}>
@@ -1444,7 +1438,6 @@ function MainApp() {
                         style={{ accentColor: '#2383e2', width: '16px', height: '16px', cursor: 'pointer' }}
                       />
                       {grupo === 'Particular' && '🔒 '}
-                      {grupo === 'Pública' && '🌐 '}
                       {grupo === 'NOC' && '👥 Grupo do NOC'}
                       {grupo === 'NIIP' && '👥 Grupo do NIIP'}
                       {grupo === 'NMR' && '👥 Grupo do NMR'}
