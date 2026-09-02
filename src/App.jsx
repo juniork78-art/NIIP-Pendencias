@@ -941,7 +941,7 @@ function MainApp() {
     );
   };
 
-  // Renderização recursiva limpa com linhas conectoras verticais e símbolos de árvore (├─ / └─)
+  // Renderização recursiva com linhas de árvore (├─ / └─) e subtarefas permanecendo visíveis ao concluir
   const renderizarSubTarefasRecursivas = (subLista, tarefaRaizObj, caminhoPai, nivel = 1) => {
     if (!subLista || subLista.length === 0) return null;
 
@@ -960,8 +960,8 @@ function MainApp() {
           const isArquivada = Boolean(sub.arquivada);
           const isExcluido = Boolean(sub.excluido);
 
+          // CORREÇÃO: Removido o filtro que ocultava subtarefas em 'andamento' quando marcadas como concluídas
           if (paginaAtual === 'resolvidas' && !isConcluida) return null;
-          if (paginaAtual === 'andamento' && (isConcluida || isArquivada || isExcluido)) return null;
           if (paginaAtual === 'arquivados' && (isExcluido || !isArquivada)) return null;
           if (paginaAtual === 'lixeira' && !isExcluido) return null;
 
@@ -986,7 +986,7 @@ function MainApp() {
                 onMouseEnter={(e) => { if (!isConcluida) e.currentTarget.style.background = theme.cardInner; }} 
                 onMouseLeave={(e) => { if (!isConcluida) e.currentTarget.style.background = 'transparent'; }}
               >
-                {/* Linha guia vertical para alinhar perfeitamente na mesma coluna */}
+                {/* Linha guia vertical */}
                 <div style={{
                   position: 'absolute',
                   top: 0,
@@ -998,7 +998,6 @@ function MainApp() {
                 }} />
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden', paddingLeft: `${currentIndent - 4}px`, paddingRight: '10px', position: 'relative' }}>
-                  {/* Conector horizontal ramificado estilo árvore (├─ ou └─) */}
                   <span style={{ fontFamily: 'monospace', color: theme.textMuted, fontSize: '13px', userSelect: 'none', fontWeight: 'bold' }}>
                     {isUltimo ? '└─' : '├─'}
                   </span>
@@ -1100,7 +1099,6 @@ function MainApp() {
                       onMouseEnter={(e) => e.currentTarget.style.background = theme.cardInner}
                       onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                     >
-                      {/* Linha vertical conectora no botão Adicionar nova */}
                       <div style={{
                         position: 'absolute',
                         top: 0,
