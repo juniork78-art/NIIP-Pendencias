@@ -209,11 +209,11 @@ function MainApp() {
     });
   };
 
-  const verificarExpandido = (id, temFilhos) => {
+  const verificarExpandido = (id) => {
     if (expandidoIds[id] !== undefined) {
       return expandidoIds[id];
     }
-    return temFilhos ? true : false;
+    return false;
   };
 
   useEffect(() => {
@@ -352,7 +352,6 @@ function MainApp() {
 
   const responsavelFinal = isGestor ? responsavelSelecionadoGestor : nomeForcadoParaUsuario || (TODOS_INTEGRANTES.find(n => nomeFormatadoGlobal.includes(n.toUpperCase())) || TODOS_INTEGRANTES[0]);
 
-  // Função para criar nova página pelo Modal
   const confirmarCriacaoNovaPagina = () => {
     if (!novoTituloModal.trim()) {
       alert("Digite um título para a página.");
@@ -380,7 +379,6 @@ function MainApp() {
     }).catch(e => alert("Erro ao criar página: " + e.message));
   };
 
-  // Funções Auxiliares de Propagação Recursiva
   const setTrashRecursiveProp = (lista, val) => {
     return (lista || []).map(item => ({
       ...item,
@@ -397,7 +395,6 @@ function MainApp() {
     }));
   };
 
-  // Árvore Recursiva
   const insertNodeInTree = (lista, ids, newNode) => {
     if (!ids || ids.length === 0) {
       return [...(lista || []), newNode];
@@ -741,7 +738,7 @@ function MainApp() {
         {subLista.map((sub) => {
           const caminhoAtual = [...caminhoPai, sub.id];
           const temFilhos = sub.subTarefas && sub.subTarefas.length > 0;
-          const isExpandidoSub = verificarExpandido(sub.id, temFilhos);
+          const isExpandidoSub = verificarExpandido(sub.id);
           const paddingLeftPx = nivel * 24 + 16;
           const isConcluida = Boolean(sub.concluida);
           const isArquivada = Boolean(sub.arquivada);
@@ -772,6 +769,7 @@ function MainApp() {
                 onMouseLeave={(e) => { if (!isConcluida) e.currentTarget.style.background = 'transparent'; }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden', paddingLeft: `${paddingLeftPx}px`, paddingRight: '10px' }}>
+                  {/* Seta sempre visível em todas as subtarefas */}
                   <span onClick={() => alternarExpandido(sub.id)} style={{ cursor: 'pointer', fontSize: '11px', color: theme.textMain, userSelect: 'none', padding: '2px', width: '12px', textAlign: 'center', fontWeight: 'bold' }}>
                     {isExpandidoSub ? '▼' : '▶'}
                   </span>
@@ -1025,7 +1023,7 @@ function MainApp() {
                 {tarefasFiltradas.map(t => {
                   const subTarefas = t.subTarefas || [];
                   const temFilhos = subTarefas.length > 0;
-                  const isExpandido = verificarExpandido(t.id, temFilhos);
+                  const isExpandido = verificarExpandido(t.id);
                   const isConcluida = t.status === 'Resolvida';
                   const isArquivada = Boolean(t.arquivada);
                   const isExcluido = Boolean(t.excluido);
@@ -1054,8 +1052,9 @@ function MainApp() {
                       >
                         
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden', paddingRight: '10px' }}>
+                          {/* Seta sempre visível em todas as tarefas principais */}
                           <span onClick={() => alternarExpandido(t.id)} style={{ cursor: 'pointer', fontSize: '11px', color: theme.textMain, userSelect: 'none', padding: '2px', width: '12px', textAlign: 'center', fontWeight: 'bold' }}>
-                            {temFilhos ? (isExpandido ? '▼' : '▶') : ''}
+                            {isExpandido ? '▼' : '▶'}
                           </span>
                           <span>📄</span>
                           {editandoId === t.id ? (
