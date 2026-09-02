@@ -166,10 +166,6 @@ function MainApp() {
   
   const [tarefas, setTarefas] = useState([]);
   
-  const [titulo, setTitulo] = useState('');
-  const [descricao, setDescription] = useState('');
-  const [prazo, setPrazo] = useState('');
-  const [prioridade, setPrioridade] = useState('Média');
   const [responsavelSelecionadoGestor, setResponsavelSelecionadoGestor] = useState(TODOS_INTEGRANTES[0]);
   
   const [filtroResponsavel, setFiltroResponsavel] = useState('todos');
@@ -188,8 +184,11 @@ function MainApp() {
   const [editPrazo, setEditPrazo] = useState('');
   const [editPrioridade, setEditPrioridade] = useState('');
 
-  // Estado para o Pop-up de Confirmação de Exclusão
+  // Estados para modais
   const [modalExclusao, setModalExclusao] = useState({ isOpen: false, tipo: null, tarefa: null, caminhoIds: null });
+  const [modalNovaPagina, setModalNovaPagina] = useState(false);
+  const [novoTituloModal, setNovoTituloModal] = useState('');
+  const [novaPrioridadeModal, setNovaPrioridadeModal] = useState('Baixa');
 
   const [expandidoIds, setExpandidoIds] = useState(() => {
     try {
@@ -249,8 +248,6 @@ function MainApp() {
       titulo: sub.texto,
       descricao: sub.descricao || 'Sub-tarefa',
       responsavel: tarefaPai.responsavel,
-      prazo: tarefaPai.prazo,
-      prioridade: tarefaPai.prioridade,
       concluida: Boolean(sub.concluida),
       arquivada: Boolean(sub.arquivada),
       excluido: Boolean(sub.excluido),
@@ -354,6 +351,34 @@ function MainApp() {
   }, [usuarioLogado]);
 
   const responsavelFinal = isGestor ? responsavelSelecionadoGestor : nomeForcadoParaUsuario || (TODOS_INTEGRANTES.find(n => nomeFormatadoGlobal.includes(n.toUpperCase())) || TODOS_INTEGRANTES[0]);
+
+  // Função para criar nova página pelo Modal
+  const confirmarCriacaoNovaPagina = () => {
+    if (!novoTituloModal.trim()) {
+      alert("Digite um título para a página.");
+      return;
+    }
+    const novaId = Date.now().toString();
+    const dataHoje = new Date().toISOString().split('T')[0];
+
+    setDoc(doc(db, 'tarefas_gerais', novaId), {
+      titulo: novoTituloModal.trim(),
+      descricao: 'Particular',
+      responsavel: responsavelFinal,
+      prazo: dataHoje,
+      prioridade: novaPrioridadeModal,
+      status: 'Pendente',
+      arquivada: false,
+      excluido: false,
+      criadoPor: nomeFormatadoGlobal || 'Usuário',
+      criadoEm: Date.now(),
+      subTarefas: []
+    }).then(() => {
+      setModalNovaPagina(false);
+      setNovoTituloModal('');
+      setNovaPrioridadeModal('Baixa');
+    }).catch(e => alert("Erro ao criar página: " + e.message));
+  };
 
   // Funções Auxiliares de Propagação Recursiva
   const setTrashRecursiveProp = (lista, val) => {
@@ -691,6 +716,24 @@ function MainApp() {
     treeLine: darkMode ? '#555550' : '#c8c8c2'
   };
 
+  // Retorna a cor e o estilo para a prioridade solicitada
+  const renderizarPrioridadeBadge = (prio) => {
+    let cor = '#27ae60'; // Baixa (Verde)
+    let texto = 'Baixa';
+    if (prio === 'Média') {
+      cor = '#d97706'; // Média (Laranja)
+      texto = 'Média';
+    } else if (prio === 'Alta') {
+      cor = '#eb5757'; // Alta (Vermelha)
+      texto = 'Alta';
+    }
+    return (
+      <span style={{ color: cor, fontWeight: '700', fontSize: '13px', marginLeft: '10px', background: `${cor}15`, padding: '2px 8px', borderRadius: '4px', border: `1px solid ${cor}40` }}>
+        {texto}
+      </span>
+    );
+  };
+
   const renderizarSubTarefasRecursivas = (subLista, tarefaRaizObj, caminhoPai, nivel = 1) => {
     if (!subLista || subLista.length === 0) return null;
 
@@ -929,29 +972,7 @@ function MainApp() {
               </button>
               {paginaAtual === 'andamento' && (
                 <button 
-                  onClick={() => {
-                    const nome = prompt("Digite o título da nova página:");
-                    if (nome) {
-                      setTitulo(nome);
-                      setPrazo(new Date().toISOString().split('T')[0]);
-                      setTimeout(() => {
-                        const novaId = Date.now().toString();
-                        setDoc(doc(db, 'tarefas_gerais', novaId), {
-                          titulo: nome.trim(),
-                          descricao: 'Particular',
-                          responsavel: responsavelFinal,
-                          prazo: new Date().toISOString().split('T')[0],
-                          prioridade: 'Média',
-                          status: 'Pendente',
-                          arquivada: false,
-                          excluido: false,
-                          criadoPor: nomeFormatadoGlobal || 'Usuário',
-                          criadoEm: Date.now(),
-                          subTarefas: []
-                        });
-                      }, 100);
-                    }
-                  }}
+                  onClick={() => setModalNovaPagina(true)}
                   style={{ background: '#2383e2', color: '#fff', border: 'none', padding: '8px 18px', borderRadius: '6px', fontWeight: '600', fontSize: '14px', cursor: 'pointer', boxShadow: '0 1px 3px rgba(0,0,0,0.15)' }}
                 >
                   Nova página
@@ -1047,12 +1068,15 @@ function MainApp() {
                               style={{ background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, padding: '4px 8px', fontSize: '14px', borderRadius: '4px', width: '80%', fontWeight: '700' }}
                             />
                           ) : (
-                            <span 
-                              onClick={() => abrirPainelLateral(t)}
-                              style={{ fontWeight: '700', color: isConcluida ? '#27ae60' : theme.textMain, textDecoration: isConcluida ? 'line-through' : 'none', cursor: 'pointer', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
-                            >
-                              {t.titulo}
-                            </span>
+                            <div style={{ display: 'flex', alignItems: 'center', overflow: 'hidden' }}>
+                              <span 
+                                onClick={() => abrirPainelLateral(t)}
+                                style={{ fontWeight: '700', color: isConcluida ? '#27ae60' : theme.textMain, textDecoration: isConcluida ? 'line-through' : 'none', cursor: 'pointer', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                              >
+                                {t.titulo}
+                              </span>
+                              {renderizarPrioridadeBadge(t.prioridade)}
+                            </div>
                           )}
                         </div>
 
@@ -1137,6 +1161,45 @@ function MainApp() {
           </div>
 
         </div>
+
+        {/* MODAL DE CRIAÇÃO DE NOVA PÁGINA */}
+        {modalNovaPagina && (
+          <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, padding: '15px', boxSizing: 'border-box' }}>
+            <div style={{ background: theme.cardBg, padding: '28px', borderRadius: '8px', width: '100%', maxWidth: '420px', border: `1px solid ${theme.border}`, boxShadow: '0 10px 30px rgba(0,0,0,0.3)', textAlign: 'left' }}>
+              <h3 style={{ margin: '0 0 16px 0', color: theme.textMain, fontSize: '18px', fontWeight: '700' }}>Criar Nova Página</h3>
+              
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Título da Tarefa</label>
+                <input 
+                  type="text" 
+                  value={novoTituloModal}
+                  onChange={(e) => setNovoTituloModal(e.target.value)}
+                  placeholder="Digite o título..."
+                  autoFocus
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: `1px solid ${theme.border}`, background: theme.inputBg, color: theme.inputText, boxSizing: 'border-box', fontSize: '14px', fontWeight: '500', outline: 'none' }}
+                />
+              </div>
+
+              <div style={{ marginBottom: '24px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Prioridade</label>
+                <select 
+                  value={novaPrioridadeModal} 
+                  onChange={(e) => setNovaPrioridadeModal(e.target.value)} 
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: `1px solid ${theme.border}`, background: theme.inputBg, color: theme.inputText, boxSizing: 'border-box', fontSize: '14px', fontWeight: '600', outline: 'none' }}
+                >
+                  <option value="Baixa" style={{ color: '#27ae60' }}>🟢 Baixa</option>
+                  <option value="Média" style={{ color: '#d97706' }}>🟠 Média</option>
+                  <option value="Alta" style={{ color: '#eb5757' }}>🔴 Alta</option>
+                </select>
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button onClick={() => setModalNovaPagina(false)} style={{ flex: 1, padding: '10px', background: theme.cardInner, color: theme.textMain, border: `1px solid ${theme.border}`, borderRadius: '6px', fontWeight: '600', cursor: 'pointer', fontSize: '14px' }}>Cancelar</button>
+                <button onClick={confirmarCriacaoNovaPagina} style={{ flex: 1, padding: '10px', background: '#2383e2', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: '600', cursor: 'pointer', fontSize: '14px' }}>Criar</button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* POP-UP DE CONFIRMAÇÃO DE EXCLUSÃO */}
         {modalExclusao.isOpen && (
