@@ -88,39 +88,23 @@ const formatarDataParaBr = (dataStr) => {
   }
 };
 
-const corrigirDatasNoTexto = (texto) => {
-  if (!texto) return '';
-  return texto.replace(/\b(\d{4})-(\d{2})-(\d{2})\b/g, (match, ano, mes, dia) => {
-    return `${dia}/${mes}/${ano}`;
-  });
-};
+const tempoDecorrido = (timestamp) => {
+  if (!timestamp) return 'Agora há pouco';
+  const agora = Date.now();
+  const diffMs = agora - timestamp;
+  const diffSeg = Math.floor(diffMs / 1000);
+  const diffMin = Math.floor(diffSeg / 60);
+  const diffHoras = Math.floor(diffMin / 60);
+  const diffDias = Math.floor(diffHoras / 24);
 
-const calcularStatusPrazo = (dataStr) => {
-  if (!dataStr) return { status: 'normal', texto: '', diasAtraso: 0 };
-  try {
-    const parts = dataStr.split('-'); 
-    if (parts.length === 3) {
-      const year = parseInt(parts[0], 10);
-      const month = parseInt(parts[1], 10) - 1;
-      const day = parseInt(parts[2], 10);
-      const dataPrazo = new Date(year, month, day);
-      const hoje = new Date();
-      hoje.setHours(0, 0, 0, 0);
-
-      const diffTime = dataPrazo - hoje;
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      const dataFormatada = `${String(day).padStart(2, '0')}/${String(month + 1).padStart(2, '0')}/${year}`;
-
-      if (diffDays < 0) return { status: 'vencido', texto: `Vencido há ${Math.abs(diffDays)} dia(s) (${dataFormatada})`, diasAtraso: Math.abs(diffDays) };
-      if (diffDays === 0) return { status: 'hoje', texto: `Vence HOJE (${dataFormatada})`, diasAtraso: 0 };
-      if (diffDays === 1) return { status: 'um_dia', texto: `Vence AMANHÃ (${dataFormatada})`, diasAtraso: 0 };
-      if (diffDays <= 3) return { status: 'proximo', texto: `Vence em ${diffDays} dia(s) (${dataFormatada})`, diasAtraso: 0 };
-      return { status: 'normal', texto: `Prazo: ${dataFormatada}`, diasAtraso: 0 };
-    }
-    return { status: 'normal', texto: '', diasAtraso: 0 };
-  } catch (e) {
-    return { status: 'normal', texto: '', diasAtraso: 0 };
-  }
+  if (diffSeg < 60) return 'Há poucos segundos';
+  if (diffMin < 60) return `Há ${diffMin} minuto${diffMin > 1 ? 's' : ''}`;
+  if (diffHoras < 24) return `Há ${diffHoras} hora${diffHoras > 1 ? 's' : ''}`;
+  if (diffDias < 30) return `Há ${diffDias} dia${diffDias > 1 ? 's' : ''}`;
+  const diffMeses = Math.floor(diffDias / 30);
+  if (diffMeses < 12) return `Há ${diffMeses} mês${diffMeses > 1 ? 'es' : ''}`;
+  const diffAnos = Math.floor(diffDias / 365);
+  return `Há ${diffAnos} ano${diffAnos > 1 ? 's' : ''}`;
 };
 
 const TODOS_INTEGRANTES = ["Dhennifer", "Duandys", "Francisco", "Gabriel", "Gilvan", "Gustavo", "João", "Kessy", "Lucas", "Stevan", "Tolentino", "Walgney"];
@@ -722,7 +706,6 @@ function MainApp() {
     }
   };
 
-  // Cores mais vivas e fontes levemente aumentadas
   const theme = {
     bg: darkMode ? '#141414' : '#f7f6f2',
     sidebarBg: darkMode ? '#1c1c1c' : '#eeedeb',
@@ -800,7 +783,7 @@ function MainApp() {
                 </div>
 
                 <div style={{ color: isConcluida ? '#27ae60' : theme.textMuted, fontSize: '14px' }}>
-                  {isConcluida ? 'Concluída' : 'Agora há pouco'}
+                  {tempoDecorrido(tarefaRaizObj.criadoEm)}
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', color: theme.textMuted, fontSize: '14px', paddingRight: '10px' }}>
@@ -838,6 +821,7 @@ function MainApp() {
                         color: theme.textMain, 
                         cursor: 'pointer', 
                         transition: 'background 0.1s',
+                        background: theme.cardInner,
                         fontWeight: '600' 
                       }}
                       onMouseEnter={(e) => e.currentTarget.style.background = theme.cardInner}
@@ -1110,7 +1094,7 @@ function MainApp() {
                         </div>
 
                         <div style={{ color: isConcluida ? '#27ae60' : theme.textMuted, fontSize: '14px', fontWeight: '500' }}>
-                          {isConcluida ? 'Concluída' : 'Agora há pouco'}
+                          {tempoDecorrido(t.criadoEm)}
                         </div>
 
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: theme.textMuted, fontSize: '14px', paddingRight: '10px' }}>
@@ -1129,7 +1113,7 @@ function MainApp() {
                                 {isArquivada ? 'Desarquivar' : 'Arquivar'}
                               </button>
                             )}
-                            <button onClick={() => solicitarExclusaoTarefaPai(t)} title="Lixeira" style={{ background: 'transparent', border: 'none', color: '#eb5757', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}>
+                            <button onClick={() => tratarCliqueExcluirOuRestaurarPai(t)} title="Lixeira" style={{ background: 'transparent', border: 'none', color: '#eb5757', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}>
                               {isExcluido ? 'Restaurar' : 'Excluir'}
                             </button>
                             {isGestor && paginaAtual === 'lixeira' && (
