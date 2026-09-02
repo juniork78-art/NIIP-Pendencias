@@ -63,6 +63,14 @@ style.innerHTML = `
     background: rgba(120, 119, 116, 0.3);
     border-radius: 3px;
   }
+  
+  /* RESPONSIVIDADE PARA CELULARES */
+  .table-responsive-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
   @media (max-width: 768px) {
     .workspace-layout {
       flex-direction: column !important;
@@ -70,6 +78,18 @@ style.innerHTML = `
     .sidebar-notion {
       width: 100% !important;
       height: auto !important;
+      max-height: none !important;
+    }
+    .main-content-area {
+      padding: 16px !important;
+    }
+    .lateral-panel {
+      width: 100% !important;
+      position: fixed !important;
+      top: 0;
+      left: 0;
+      z-index: 1000;
+      height: 100vh !important;
     }
   }
 `;
@@ -535,13 +555,11 @@ function MainApp() {
     }).catch(e => alert("Erro ao adicionar subtarefa: " + e.message));
   };
 
-  // Validação: Verificar se a tarefa/subtarefa pertence ao usuário logado
   const tarefaPertenceAoUsuario = (criadoPor) => {
     if (!criadoPor) return true;
     return criadoPor.toUpperCase() === nomeFormatadoGlobal.toUpperCase();
   };
 
-  // Função auxiliar para encontrar subtarefa na árvore por caminhoIds
   const encontrarSubNaArvore = (subLista, caminhoIds) => {
     if (!subLista || caminhoIds.length === 0) return null;
     const atual = subLista.find(s => s.id === caminhoIds[0]);
@@ -908,7 +926,6 @@ function MainApp() {
     if (paginaAtual === 'andamento' && (isArquivada || isExcluido)) return false;
     if (filtroResponsavel !== 'todos' && t.responsavel !== filtroResponsavel) return false;
 
-    // Filtro por palavra-chave
     if (filtroPalavraChave.trim() !== '') {
       const termo = filtroPalavraChave.toLowerCase();
       const tituloMatch = t.titulo && t.titulo.toLowerCase().includes(termo);
@@ -984,8 +1001,8 @@ function MainApp() {
       {/* ÁREA PRINCIPAL SPLIT-VIEW */}
       <div style={{ flex: 1, display: 'flex', width: '100%', boxSizing: 'border-box', overflow: 'hidden' }}>
         
-        {/* CONTEÚDO DA BIBLIOTECA */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '36px 52px', boxSizing: 'border-box', overflowY: 'auto' }}>
+        {/* CONTEÚDO DA BIBLIOTECA COM SUPORTE A TELA RESPONSIVA */}
+        <div className="main-content-area" style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '36px 52px', boxSizing: 'border-box', overflowY: 'auto' }}>
           
           {/* CABEÇALHO E BOTÃO NOVA PÁGINA */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '16px' }}>
@@ -1008,7 +1025,7 @@ function MainApp() {
             </div>
           </div>
 
-          {/* ABAS SUPERIORES COM CAMPO DE BUSCA POR PALAVRA-CHAVE */}
+          {/* ABAS SUPERIORES COM CAMPO DE BUSCA */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `2px solid ${theme.border}`, paddingBottom: '12px', marginBottom: '24px', fontSize: '14px', flexWrap: 'wrap', gap: '16px', fontWeight: '600' }}>
             <div style={{ display: 'flex', gap: '24px', alignItems: 'center', flexWrap: 'wrap', color: theme.textMuted }}>
               <span onClick={() => mudarPagina('andamento')} style={{ fontWeight: paginaAtual === 'andamento' ? '700' : '500', color: paginaAtual === 'andamento' ? theme.textMain : theme.textMuted, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>🕒 Recentes</span>
@@ -1018,7 +1035,7 @@ function MainApp() {
               )}
             </div>
 
-            <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: '14px', alignItems: 'center', flexWrap: 'wrap' }}>
               <input 
                 type="text" 
                 value={filtroPalavraChave} 
@@ -1033,8 +1050,8 @@ function MainApp() {
             </div>
           </div>
 
-          {/* TABELA DE DADOS ESTILO NOTION */}
-          <div style={{ width: '100%', boxSizing: 'border-box' }}>
+          {/* TABELA DE DADOS COM WRAPPER RESPONSIVO PARA EVITAR CORTE EM DISPOSITIVOS MÓVEIS */}
+          <div className="table-responsive-wrapper" style={{ width: '100%', boxSizing: 'border-box' }}>
             
             <div style={{ display: 'grid', gridTemplateColumns: '2.5fr 1.5fr 1.5fr 1fr 1fr', padding: '10px 0', borderBottom: `2px solid ${theme.border}`, fontSize: '13px', fontWeight: '700', color: theme.textMuted, minWidth: '700px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>📄 Nome da página</div>
@@ -1247,7 +1264,7 @@ function MainApp() {
 
         {/* PAINEL LATERAL DIREITO (SPLIT-VIEW) */}
         {paginaLateral && (
-          <div style={{ width: '450px', background: theme.cardBg, borderLeft: `1px solid ${theme.border}`, display: 'flex', flexDirection: 'column', padding: '36px', boxSizing: 'border-box', height: '100vh', overflowY: 'auto', flexShrink: '0', boxShadow: '-5px 0 25px rgba(0,0,0,0.1)' }}>
+          <div className="lateral-panel" style={{ width: '450px', background: theme.cardBg, borderLeft: `1px solid ${theme.border}`, display: 'flex', flexDirection: 'column', padding: '36px', boxSizing: 'border-box', height: '100vh', overflowY: 'auto', flexShrink: '0', boxShadow: '-5px 0 25px rgba(0,0,0,0.1)' }}>
             
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
               <div style={{ fontSize: '13px', color: theme.textMuted, fontWeight: '600' }}>
@@ -1292,7 +1309,7 @@ function TelaLogin({ onLoginSucesso, darkMode, setDarkMode, theme }) {
   const [erro, setErro] = useState('');
 
   const handleLogin = async (e) => {
-    e.createElement && e.preventDefault();
+    e.preventDefault();
     setErro('');
     try {
       const result = await signInWithEmailAndPassword(auth, email, senha);
@@ -1322,7 +1339,7 @@ function TelaLogin({ onLoginSucesso, darkMode, setDarkMode, theme }) {
         </div>
 
         <div style={{ marginBottom: '20px' }}>
-          <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Senha</label>
+          <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px')), fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Senha</label>
           <input type="password" value={senha} onChange={(e) => setSenha(e.target.value)} required style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: `1px solid ${theme.border}`, background: theme.inputBg, color: theme.inputText, boxSizing: 'border-box', fontSize: '14px', fontWeight: '500' }} />
         </div>
 
