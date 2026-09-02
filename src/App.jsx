@@ -523,7 +523,7 @@ function MainApp() {
     }).catch(e => alert("Erro ao adicionar subtarefa: " + e.message));
   };
 
-  // Função para salvar a alteração de grupos feita ao clicar na fonte
+  // Salvar alteração de grupos feita ao clicar na fonte
   const salvarEdicaoGruposFonte = async (novosGrupos) => {
     const { isSub, tarefaId, caminhoIds } = modalEditarGruposFonte;
     const tarefaObj = tarefas.find(t => t.id === tarefaId);
@@ -539,7 +539,6 @@ function MainApp() {
 
     try {
       if (isSub) {
-        // Atualização recursiva dos grupos da subtarefa
         const atualizarGruposSubNaArvore = (lista, ids) => {
           return (lista || []).map(item => {
             if (item.id === ids[0]) {
@@ -556,7 +555,6 @@ function MainApp() {
         const novasSubs = atualizarGruposSubNaArvore(tarefaObj.subTarefas || [], caminhoIds);
         await updateDoc(doc(db, colecaoAlvo, tarefaId), { subTarefas: novasSubs });
       } else {
-        // Atualização da tarefa principal
         await updateDoc(doc(db, colecaoAlvo, tarefaId), {
           gruposSelecionados: novosGrupos,
           fonteGrupos: novaFonteStr
@@ -1004,15 +1002,21 @@ function MainApp() {
                   {displayAutorSub}
                 </div>
 
-                {/* Coluna Fonte clicable para alterar grupos da subtarefa */}
+                {/* Coluna Fonte com restrição de permissão */}
                 <div 
-                  onClick={() => setModalEditarGruposFonte({
-                    isOpen: true,
-                    isSub: true,
-                    tarefaId: tarefaRaizObj.id,
-                    caminhoIds: caminhoAtual,
-                    gruposAtuais: sub.gruposSelecionados || { Particular: true, NOC: false, NIIP: false, NMR: false, CGR: false }
-                  })}
+                  onClick={() => {
+                    if (!usuarioTemPermissaoTarefa(tarefaRaizObj)) {
+                      alert("Você não tem permissão para alterar os grupos desta subtarefa.");
+                      return;
+                    }
+                    setModalEditarGruposFonte({
+                      isOpen: true,
+                      isSub: true,
+                      tarefaId: tarefaRaizObj.id,
+                      caminhoIds: caminhoAtual,
+                      gruposAtuais: sub.gruposSelecionados || { Particular: true, NOC: false, NIIP: false, NMR: false, CGR: false }
+                    });
+                  }}
                   title="Clique para alterar os grupos"
                   style={{ color: isConcluida ? '#27ae60' : theme.textMuted, fontSize: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', cursor: 'pointer', textDecoration: 'underline dotted' }}
                 >
@@ -1314,15 +1318,21 @@ function MainApp() {
                           {displayAutorPai}
                         </div>
 
-                        {/* Coluna Fonte clicável para alterar os grupos da tarefa principal */}
+                        {/* Coluna Fonte com restrição de permissão estrita */}
                         <div 
-                          onClick={() => setModalEditarGruposFonte({
-                            isOpen: true,
-                            isSub: false,
-                            tarefaId: t.id,
-                            caminhoIds: null,
-                            gruposAtuais: t.gruposSelecionados || { Particular: true, NOC: false, NIIP: false, NMR: false, CGR: false }
-                          })}
+                          onClick={() => {
+                            if (!usuarioTemPermissaoTarefa(t)) {
+                              alert("Você não tem permissão para alterar os grupos desta tarefa.");
+                              return;
+                            }
+                            setModalEditarGruposFonte({
+                              isOpen: true,
+                              isSub: false,
+                              tarefaId: t.id,
+                              caminhoIds: null,
+                              gruposAtuais: t.gruposSelecionados || { Particular: true, NOC: false, NIIP: false, NMR: false, CGR: false }
+                            });
+                          }}
                           title="Clique para alterar os grupos"
                           style={{ color: isConcluida ? '#27ae60' : theme.textMain, fontSize: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: '600', cursor: 'pointer', textDecoration: 'underline dotted' }}
                         >
