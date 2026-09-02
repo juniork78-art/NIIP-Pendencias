@@ -810,9 +810,11 @@ function MainApp() {
                   ) : <div></div>}
 
                   <div style={{ display: 'flex', gap: '8px' }}>
-                    <button onClick={() => tratarCliqueExcluirOuRestaurarSub(tarefaRaizObj, caminhoAtual, isExcluido)} style={{ background: 'transparent', border: 'none', color: '#eb5757', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}>
-                      {isExcluido ? 'Restaurar' : 'Excluir'}
-                    </button>
+                    {isGestor && (
+                      <button onClick={() => tratarCliqueExcluirOuRestaurarSub(tarefaRaizObj, caminhoAtual, isExcluido)} style={{ background: 'transparent', border: 'none', color: '#eb5757', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}>
+                        {isExcluido ? 'Restaurar' : 'Excluir'}
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -959,7 +961,7 @@ function MainApp() {
         {/* CONTEÚDO DA BIBLIOTECA */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '36px 52px', boxSizing: 'border-box', overflowY: 'auto' }}>
           
-          {/* CABEÇALHO E BOTÃO NOVA PÁGINA (VISÍVEL EM ANDAMENTO, RESOLVIDAS, ARQUIVADOS) */}
+          {/* CABEÇALHO E BOTÃO NOVA PÁGINA */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '16px' }}>
             <h1 style={{ margin: 0, fontSize: '32px', fontWeight: '800', color: theme.textMain, letterSpacing: '-0.5px' }}>
               {paginaAtual === 'arquivados' ? '📁 Arquivados' : paginaAtual === 'lixeira' ? '🗑️ Lixeira' : 'Biblioteca'}
@@ -1107,9 +1109,11 @@ function MainApp() {
                                 {isArquivada ? 'Desarquivar' : 'Arquivar'}
                               </button>
                             )}
-                            <button onClick={() => tratarCliqueExcluirOuRestaurarPai(t)} title="Lixeira" style={{ background: 'transparent', border: 'none', color: '#eb5757', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}>
-                              {isExcluido ? 'Restaurar' : 'Excluir'}
-                            </button>
+                            {isGestor && (
+                              <button onClick={() => tratarCliqueExcluirOuRestaurarPai(t)} title="Lixeira" style={{ background: 'transparent', border: 'none', color: '#eb5757', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}>
+                                {isExcluido ? 'Restaurar' : 'Excluir'}
+                              </button>
+                            )}
                             {isGestor && paginaAtual === 'lixeira' && (
                               <button onClick={() => excluirTarefaDefinitivo(t.id, t._colecao)} title="Excluir Definitivo" style={{ background: 'transparent', border: 'none', color: '#dc2626', cursor: 'pointer', fontSize: '13px', fontWeight: 'bold' }}>Destruir</button>
                             )}
