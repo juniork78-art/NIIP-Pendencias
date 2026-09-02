@@ -636,35 +636,6 @@ function MainApp() {
     } catch (e) {}
   };
 
-  const abrirModalEdicao = (tarefa) => {
-    setTarefaEditando(tarefa);
-    setEditTitulo(tarefa.titulo || '');
-    setEditDescricao(tarefa.descricao || '');
-    setEditPrazo(tarefa.prazo || '');
-    setEditPrioridade(tarefa.prioridade || 'Média');
-  };
-
-  const salvarEdicaoTarefa = async (e) => {
-    e.preventDefault();
-    if (!editTitulo.trim() || !editPrazo) return;
-
-    try {
-      const colecaoAlvo = tarefaEditando._colecao || 'tarefas_gerais';
-      const creator = tarefaEditando.criadoPor || '';
-      const needsEditor = creator && creator.toUpperCase() !== nomeFormatadoGlobal.toUpperCase();
-      const updates = {
-        titulo: editTitulo.trim(),
-        descricao: editDescricao.trim(),
-        prazo: editPrazo,
-        prioridade: editPrioridade
-      };
-      if (needsEditor) updates.editadoPor = nomeFormatadoGlobal;
-
-      await updateDoc(doc(db, colecaoAlvo, tarefaEditando.id), updates);
-      setTarefaEditando(null);
-    } catch (err) {}
-  };
-
   const excluirTarefaDefinitivo = async (id, colecaoAlvo) => {
     if (window.confirm("ATENÇÃO: Deseja excluir DEFINTIVAMENTE este item da lixeira?")) {
       try {
@@ -1136,6 +1107,7 @@ function MainApp() {
                                 gridTemplateColumns: '2.5fr 1.5fr 1.5fr 1fr 1fr', 
                                 padding: '12px 0', 
                                 borderBottom: `1px solid ${theme.border}`, 
+                                alignContent: 'center', 
                                 alignItems: 'center', 
                                 fontSize: '14px', 
                                 color: theme.textMain, 
@@ -1201,21 +1173,6 @@ function MainApp() {
               onChange={(e) => setEditTituloLateral(e.target.value)}
               style={{ fontSize: '28px', fontWeight: '800', color: theme.textMain, background: 'transparent', border: 'none', outline: 'none', width: '100%', marginBottom: '24px' }}
             />
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', borderTop: `1px solid ${theme.border}`, paddingTop: '18px', fontSize: '14px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', color: theme.textMuted, fontWeight: '500' }}>
-                <span>Atribuído a:</span>
-                <strong style={{ color: theme.textMain, fontWeight: '700' }}>{paginaLateral.responsavel}</strong>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', color: theme.textMuted, fontWeight: '500' }}>
-                <span>Prazo:</span>
-                <strong style={{ color: theme.textMain, fontWeight: '700' }}>{formatarDataParaBr(paginaLateral.prazo)}</strong>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', color: theme.textMuted, fontWeight: '500' }}>
-                <span>Prioridade:</span>
-                <strong style={{ color: theme.textMain, fontWeight: '700' }}>{paginaLateral.prioridade}</strong>
-              </div>
-            </div>
 
             <div style={{ marginTop: '28px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <label style={{ fontSize: '13px', color: theme.textMuted, fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Conteúdo / Bloco de Notas</label>
