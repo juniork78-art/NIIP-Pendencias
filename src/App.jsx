@@ -199,17 +199,31 @@ function MainApp() {
   const [editandoId, setEditandoId] = useState(null);
   const [textoEditando, setTextoEditando] = useState('');
 
-  // Estados para Modal de Nova Página Principal
+  // Estados para Modal de Nova Página Principal (Grupos múltiplos)
   const [modalNovaPagina, setModalNovaPagina] = useState(false);
   const [novoTituloModal, setNovoTituloModal] = useState('');
   const [novaPrioridadeModal, setNovaPrioridadeModal] = useState('Baixa');
-  const [novoGrupoModal, setNovoGrupoModal] = useState('Particular');
+  const [novosGruposModal, setNovosGruposModal] = useState({
+    Particular: true,
+    Pública: false,
+    NOC: false,
+    NIIP: false,
+    NMR: false,
+    CGR: false
+  });
 
-  // Estados para Modal de Subtarefa
+  // Estados para Modal de Subtarefa (Grupos múltiplos)
   const [modalNovaSub, setModalNovaSub] = useState({ isOpen: false, tarefaRaizId: null, caminhoIds: null });
   const [subTituloModal, setSubTituloModal] = useState('');
   const [subPrioridadeModal, setSubPrioridadeModal] = useState('Baixa');
-  const [subGrupoModal, setSubGrupoModal] = useState('Particular');
+  const [subGruposModal, setSubGruposModal] = useState({
+    Particular: true,
+    Pública: false,
+    NOC: false,
+    NIIP: false,
+    NMR: false,
+    CGR: false
+  });
 
   // Estado para Exclusão
   const [modalExclusao, setModalExclusao] = useState({ isOpen: false, tipo: null, tarefa: null, caminhoIds: null });
@@ -376,12 +390,14 @@ function MainApp() {
 
   const responsavelFinal = isGestor ? responsavelSelecionadoGestor : nomeForcadoParaUsuario || (TODOS_INTEGRANTES.find(n => nomeFormatadoGlobal.includes(n.toUpperCase())) || TODOS_INTEGRANTES[0]);
 
-  // Função auxiliar para mapear a escolha de grupo à coleção do Firestore correta
-  const obterColecaoPorGrupo = (grupo) => {
-    if (grupo === 'noc') return 'noc_tarefas';
-    if (grupo === 'niip') return 'niip_tarefas';
-    if (grupo === 'nmr') return 'nmr_tarefas';
-    return 'tarefas_gerais'; // Particular, Pública ou CGR vão para gerais
+  // Formata os grupos selecionados em string descritiva
+  const formatarDescricaoGrupos = (objGrupos) => {
+    const selecionados = Object.keys(objGrupos).filter(k => objGrupos[k]);
+    if (selecionados.length === 0) return 'Particular';
+    if (selecionados.length === 1) {
+      return selecionados[0] === 'Particular' ? 'Particular' : `Grupo: ${selecionados[0]}`;
+    }
+    return `Grupos: ${selecionados.join(', ')}`;
   };
 
   const confirmarCriacaoNovaPagina = () => {
@@ -391,11 +407,17 @@ function MainApp() {
     }
     const novaId = Date.now().toString();
     const dataHoje = new Date().toISOString().split('T')[0];
-    const colecaoAlvo = obterColecaoPorGrupo(novoGrupoModal);
+    
+    // Determina a coleção principal (se NOC, NIIP ou NMR estiver selecionado, prioriza, senão geral)
+    let colecaoAlvo = 'tarefas_gerais';
+    if (novosGruposModal.NOC) colecaoAlvo = 'noc_tarefas';
+    else if (novosGruposModal.NIIP) colecaoAlvo = 'niip_tarefas';
+    else if (novosGruposModal.NMR) colecaoAlvo = 'nmr_tarefas';
 
     setDoc(doc(db, colecaoAlvo, novaId), {
       titulo: novoTituloModal.trim(),
-      descricao: novoGrupoModal === 'Particular' ? 'Particular' : `Grupo: ${novoGrupoModal.toUpperCase()}`,
+      descricao: formatarDescricaoGrupos(novosGruposModal),
+      gruposSelecionados: novosGruposModal,
       responsavel: responsavelFinal,
       prazo: dataHoje,
       prioridade: novaPrioridadeModal,
@@ -409,7 +431,7 @@ function MainApp() {
       setModalNovaPagina(false);
       setNovoTituloModal('');
       setNovaPrioridadeModal('Baixa');
-      setNovoGrupoModal('Particular');
+      setNovosGruposModal({ Particular: true, Pública: false, NOC: false, NIIP: false, NMR: false, CGR: false });
     }).catch(e => alert("Erro ao criar página: " + e.message));
   };
 
@@ -426,7 +448,8 @@ function MainApp() {
       id: Date.now().toString() + "_" + Math.random().toString(36).substring(2, 5),
       texto: subTituloModal.trim(),
       prioridade: subPrioridadeModal,
-      descricao: subGrupoModal === 'Particular' ? 'Sub-tarefa' : `Grupo: ${subGrupoModal.toUpperCase()}`,
+      descricao: formatarDescricaoGrupos(subGruposModal),
+      gruposSelecionados: subGruposModal,
       concluida: false,
       arquivada: false,
       excluido: false,
@@ -449,7 +472,7 @@ function MainApp() {
       setModalNovaSub({ isOpen: false, tarefaRaizId: null, caminhoIds: null });
       setSubTituloModal('');
       setSubPrioridadeModal('Baixa');
-      setSubGrupoModal('Particular');
+      setSubGruposModal({ Particular: true, Pública: false, NOC: false, NIIP: false, NMR: false, CGR: false });
     }).catch(e => alert("Erro ao adicionar subtarefa: " + e.message));
   };
 
@@ -1233,10 +1256,10 @@ function MainApp() {
 
         </div>
 
-        {/* MODAL DE CRIAÇÃO DE NOVA PÁGINA PRINCIPAL */}
+        {/* MODAL DE CRIAÇÃO DE NOVA PÁGINA PRINCIPAL (MULTIPLOS GRUPOS) */}
         {modalNovaPagina && (
           <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, padding: '15px', boxSizing: 'border-box' }}>
-            <div style={{ background: theme.cardBg, padding: '28px', borderRadius: '8px', width: '100%', maxWidth: '420px', border: `1px solid ${theme.border}`, boxShadow: '0 10px 30px rgba(0,0,0,0.3)', textAlign: 'left' }}>
+            <div style={{ background: theme.cardBg, padding: '28px', borderRadius: '8px', width: '100%', maxWidth: '420px', border: `1px solid ${theme.border}`, boxShadow: '0 10px 30px rgba(0,0,0,0.3)', textAlign: 'left', maxHeight: '90vh', overflowY: 'auto' }}>
               <h3 style={{ margin: '0 0 16px 0', color: theme.textMain, fontSize: '18px', fontWeight: '700' }}>Criar Nova Página</h3>
               
               <div style={{ marginBottom: '16px' }}>
@@ -1265,19 +1288,26 @@ function MainApp() {
               </div>
 
               <div style={{ marginBottom: '24px' }}>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Visibilidade / Grupo</label>
-                <select 
-                  value={novoGrupoModal} 
-                  onChange={(e) => setNovoGrupoModal(e.target.value)} 
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: `1px solid ${theme.border}`, background: theme.inputBg, color: theme.inputText, boxSizing: 'border-box', fontSize: '14px', fontWeight: '600', outline: 'none' }}
-                >
-                  <option value="Particular">🔒 Particular</option>
-                  <option value="Pública">🌐 Pública</option>
-                  <option value="noc">👥 Grupo do NOC</option>
-                  <option value="niip">👥 Grupo do NIIP</option>
-                  <option value="nmr">👥 Grupo do NMR</option>
-                  <option value="cgr">👥 Todos Grupo do CGR</option>
-                </select>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '8px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Visibilidade / Grupos (Escolha um ou mais)</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: theme.cardInner, padding: '12px', borderRadius: '6px', border: `1px solid ${theme.border}` }}>
+                  {Object.keys(novosGruposModal).map((grupo) => (
+                    <label key={grupo} style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '14px', fontWeight: '500', cursor: 'pointer', color: theme.textMain }}>
+                      <input 
+                        type="checkbox" 
+                        checked={novosGruposModal[grupo]} 
+                        onChange={(e) => setNovosGruposModal({ ...novosGruposModal, [grupo]: e.target.checked })}
+                        style={{ accentColor: '#2383e2', width: '16px', height: '16px', cursor: 'pointer' }}
+                      />
+                      {grupo === 'Particular' && '🔒 '}
+                      {grupo === 'Pública' && '🌐 '}
+                      {grupo === 'NOC' && '👥 Grupo do NOC'}
+                      {grupo === 'NIIP' && '👥 Grupo do NIIP'}
+                      {grupo === 'NMR' && '👥 Grupo do NMR'}
+                      {grupo === 'CGR' && '👥 Todos Grupo do CGR'}
+                      {grupo !== 'NOC' && grupo !== 'NIIP' && grupo !== 'NMR' && grupo !== 'CGR' && grupo}
+                    </label>
+                  ))}
+                </div>
               </div>
 
               <div style={{ display: 'flex', gap: '12px' }}>
@@ -1288,10 +1318,10 @@ function MainApp() {
           </div>
         )}
 
-        {/* MODAL DE CRIAÇÃO DE SUBTAREFA */}
+        {/* MODAL DE CRIAÇÃO DE SUBTAREFA (MULTIPLOS GRUPOS) */}
         {modalNovaSub.isOpen && (
           <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, padding: '15px', boxSizing: 'border-box' }}>
-            <div style={{ background: theme.cardBg, padding: '28px', borderRadius: '8px', width: '100%', maxWidth: '420px', border: `1px solid ${theme.border}`, boxShadow: '0 10px 30px rgba(0,0,0,0.3)', textAlign: 'left' }}>
+            <div style={{ background: theme.cardBg, padding: '28px', borderRadius: '8px', width: '100%', maxWidth: '420px', border: `1px solid ${theme.border}`, boxShadow: '0 10px 30px rgba(0,0,0,0.3)', textAlign: 'left', maxHeight: '90vh', overflowY: 'auto' }}>
               <h3 style={{ margin: '0 0 16px 0', color: theme.textMain, fontSize: '18px', fontWeight: '700' }}>Adicionar Subtarefa</h3>
               
               <div style={{ marginBottom: '16px' }}>
@@ -1320,19 +1350,26 @@ function MainApp() {
               </div>
 
               <div style={{ marginBottom: '24px' }}>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Visibilidade / Grupo</label>
-                <select 
-                  value={subGrupoModal} 
-                  onChange={(e) => setSubGrupoModal(e.target.value)} 
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: `1px solid ${theme.border}`, background: theme.inputBg, color: theme.inputText, boxSizing: 'border-box', fontSize: '14px', fontWeight: '600', outline: 'none' }}
-                >
-                  <option value="Particular">🔒 Particular</option>
-                  <option value="Pública">🌐 Pública</option>
-                  <option value="noc">👥 Grupo do NOC</option>
-                  <option value="niip">👥 Grupo do NIIP</option>
-                  <option value="nmr">👥 Grupo do NMR</option>
-                  <option value="cgr">👥 Todos Grupo do CGR</option>
-                </select>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '8px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Visibilidade / Grupos (Escolha um ou mais)</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: theme.cardInner, padding: '12px', borderRadius: '6px', border: `1px solid ${theme.border}` }}>
+                  {Object.keys(subGruposModal).map((grupo) => (
+                    <label key={grupo} style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '14px', fontWeight: '500', cursor: 'pointer', color: theme.textMain }}>
+                      <input 
+                        type="checkbox" 
+                        checked={subGruposModal[grupo]} 
+                        onChange={(e) => setSubGruposModal({ ...subGruposModal, [grupo]: e.target.checked })}
+                        style={{ accentColor: '#2383e2', width: '16px', height: '16px', cursor: 'pointer' }}
+                      />
+                      {grupo === 'Particular' && '🔒 '}
+                      {grupo === 'Pública' && '🌐 '}
+                      {grupo === 'NOC' && '👥 Grupo do NOC'}
+                      {grupo === 'NIIP' && '👥 Grupo do NIIP'}
+                      {grupo === 'NMR' && '👥 Grupo do NMR'}
+                      {grupo === 'CGR' && '👥 Todos Grupo do CGR'}
+                      {grupo !== 'NOC' && grupo !== 'NIIP' && grupo !== 'NMR' && grupo !== 'CGR' && grupo}
+                    </label>
+                  ))}
+                </div>
               </div>
 
               <div style={{ display: 'flex', gap: '12px' }}>
