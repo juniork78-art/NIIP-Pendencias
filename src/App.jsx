@@ -941,7 +941,7 @@ function MainApp() {
     );
   };
 
-  // Renderização recursiva com linhas de árvore (├─ / └─) e subtarefas permanecendo visíveis ao concluir
+  // Renderização recursiva limpa de subtarefas SEM CHECKBOXES, contendo apenas o botão Concluir
   const renderizarSubTarefasRecursivas = (subLista, tarefaRaizObj, caminhoPai, nivel = 1) => {
     if (!subLista || subLista.length === 0) return null;
 
@@ -960,7 +960,6 @@ function MainApp() {
           const isArquivada = Boolean(sub.arquivada);
           const isExcluido = Boolean(sub.excluido);
 
-          // CORREÇÃO: Removido o filtro que ocultava subtarefas em 'andamento' quando marcadas como concluídas
           if (paginaAtual === 'resolvidas' && !isConcluida) return null;
           if (paginaAtual === 'arquivados' && (isExcluido || !isArquivada)) return null;
           if (paginaAtual === 'lixeira' && !isExcluido) return null;
@@ -1006,9 +1005,6 @@ function MainApp() {
                     {isExpandidoSub ? '▼' : '▶'}
                   </span>
 
-                  {paginaAtual !== 'lixeira' && (
-                    <input type="checkbox" checked={isConcluida} onChange={() => alternarStatusRecursivo(tarefaRaizObj, caminhoAtual)} style={{ accentColor: '#27ae60', cursor: 'pointer', width: '16px', height: '16px' }} />
-                  )}
                   <span>📄</span>
                   <div style={{ display: 'flex', alignItems: 'center', overflow: 'hidden' }}>
                     <span 
