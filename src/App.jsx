@@ -362,7 +362,6 @@ function MainApp() {
     if (isGestor) return true;
     const grupos = tarefaObj.gruposSelecionados;
     
-    // Se não houver restrição específica de grupos ou for particular/pública estrita do próprio autor
     if (!grupos) {
       if (tarefaObj.criadoPor && tarefaObj.criadoPor.toUpperCase() === nomeFormatadoGlobal.toUpperCase()) return true;
       return false;
@@ -381,7 +380,6 @@ function MainApp() {
     if (grupos.NMR && GRUPOS_MEMBROS.nmr.includes(nomeFormatadoGlobal)) permitido = true;
     if (grupos.CGR && GRUPOS_MEMBROS.cgr.includes(nomeFormatadoGlobal)) permitido = true;
 
-    // Se nenhum grupo restritivo foi marcado mas tem outras marcações
     if (!grupos.NOC && !grupos.NIIP && !grupos.NMR && !grupos.CGR && !grupos.Pública && !grupos.Particular) {
       return tarefaObj.criadoPor && tarefaObj.criadoPor.toUpperCase() === nomeFormatadoGlobal.toUpperCase();
     }
@@ -706,8 +704,8 @@ function MainApp() {
   };
 
   const tratarCliqueExcluirOuRestaurarPai = (tarefa) => {
-    if (!usuarioTemPermissaoTarefa(tarefa) && !isGestor) {
-      alert("Você não tem permissão para excluir esta tarefa!");
+    if (!isGestor) {
+      alert("Apenas o gestor pode excluir tarefas.");
       return;
     }
     if (tarefa.excluido) {
@@ -718,8 +716,8 @@ function MainApp() {
   };
 
   const tratarCliqueExcluirOuRestaurarSub = (tarefaRaiz, caminhoIds, isSubExcluido) => {
-    if (!usuarioTemPermissaoTarefa(tarefaRaiz) && !isGestor) {
-      alert("Você não tem permissão para excluir esta subtarefa!");
+    if (!isGestor) {
+      alert("Apenas o gestor pode excluir subtarefas.");
       return;
     }
     if (isSubExcluido) {
@@ -800,6 +798,7 @@ function MainApp() {
   };
 
   const excluirTarefaDefinitivo = async (id, colecaoAlvo) => {
+    if (!isGestor) return;
     if (window.confirm("ATENÇÃO: Deseja excluir DEFINTIVAMENTE este item da lixeira?")) {
       try {
         await deleteDoc(doc(db, colecaoAlvo || 'tarefas_gerais', id));
@@ -832,7 +831,7 @@ function MainApp() {
         const needsEditor = creator && creator.toUpperCase() !== nomeFormatadoGlobal.toUpperCase();
         const updates = {
           titulo: editTituloLateral.trim(),
-          descricao: editDescricaoLateral.trim() // Salva apenas no bloco de notas sem alterar os grupos da fonte
+          descricao: editDescricaoLateral.trim() // Atualiza notas sem tocar nos grupos
         };
         if (needsEditor) updates.editadoPor = nomeFormatadoGlobal;
 
@@ -956,7 +955,7 @@ function MainApp() {
                   ) : <div></div>}
 
                   <div style={{ display: 'flex', gap: '8px' }}>
-                    {(isGestor || usuarioTemPermissaoTarefa(tarefaRaizObj)) && (
+                    {isGestor && (
                       <button onClick={() => tratarCliqueExcluirOuRestaurarSub(tarefaRaizObj, caminhoAtual, isExcluido)} style={{ background: 'transparent', border: 'none', color: '#eb5757', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}>
                         {isExcluido ? 'Restaurar' : 'Excluir'}
                       </button>
@@ -971,7 +970,13 @@ function MainApp() {
                   
                   {paginaAtual === 'andamento' && !isExcluido && (
                     <div 
-                      onClick={() => setModalNovaSub({ isOpen: true, tarefaRaizId: tarefaRaizObj.id, caminhoIds: caminhoAtual })}
+                      onClick={() => {
+                        if (!usuarioTemPermissaoTarefa(tarefaRaizObj)) {
+                          alert("Você não tem permissão para adicionar subtarefas nesta página.");
+                          return;
+                        }
+                        setModalNovaSub({ isOpen: true, tarefaRaizId: tarefaRaizObj.id, caminhoIds: caminhoAtual });
+                      }}
                       style={{ 
                         display: 'grid', 
                         gridTemplateColumns: '2.5fr 1.5fr 1.5fr 1fr 1fr', 
@@ -1254,7 +1259,7 @@ function MainApp() {
                                 {isArquivada ? 'Desarquivar' : 'Arquivar'}
                               </button>
                             )}
-                            {(isGestor || usuarioTemPermissaoTarefa(t)) && (
+                            {isGestor && (
                               <button onClick={() => tratarCliqueExcluirOuRestaurarPai(t)} title="Lixeira" style={{ background: 'transparent', border: 'none', color: '#eb5757', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}>
                                 {isExcluido ? 'Restaurar' : 'Excluir'}
                               </button>
