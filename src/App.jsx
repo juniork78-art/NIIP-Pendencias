@@ -921,7 +921,7 @@ function MainApp() {
     inputBg: darkMode ? '#242424' : '#ffffff',
     inputText: darkMode ? '#f4f4f0' : '#1a1a18',
     primary: '#2eaadc',
-    treeLine: darkMode ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)'
+    treeLine: darkMode ? 'rgba(255, 255, 255, 0.18)' : 'rgba(0, 0, 0, 0.18)'
   };
 
   const renderizarPrioridadeBadge = (prio) => {
@@ -941,21 +941,21 @@ function MainApp() {
     );
   };
 
+  // Renderização recursiva limpa com linhas conectoras verticais e símbolos de árvore (├─ / └─)
   const renderizarSubTarefasRecursivas = (subLista, tarefaRaizObj, caminhoPai, nivel = 1) => {
     if (!subLista || subLista.length === 0) return null;
-
-    // Cálculo exato de alinhamento com linha guia vertical estilo Notion
-    const basePadding = 18;
-    const stepPadding = 26;
-    const currentPaddingLeft = basePadding + (nivel * stepPadding);
 
     return (
       <div style={{ display: 'flex', flexDirection: 'column', width: '100%', position: 'relative' }}>
         {subLista.map((sub, index) => {
           const caminhoAtual = [...caminhoPai, sub.id];
-          const temFilhos = sub.subTarefas && sub.subTarefas.length > 0;
           const isExpandidoSub = verificarExpandido(sub.id);
-          
+          const isUltimo = index === subLista.length - 1;
+
+          const baseIndent = 24;
+          const stepIndent = 28;
+          const currentIndent = baseIndent + ((nivel - 1) * stepIndent);
+
           const isConcluida = Boolean(sub.concluida);
           const isArquivada = Boolean(sub.arquivada);
           const isExcluido = Boolean(sub.excluido);
@@ -986,21 +986,27 @@ function MainApp() {
                 onMouseEnter={(e) => { if (!isConcluida) e.currentTarget.style.background = theme.cardInner; }} 
                 onMouseLeave={(e) => { if (!isConcluida) e.currentTarget.style.background = 'transparent'; }}
               >
-                {/* Linha guia vertical conectora de hierarquia */}
+                {/* Linha guia vertical para alinhar perfeitamente na mesma coluna */}
                 <div style={{
                   position: 'absolute',
                   top: 0,
-                  bottom: 0,
-                  left: `${currentPaddingLeft - 8}px`,
+                  bottom: isUltimo ? '50%' : 0,
+                  left: `${currentIndent}px`,
                   width: '1px',
                   backgroundColor: theme.treeLine,
                   pointerEvents: 'none'
                 }} />
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden', paddingLeft: `${currentPaddingLeft}px`, paddingRight: '10px', position: 'relative' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden', paddingLeft: `${currentIndent - 4}px`, paddingRight: '10px', position: 'relative' }}>
+                  {/* Conector horizontal ramificado estilo árvore (├─ ou └─) */}
+                  <span style={{ fontFamily: 'monospace', color: theme.textMuted, fontSize: '13px', userSelect: 'none', fontWeight: 'bold' }}>
+                    {isUltimo ? '└─' : '├─'}
+                  </span>
+
                   <span onClick={() => alternarExpandido(sub.id)} style={{ cursor: 'pointer', fontSize: '11px', color: theme.textMain, userSelect: 'none', padding: '2px', width: '12px', textAlign: 'center', fontWeight: 'bold' }}>
                     {isExpandidoSub ? '▼' : '▶'}
                   </span>
+
                   {paginaAtual !== 'lixeira' && (
                     <input type="checkbox" checked={isConcluida} onChange={() => alternarStatusRecursivo(tarefaRaizObj, caminhoAtual)} style={{ accentColor: '#27ae60', cursor: 'pointer', width: '16px', height: '16px' }} />
                   )}
@@ -1094,17 +1100,18 @@ function MainApp() {
                       onMouseEnter={(e) => e.currentTarget.style.background = theme.cardInner}
                       onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                     >
-                      {/* Linha guia vertical contínua no botão Adicionar Nova */}
+                      {/* Linha vertical conectora no botão Adicionar nova */}
                       <div style={{
                         position: 'absolute',
                         top: 0,
                         bottom: 0,
-                        left: `${currentPaddingLeft + 16}px`,
+                        left: `${currentIndent + stepIndent}px`,
                         width: '1px',
                         backgroundColor: theme.treeLine,
                         pointerEvents: 'none'
                       }} />
-                      <div style={{ paddingLeft: `${currentPaddingLeft + 24}px`, display: 'flex', alignItems: 'center', gap: '8px', position: 'relative' }}>
+                      <div style={{ paddingLeft: `${currentIndent + stepIndent - 4}px`, display: 'flex', alignItems: 'center', gap: '6px', position: 'relative' }}>
+                        <span style={{ fontFamily: 'monospace', color: theme.textMuted, fontSize: '13px', fontWeight: 'bold' }}>└─</span>
                         <span>+</span> <span>Adicionar nova</span>
                       </div>
                       <div></div><div></div><div></div><div></div>
@@ -1440,12 +1447,13 @@ function MainApp() {
                                 position: 'absolute',
                                 top: 0,
                                 bottom: 0,
-                                left: '10px',
+                                left: '24px',
                                 width: '1px',
                                 backgroundColor: theme.treeLine,
                                 pointerEvents: 'none'
                               }} />
-                              <div style={{ paddingLeft: '18px', display: 'flex', alignItems: 'center', gap: '8px', position: 'relative' }}>
+                              <div style={{ paddingLeft: '32px', display: 'flex', alignItems: 'center', gap: '6px', position: 'relative' }}>
+                                <span style={{ fontFamily: 'monospace', color: theme.textMuted, fontSize: '13px', fontWeight: 'bold' }}>└─</span>
                                 <span>+</span> <span>Adicionar nova</span>
                               </div>
                               <div></div><div></div><div></div><div></div>
