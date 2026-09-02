@@ -1339,7 +1339,7 @@ function TelaLogin({ onLoginSucesso, darkMode, setDarkMode, theme }) {
         </div>
 
         <div style={{ marginBottom: '20px' }}>
-          <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px')), fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Senha</label>
+          <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Senha</label>
           <input type="password" value={senha} onChange={(e) => setSenha(e.target.value)} required style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: `1px solid ${theme.border}`, background: theme.inputBg, color: theme.inputText, boxSizing: 'border-box', fontSize: '14px', fontWeight: '500' }} />
         </div>
 
