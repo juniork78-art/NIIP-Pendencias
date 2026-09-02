@@ -174,6 +174,7 @@ function MainApp() {
   const [usuarioLogado, setUsuarioLogado] = useState(null);
   const [loadingAuth, setLoadingAuth] = useState(true);
   const [paginaAtual, setPaginaAtual] = useState('andamento'); 
+  const [filtroRecenteId, setFiltroRecenteId] = useState(null); // Estado para focar em uma única tarefa recente
   
   const [darkMode, setDarkMode] = useState(() => {
     try {
@@ -327,6 +328,7 @@ function MainApp() {
 
   const mudarPagina = (novaPagina) => {
     setPaginaLateral(null);
+    setFiltroRecenteId(null); // Limpa o filtro individual ao mudar de aba principal
     setPaginaAtual(novaPagina);
     window.history.pushState({ view: novaPagina }, '');
   };
@@ -1006,7 +1008,7 @@ function MainApp() {
     );
   };
 
-  // Renderização recursiva com cores por nível hierárquico (Pai: preto/branco em negrito, Filhas (nivel 1): azul, Netas (nivel >= 2): verde)
+  // Renderização recursiva com cores por nível hierárquico
   const renderizarSubTarefasRecursivas = (subLista, tarefaRaizObj, caminhoPai, nivel = 1) => {
     if (!subLista || subLista.length === 0) return null;
 
@@ -1226,6 +1228,9 @@ function MainApp() {
     if (paginaAtual === 'resolvidas' && (!isConcluida || isArquivada || isExcluido)) return false;
     if (paginaAtual === 'andamento' && (isConcluida || isArquivada || isExcluido)) return false;
 
+    // Filtro para focar exatamente na tarefa recente selecionada na barra lateral
+    if (filtroRecenteId && t.id !== filtroRecenteId) return false;
+
     if (filtroResponsavel !== 'todos' && t.responsavel !== filtroResponsavel) return false;
 
     if (filtroPalavraChave.trim() !== '') {
@@ -1286,10 +1291,11 @@ function MainApp() {
             <div 
               key={t.id} 
               onClick={() => {
-                setPaginaAtual('andamento'); // CORREÇÃO: Abre a tela principal (Recentes) ao clicar na página recente
+                setPaginaAtual('andamento');
+                setFiltroRecenteId(t.id); // Foca apenas nesta página na tela principal
                 abrirPainelLateral(t);
               }}
-              style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 10px', borderRadius: '6px', cursor: 'pointer', background: paginaLateral?.id === t.id ? theme.cardInner : 'transparent', color: paginaLateral?.id === t.id ? theme.textMain : theme.textMuted, fontWeight: '500' }}
+              style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 10px', borderRadius: '6px', cursor: 'pointer', background: paginaLateral?.id === t.id || filtroRecenteId === t.id ? theme.cardInner : 'transparent', color: paginaLateral?.id === t.id || filtroRecenteId === t.id ? theme.textMain : theme.textMuted, fontWeight: '500' }}
             >
               <span>📄</span> <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.titulo}</span>
             </div>
@@ -1316,6 +1322,14 @@ function MainApp() {
             </h1>
 
             <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
+              {filtroRecenteId && (
+                <button 
+                  onClick={() => setFiltroRecenteId(null)}
+                  style={{ background: theme.cardInner, border: `1px solid ${theme.border}`, color: theme.textMain, padding: '8px 14px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}
+                >
+                  ✕ Ver Todas
+                </button>
+              )}
               <button onClick={alternarTema} style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, color: theme.textMain, padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
                 {darkMode ? '☀️ Claro' : '🌙 Escuro'}
               </button>
