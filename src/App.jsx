@@ -128,6 +128,13 @@ const tempoDecorrido = (timestamp) => {
   return `Há ${diffAnos} ano${diffAnos > 1 ? 's' : ''}`;
 };
 
+const GRUPOS_MEMBROS = {
+  noc: ["ESTEVAN", "GILVAN", "GUSTAVO", "JOÃO", "LUCAS", "KESSY", "TOLENTINO"],
+  niip: ["FRANCISCO", "GABRIEL", "WALGNEY"],
+  nmr: ["DHENNIFER"],
+  cgr: ["ESTEVAN", "GILVAN", "GUSTAVO", "JOÃO", "LUCAS", "KESSY", "TOLENTINO", "FRANCISCO", "GABRIEL", "WALGNEY", "DHENNIFER"]
+};
+
 const TODOS_INTEGRANTES = ["Dhennifer", "Duandys", "Francisco", "Gabriel", "Gilvan", "Gustavo", "João", "Kessy", "Lucas", "Stevan", "Tolentino", "Walgney"];
 
 class ErrorBoundary extends React.Component {
@@ -291,6 +298,7 @@ function MainApp() {
       excluido: Boolean(sub.excluido),
       criadoPor: sub.criadoPor || tarefaPai.criadoPor,
       editadoPor: sub.editadoPor,
+      gruposSelecionados: sub.gruposSelecionados,
       _colecao: tarefaPai._colecao
     };
     setPaginaLateral(subObj);
@@ -349,6 +357,38 @@ function MainApp() {
     nomeForcadoParaUsuario = 'João';
   }
 
+  // Validação de Permissão por Grupo com base na coluna Fonte / Grupos Selecionados
+  const usuarioTemPermissaoTarefa = (tarefaObj) => {
+    if (isGestor) return true;
+    const grupos = tarefaObj.gruposSelecionados;
+    
+    // Se não houver restrição específica de grupos ou for particular/pública estrita do próprio autor
+    if (!grupos) {
+      if (tarefaObj.criadoPor && tarefaObj.criadoPor.toUpperCase() === nomeFormatadoGlobal.toUpperCase()) return true;
+      return false;
+    }
+
+    if (grupos.Particular) {
+      return tarefaObj.criadoPor && tarefaObj.criadoPor.toUpperCase() === nomeFormatadoGlobal.toUpperCase();
+    }
+    if (grupos.Pública) {
+      return true;
+    }
+
+    let permitido = false;
+    if (grupos.NOC && GRUPOS_MEMBROS.noc.includes(nomeFormatadoGlobal)) permitido = true;
+    if (grupos.NIIP && GRUPOS_MEMBROS.niip.includes(nomeFormatadoGlobal)) permitido = true;
+    if (grupos.NMR && GRUPOS_MEMBROS.nmr.includes(nomeFormatadoGlobal)) permitido = true;
+    if (grupos.CGR && GRUPOS_MEMBROS.cgr.includes(nomeFormatadoGlobal)) permitido = true;
+
+    // Se nenhum grupo restritivo foi marcado mas tem outras marcações
+    if (!grupos.NOC && !grupos.NIIP && !grupos.NMR && !grupos.CGR && !grupos.Pública && !grupos.Particular) {
+      return tarefaObj.criadoPor && tarefaObj.criadoPor.toUpperCase() === nomeFormatadoGlobal.toUpperCase();
+    }
+
+    return permitido;
+  };
+
   useEffect(() => {
     if (usuarioLogado && db) {
       try {
@@ -390,7 +430,6 @@ function MainApp() {
 
   const responsavelFinal = isGestor ? responsavelSelecionadoGestor : nomeForcadoParaUsuario || (TODOS_INTEGRANTES.find(n => nomeFormatadoGlobal.includes(n.toUpperCase())) || TODOS_INTEGRANTES[0]);
 
-  // Formata os grupos selecionados em string descritiva
   const formatarDescricaoGrupos = (objGrupos) => {
     const selecionados = Object.keys(objGrupos).filter(k => objGrupos[k]);
     if (selecionados.length === 0) return 'Particular';
@@ -408,7 +447,6 @@ function MainApp() {
     const novaId = Date.now().toString();
     const dataHoje = new Date().toISOString().split('T')[0];
     
-    // Determina a coleção principal (se NOC, NIIP ou NMR estiver selecionado, prioriza, senão geral)
     let colecaoAlvo = 'tarefas_gerais';
     if (novosGruposModal.NOC) colecaoAlvo = 'noc_tarefas';
     else if (novosGruposModal.NIIP) colecaoAlvo = 'niip_tarefas';
@@ -443,6 +481,11 @@ function MainApp() {
     const { tarefaRaizId, caminhoIds } = modalNovaSub;
     const tarefaRaiz = tarefas.find(t => t.id === tarefaRaizId);
     if (!tarefaRaiz) return;
+
+    if (!usuarioTemPermissaoTarefa(tarefaRaiz)) {
+      alert("Você não tem permissão para adicionar subtarefas nesta página.");
+      return;
+    }
 
     const novaSub = {
       id: Date.now().toString() + "_" + Math.random().toString(36).substring(2, 5),
@@ -565,7 +608,7 @@ function MainApp() {
     });
   };
 
-  const updateTextNodeInTree = (lista, ids, newText, newDesc, editorName) => {
+  const updateTextNodeInTree = (lista, ids, newText, editorName) => {
     if (!ids || ids.length === 0) return lista;
     return (lista || []).map(item => {
       if (item.id === ids[0]) {
@@ -575,13 +618,12 @@ function MainApp() {
           return { 
             ...item, 
             texto: newText, 
-            ...(newDesc !== undefined && { descricao: newDesc }),
             ...(needsEditor && { editadoPor: editorName })
           };
         } else {
           return {
             ...item,
-            subTarefas: updateTextNodeInTree(item.subTarefas || [], ids.slice(1), newText, newDesc, editorName)
+            subTarefas: updateTextNodeInTree(item.subTarefas || [], ids.slice(1), newText, editorName)
           };
         }
       }
@@ -600,11 +642,6 @@ function MainApp() {
     return true;
   };
 
-  const tarefaPertenceAoUsuario = (criadoPor) => {
-    if (!criadoPor) return true;
-    return criadoPor.toUpperCase() === nomeFormatadoGlobal.toUpperCase();
-  };
-
   const encontrarSubNaArvore = (subLista, caminhoIds) => {
     if (!subLista || caminhoIds.length === 0) return null;
     const atual = subLista.find(s => s.id === caminhoIds[0]);
@@ -614,9 +651,8 @@ function MainApp() {
   };
 
   const alternarStatusTarefaPai = async (tarefa) => {
-    const creator = tarefa.criadoPor || '';
-    if (!tarefaPertenceAoUsuario(creator) && !isGestor) {
-      alert("Você não pode concluir esta tarefa pois ela não pertence a você!");
+    if (!usuarioTemPermissaoTarefa(tarefa)) {
+      alert("Você não tem permissão para alterar o status desta tarefa pois não pertence ao grupo responsável!");
       return;
     }
 
@@ -636,11 +672,8 @@ function MainApp() {
   };
 
   const alternarStatusRecursivo = async (tarefaRaiz, caminhoIds) => {
-    const subAlvo = encontrarSubNaArvore(tarefaRaiz.subTarefas, caminhoIds);
-    const creator = subAlvo ? (subAlvo.criadoPor || tarefaRaiz.criadoPor) : tarefaRaiz.criadoPor;
-
-    if (!tarefaPertenceAoUsuario(creator) && !isGestor) {
-      alert("Você não pode concluir esta subtarefa pois ela não pertence a você!");
+    if (!usuarioTemPermissaoTarefa(tarefaRaiz)) {
+      alert("Você não tem permissão para alterar subtarefas nesta tarefa!");
       return;
     }
 
@@ -655,6 +688,10 @@ function MainApp() {
   };
 
   const arquivarTarefaPai = async (tarefa) => {
+    if (!usuarioTemPermissaoTarefa(tarefa)) {
+      alert("Você não tem permissão para arquivar esta tarefa!");
+      return;
+    }
     if (!window.confirm("Deseja realmente alterar o status de arquivamento desta página?")) return;
     try {
       const novaArquivada = !Boolean(tarefa.arquivada);
@@ -669,6 +706,10 @@ function MainApp() {
   };
 
   const tratarCliqueExcluirOuRestaurarPai = (tarefa) => {
+    if (!usuarioTemPermissaoTarefa(tarefa) && !isGestor) {
+      alert("Você não tem permissão para excluir esta tarefa!");
+      return;
+    }
     if (tarefa.excluido) {
       executarRestaurarDiretoPai(tarefa);
     } else {
@@ -677,6 +718,10 @@ function MainApp() {
   };
 
   const tratarCliqueExcluirOuRestaurarSub = (tarefaRaiz, caminhoIds, isSubExcluido) => {
+    if (!usuarioTemPermissaoTarefa(tarefaRaiz) && !isGestor) {
+      alert("Você não tem permissão para excluir esta subtarefa!");
+      return;
+    }
     if (isSubExcluido) {
       executarRestaurarDiretoSub(tarefaRaiz, caminhoIds);
     } else {
@@ -738,6 +783,10 @@ function MainApp() {
   };
 
   const salvarEdicaoInlineTarefa = async (tarefaId, colecaoAlvo, novoTitulo, tarefaObj) => {
+    if (!usuarioTemPermissaoTarefa(tarefaObj)) {
+      alert("Você não tem permissão para editar esta tarefa!");
+      return;
+    }
     if (!novoTitulo.trim()) return;
     try {
       const creator = tarefaObj.criadoPor || '';
@@ -759,26 +808,31 @@ function MainApp() {
     }
   };
 
+  // Bloco de notas atualiza apenas a descrição/conteúdo sem alterar os grupos atribuídos
   const salvarAlteracoesPaginaLateral = async () => {
     if (!paginaLateral) return;
+    if (!usuarioTemPermissaoTarefa(paginaLateral) && !isGestor) {
+      alert("Você não tem permissão para editar o conteúdo desta tarefa!");
+      return;
+    }
     try {
       const colecaoAlvo = paginaLateral._colecao || 'tarefas_gerais';
       if (paginaLateral.isSub) {
         const tarefaRaiz = tarefas.find(t => t.id === paginaLateral.raizId);
         if (!tarefaRaiz) return;
 
-        const novaSubTarefas = updateTextNodeInTree(tarefaRaiz.subTarefas || [], paginaLateral.caminhoIds, editTituloLateral.trim(), editDescricaoLateral.trim(), nomeFormatadoGlobal);
+        const novaSubTarefas = updateTextNodeInTree(tarefaRaiz.subTarefas || [], paginaLateral.caminhoIds, editTituloLateral.trim(), nomeFormatadoGlobal);
         await updateDoc(doc(db, colecaoAlvo, paginaLateral.raizId), {
           subTarefas: novaSubTarefas
         });
-        setPaginaLateral(prev => ({ ...prev, titulo: editTituloLateral.trim(), descricao: editDescricaoLateral.trim() }));
+        setPaginaLateral(prev => ({ ...prev, titulo: editTituloLateral.trim() }));
       } else {
         if (!editTituloLateral.trim()) return;
         const creator = paginaLateral.criadoPor || '';
         const needsEditor = creator && creator.toUpperCase() !== nomeFormatadoGlobal.toUpperCase();
         const updates = {
           titulo: editTituloLateral.trim(),
-          descricao: editDescricaoLateral.trim()
+          descricao: editDescricaoLateral.trim() // Salva apenas no bloco de notas sem alterar os grupos da fonte
         };
         if (needsEditor) updates.editadoPor = nomeFormatadoGlobal;
 
@@ -902,7 +956,7 @@ function MainApp() {
                   ) : <div></div>}
 
                   <div style={{ display: 'flex', gap: '8px' }}>
-                    {isGestor && (
+                    {(isGestor || usuarioTemPermissaoTarefa(tarefaRaizObj)) && (
                       <button onClick={() => tratarCliqueExcluirOuRestaurarSub(tarefaRaizObj, caminhoAtual, isExcluido)} style={{ background: 'transparent', border: 'none', color: '#eb5757', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}>
                         {isExcluido ? 'Restaurar' : 'Excluir'}
                       </button>
@@ -1200,7 +1254,7 @@ function MainApp() {
                                 {isArquivada ? 'Desarquivar' : 'Arquivar'}
                               </button>
                             )}
-                            {isGestor && (
+                            {(isGestor || usuarioTemPermissaoTarefa(t)) && (
                               <button onClick={() => tratarCliqueExcluirOuRestaurarPai(t)} title="Lixeira" style={{ background: 'transparent', border: 'none', color: '#eb5757', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}>
                                 {isExcluido ? 'Restaurar' : 'Excluir'}
                               </button>
@@ -1219,7 +1273,13 @@ function MainApp() {
                           {renderizarSubTarefasRecursivas(subTarefas, t, [], 1)}
                           {paginaAtual === 'andamento' && !isExcluido && (
                             <div 
-                              onClick={() => setModalNovaSub({ isOpen: true, tarefaRaizId: t.id, caminhoIds: [] })}
+                              onClick={() => {
+                                if (!usuarioTemPermissaoTarefa(t)) {
+                                  alert("Você não tem permissão para adicionar subtarefas nesta página.");
+                                  return;
+                                }
+                                setModalNovaSub({ isOpen: true, tarefaRaizId: t.id, caminhoIds: [] });
+                              }}
                               style={{ 
                                 display: 'grid', 
                                 gridTemplateColumns: '2.5fr 1.5fr 1.5fr 1fr 1fr', 
