@@ -441,6 +441,70 @@ function MainApp() {
     return `Grupos: ${selecionados.join(', ')}`;
   };
 
+  const proximaPrioridade = (atual) => {
+    if (atual === 'Baixa') return 'Média';
+    if (atual === 'Média') return 'Alta';
+    return 'Baixa';
+  };
+
+  const alterarPrioridadePai = async (tarefa) => {
+    if (!usuarioTemPermissaoTarefa(tarefa)) {
+      alert("Você não tem permissão para alterar a prioridade desta tarefa!");
+      return;
+    }
+    const novaPrio = proximaPrioridade(tarefa.prioridade || 'Baixa');
+    const colecaoAlvo = tarefa._colecao || 'tarefas_gerais';
+    try {
+      await updateDoc(doc(db, colecaoAlvo, tarefa.id), {
+        prioridade: novaPrio
+      });
+    } catch (e) {
+      alert("Erro ao alterar prioridade: " + e.message);
+    }
+  };
+
+  const alterarPrioridadeSub = async (tarefaRaiz, caminhoIds) => {
+    if (!usuarioTemPermissaoTarefa(tarefaRaiz)) {
+      alert("Você não tem permissão para alterar a prioridade desta subtarefa!");
+      return;
+    }
+
+    const encontrarSubNaArvore = (subLista, ids) => {
+      if (!subLista || ids.length === 0) return null;
+      const atual = subLista.find(s => s.id === ids[0]);
+      if (!atual) return null;
+      if (ids.length === 1) return atual;
+      return encontrarSubNaArvore(atual.subTarefas, ids.slice(1));
+    };
+
+    const subAlvo = encontrarSubNaArvore(tarefaRaiz.subTarefas, caminhoIds);
+    if (!subAlvo) return;
+    const novaPrio = proximaPrioridade(subAlvo.prioridade || 'Baixa');
+
+    const atualizarPrioridadeSubNaArvore = (lista, ids) => {
+      return (lista || []).map(item => {
+        if (item.id === ids[0]) {
+          if (ids.length === 1) {
+            return { ...item, prioridade: novaPrio };
+          } else {
+            return { ...item, subTarefas: atualizarPrioridadeSubNaArvore(item.subTarefas || [], ids.slice(1)) };
+          }
+        }
+        return item;
+      });
+    };
+
+    const novasSubs = atualizarPrioridadeSubNaArvore(tarefaRaiz.subTarefas || [], caminhoIds);
+    const colecaoAlvo = tarefaRaiz._colecao || 'tarefas_gerais';
+    try {
+      await updateDoc(doc(db, colecaoAlvo, tarefaRaiz.id), {
+        subTarefas: novasSubs
+      });
+    } catch (e) {
+      alert("Erro ao alterar prioridade da subtarefa: " + e.message);
+    }
+  };
+
   const confirmarCriacaoNovaPagina = () => {
     if (!novoTituloModal.trim()) {
       alert("Digite um título para a página.");
@@ -924,7 +988,7 @@ function MainApp() {
     treeLine: darkMode ? 'rgba(255, 255, 255, 0.18)' : 'rgba(0, 0, 0, 0.18)'
   };
 
-  const renderizarPrioridadeBadge = (prio) => {
+  const renderizarPrioridadeBadge = (prio, onClickFn) => {
     let cor = '#27ae60'; 
     let texto = 'Baixa';
     if (prio === 'Média') {
@@ -935,13 +999,32 @@ function MainApp() {
       texto = 'Alta';
     }
     return (
-      <span style={{ color: cor, fontWeight: '700', fontSize: '13px', marginLeft: '10px', background: `${cor}15`, padding: '2px 8px', borderRadius: '4px', border: `1px solid ${cor}40` }}>
+      <span 
+        onClick={onClickFn}
+        title="Clique para alterar a prioridade"
+        style={{ 
+          color: cor, 
+          fontWeight: '700', 
+          fontSize: '13px', 
+          marginLeft: '10px', 
+          background: `${cor}15`, 
+          padding: '2px 8px', 
+          borderRadius: '4px', 
+          border: `1px solid ${cor}40`,
+          cursor: 'pointer',
+          userSelect: 'none',
+          display: 'inline-block',
+          transition: 'opacity 0.1s'
+        }}
+        onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
+        onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+      >
         {texto}
       </span>
     );
   };
 
-  // Renderização recursiva limpa de subtarefas SEM CHECKBOXES, contendo apenas o botão Concluir
+  // Renderização recursiva limpa de subtarefas com linhas de árvore e prioridade clicável
   const renderizarSubTarefasRecursivas = (subLista, tarefaRaizObj, caminhoPai, nivel = 1) => {
     if (!subLista || subLista.length === 0) return null;
 
@@ -1013,7 +1096,7 @@ function MainApp() {
                     >
                       {sub.texto}
                     </span>
-                    {sub.prioridade && renderizarPrioridadeBadge(sub.prioridade)}
+                    {renderizarPrioridadeBadge(sub.prioridade || 'Baixa', () => alterarPrioridadeSub(tarefaRaizObj, caminhoAtual))}
                   </div>
                 </div>
 
@@ -1343,7 +1426,7 @@ function MainApp() {
                               >
                                 {t.titulo}
                               </span>
-                              {renderizarPrioridadeBadge(t.prioridade)}
+                              {renderizarPrioridadeBadge(t.prioridade || 'Baixa', () => alterarPrioridadePai(t))}
                             </div>
                           )}
                         </div>
