@@ -496,7 +496,7 @@ function MainApp() {
       prioridade: subPrioridadeModal,
       fonteGrupos: formatarFonteGrupos(subGruposModal),
       blocoNotas: '',
-      criadoEm: Date.now(), // timestamp próprio da subtarefa para mostrar o tempo correto
+      criadoEm: Date.now(),
       gruposSelecionados: subGruposModal,
       concluida: false,
       arquivada: false,
@@ -941,6 +941,7 @@ function MainApp() {
     );
   };
 
+  // Organização limpa de colunas de hierarquia para subtarefas
   const renderizarSubTarefasRecursivas = (subLista, tarefaRaizObj, caminhoPai, nivel = 1) => {
     if (!subLista || subLista.length === 0) return null;
 
@@ -950,7 +951,10 @@ function MainApp() {
           const caminhoAtual = [...caminhoPai, sub.id];
           const temFilhos = sub.subTarefas && sub.subTarefas.length > 0;
           const isExpandidoSub = verificarExpandido(sub.id);
-          const paddingLeftPx = nivel * 24 + 16;
+          
+          // Ajuste preciso do padding para manter perfeitamente alinhado na coluna de hierarquia
+          const paddingLeftPx = nivel * 28 + 12; 
+
           const isConcluida = Boolean(sub.concluida);
           const isArquivada = Boolean(sub.arquivada);
           const isExcluido = Boolean(sub.excluido);
@@ -1023,7 +1027,6 @@ function MainApp() {
                   🔒 {sub.fonteGrupos || 'Sub-tarefa'}
                 </div>
 
-                {/* Usa o criadoEm individual da subtarefa se houver, senão o da raiz */}
                 <div style={{ color: isConcluida ? '#27ae60' : theme.textMuted, fontSize: '14px' }}>
                   {tempoDecorrido(sub.criadoEm || tarefaRaizObj.criadoEm)}
                 </div>
