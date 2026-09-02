@@ -1033,7 +1033,6 @@ function MainApp() {
           const editorSub = sub.editadoPor;
           const displayAutorSub = editorSub && editorSub.toUpperCase() !== autorSub.toUpperCase() ? `${autorSub} (Editado por: ${editorSub})` : autorSub;
 
-          // Cores por nível: Nível 1 = Azul, Nível 2+ = Verde
           const corTextoSub = isConcluida ? '#27ae60' : (nivel === 1 ? '#2383e2' : '#27ae60');
 
           return (
@@ -1286,7 +1285,10 @@ function MainApp() {
           {tarefas.filter(t => !t.arquivada && !t.excluido).map(t => (
             <div 
               key={t.id} 
-              onClick={() => abrirPainelLateral(t)}
+              onClick={() => {
+                setPaginaAtual('andamento'); // CORREÇÃO: Abre a tela principal (Recentes) ao clicar na página recente
+                abrirPainelLateral(t);
+              }}
               style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 10px', borderRadius: '6px', cursor: 'pointer', background: paginaLateral?.id === t.id ? theme.cardInner : 'transparent', color: paginaLateral?.id === t.id ? theme.textMain : theme.textMuted, fontWeight: '500' }}
             >
               <span>📄</span> <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.titulo}</span>
