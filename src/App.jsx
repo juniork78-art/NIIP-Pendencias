@@ -535,7 +535,28 @@ function MainApp() {
     }).catch(e => alert("Erro ao adicionar subtarefa: " + e.message));
   };
 
+  // Validação: Verificar se a tarefa/subtarefa pertence ao usuário logado
+  const tarefaPertenceAoUsuario = (criadoPor) => {
+    if (!criadoPor) return true;
+    return criadoPor.toUpperCase() === nomeFormatadoGlobal.toUpperCase();
+  };
+
+  // Função auxiliar para encontrar subtarefa na árvore por caminhoIds
+  const encontrarSubNaArvore = (subLista, caminhoIds) => {
+    if (!subLista || caminhoIds.length === 0) return null;
+    const atual = subLista.find(s => s.id === caminhoIds[0]);
+    if (!atual) return null;
+    if (caminhoIds.length === 1) return atual;
+    return encontrarSubNaArvore(atual.subTarefas, caminhoIds.slice(1));
+  };
+
   const alternarStatusTarefaPai = async (tarefa) => {
+    const creator = tarefa.criadoPor || '';
+    if (!tarefaPertenceAoUsuario(creator) && !isGestor) {
+      alert("Você não pode concluir esta tarefa pois ela não pertence a você!");
+      return;
+    }
+
     try {
       const novoStatus = tarefa.status === 'Resolvida' ? 'Pendente' : 'Resolvida';
       if (novoStatus === 'Resolvida') {
@@ -547,6 +568,25 @@ function MainApp() {
       const colecaoAlvo = tarefa._colecao || 'tarefas_gerais';
       await updateDoc(doc(db, colecaoAlvo, tarefa.id), {
         status: novoStatus
+      });
+    } catch (e) {}
+  };
+
+  const alternarStatusRecursivo = async (tarefaRaiz, caminhoIds) => {
+    const subAlvo = encontrarSubNaArvore(tarefaRaiz.subTarefas, caminhoIds);
+    const creator = subAlvo ? (subAlvo.criadoPor || tarefaRaiz.criadoPor) : tarefaRaiz.criadoPor;
+
+    if (!tarefaPertenceAoUsuario(creator) && !isGestor) {
+      alert("Você não pode concluir esta subtarefa pois ela não pertence a você!");
+      return;
+    }
+
+    try {
+      const novaSubTarefas = toggleNodeInTree(tarefaRaiz.subTarefas || [], caminhoIds);
+      const colecaoAlvo = tarefaRaiz._colecao || 'tarefas_gerais';
+
+      await updateDoc(doc(db, colecaoAlvo, tarefaRaiz.id), {
+        subTarefas: novaSubTarefas
       });
     } catch (e) {}
   };
@@ -632,17 +672,6 @@ function MainApp() {
     } finally {
       setModalExclusao({ isOpen: false, tipo: null, tarefa: null, caminhoIds: null });
     }
-  };
-
-  const alternarStatusRecursivo = async (tarefaRaiz, caminhoIds) => {
-    try {
-      const novaSubTarefas = toggleNodeInTree(tarefaRaiz.subTarefas || [], caminhoIds);
-      const colecaoAlvo = tarefaRaiz._colecao || 'tarefas_gerais';
-
-      await updateDoc(doc(db, colecaoAlvo, tarefaRaiz.id), {
-        subTarefas: novaSubTarefas
-      });
-    } catch (e) {}
   };
 
   const salvarEdicaoInlineTarefa = async (tarefaId, colecaoAlvo, novoTitulo, tarefaObj) => {
@@ -769,7 +798,6 @@ function MainApp() {
                 onMouseLeave={(e) => { if (!isConcluida) e.currentTarget.style.background = 'transparent'; }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden', paddingLeft: `${paddingLeftPx}px`, paddingRight: '10px' }}>
-                  {/* Seta sempre visível em todas as subtarefas */}
                   <span onClick={() => alternarExpandido(sub.id)} style={{ cursor: 'pointer', fontSize: '11px', color: theme.textMain, userSelect: 'none', padding: '2px', width: '12px', textAlign: 'center', fontWeight: 'bold' }}>
                     {isExpandidoSub ? '▼' : '▶'}
                   </span>
@@ -1052,7 +1080,6 @@ function MainApp() {
                       >
                         
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden', paddingRight: '10px' }}>
-                          {/* Seta sempre visível em todas as tarefas principais */}
                           <span onClick={() => alternarExpandido(t.id)} style={{ cursor: 'pointer', fontSize: '11px', color: theme.textMain, userSelect: 'none', padding: '2px', width: '12px', textAlign: 'center', fontWeight: 'bold' }}>
                             {isExpandido ? '▼' : '▶'}
                           </span>
@@ -1265,7 +1292,7 @@ function TelaLogin({ onLoginSucesso, darkMode, setDarkMode, theme }) {
   const [erro, setErro] = useState('');
 
   const handleLogin = async (e) => {
-    e.preventDefault();
+    e.createElement && e.preventDefault();
     setErro('');
     try {
       const result = await signInWithEmailAndPassword(auth, email, senha);
