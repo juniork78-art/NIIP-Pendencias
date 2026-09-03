@@ -1180,7 +1180,6 @@ function MainApp() {
                   ) : <div></div>}
 
                   <div style={{ display: 'flex', gap: '8px' }}>
-                    {/* Botão de Excluir em subtarefas visível apenas para o gestor Duandys e remove instantaneamente da inicial */}
                     {isGestor && (
                       <button onClick={() => tratarCliqueExcluirOuRestaurarSub(tarefaRaizObj, caminhoAtual, isExcluido)} style={{ background: 'transparent', border: 'none', color: '#eb5757', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}>
                         {isExcluido ? 'Restaurar' : 'Excluir'}
