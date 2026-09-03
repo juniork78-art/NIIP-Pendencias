@@ -101,7 +101,7 @@ const formatarDataParaBr = (dataStr) => {
   try {
     const parts = dataStr.split('-');
     if (parts.length === 3) {
-      return `${parts[2]}/${parts[1]}/${parts[0]}`;
+      return parts[2] + '/' + parts[1] + '/' + parts[0];
     }
     return dataStr;
   } catch (e) {
@@ -119,13 +119,13 @@ const tempoDecorrido = (timestamp) => {
   const diffDias = Math.floor(diffHoras / 24);
 
   if (diffSeg < 60) return 'Há poucos segundos';
-  if (diffMin < 60) return `Há ${diffMin} minuto${diffMin > 1 ? 's' : ''}`;
-  if (diffHoras < 24) return `Há ${diffHoras} hora${diffHoras > 1 ? 's' : ''}`;
-  if (diffDias < 30) return `Há ${diffDias} dia${diffDias > 1 ? 's' : ''}`;
+  if (diffMin < 60) return 'Há ' + diffMin + ' minuto' + (diffMin > 1 ? 's' : '');
+  if (diffHoras < 24) return 'Há ' + diffHoras + ' hora' + (diffHoras > 1 ? 's' : '');
+  if (diffDias < 30) return 'Há ' + diffDias + ' dia' + (diffDias > 1 ? 's' : '');
   const diffMeses = Math.floor(diffDias / 30);
-  if (diffMeses < 12) return `Há ${diffMeses} mês${diffMeses > 1 ? 'es' : ''}`;
+  if (diffMeses < 12) return 'Há ' + diffMeses + ' mês' + (diffMeses > 1 ? 'es' : '');
   const diffAnos = Math.floor(diffDias / 365);
-  return `Há ${diffAnos} ano${diffAnos > 1 ? 's' : ''}`;
+  return 'Há ' + diffAnos + ' ano' + (diffAnos > 1 ? 's' : '');
 };
 
 const GRUPOS_MEMBROS = {
@@ -193,9 +193,7 @@ function MainApp() {
   };
   
   const [tarefas, setTarefas] = useState([]);
-  
   const [responsavelSelecionadoGestor, setResponsavelSelecionadoGestor] = useState(TODOS_INTEGRANTES[0]);
-  
   const [filtroResponsavel, setFiltroResponsavel] = useState('todos');
   const [filtroPalavraChave, setFiltroPalavraChave] = useState('');
 
@@ -447,9 +445,9 @@ function MainApp() {
     const selecionados = Object.keys(objGrupos).filter(k => objGrupos[k]);
     if (selecionados.length === 0) return 'Particular';
     if (selecionados.length === 1) {
-      return selecionados[0] === 'Particular' ? 'Particular' : `Grupo: ${selecionados[0]}`;
+      return selecionados[0] === 'Particular' ? 'Particular' : 'Grupo: ' + selecionados[0];
     }
-    return `Grupos: ${selecionados.join(', ')}`;
+    return 'Grupos: ' + selecionados.join(', ');
   };
 
   const confirmarCriacaoNovaPagina = () => {
@@ -1025,10 +1023,10 @@ function MainApp() {
           fontWeight: '700', 
           fontSize: '13px', 
           marginLeft: '10px', 
-          background: `${cor}15`, 
+          background: cor + '15', 
           padding: '2px 8px', 
           borderRadius: '4px', 
-          border: `1px solid ${cor}40`,
+          border: '1px solid ' + cor + '40',
           cursor: 'pointer',
           userSelect: 'none',
           display: 'inline-block',
@@ -1068,7 +1066,7 @@ function MainApp() {
 
           const autorSub = sub.criadoPor || tarefaRaizObj.criadoPor || 'Usuário';
           const editorSub = sub.editadoPor;
-          const displayAutorSub = editorSub && editorSub.toUpperCase() !== autorSub.toUpperCase() ? `${autorSub} (Editado por: ${editorSub})` : autorSub;
+          const displayAutorSub = editorSub && editorSub.toUpperCase() !== autorSub.toUpperCase() ? autorSub + ' (Editado por: ' + editorSub + ')' : autorSub;
 
           const corTextoSub = isConcluida ? '#27ae60' : (nivel === 1 ? '#2383e2' : '#27ae60');
 
@@ -1079,7 +1077,7 @@ function MainApp() {
                   display: 'grid', 
                   gridTemplateColumns: '2.5fr 1.5fr 1.5fr 1fr 1fr', 
                   padding: '12px 0', 
-                  borderBottom: `1px solid ${theme.border}`, 
+                  borderBottom: '1px solid ' + theme.border, 
                   alignItems: 'center', 
                   fontSize: '14px', 
                   transition: 'background 0.1s',
@@ -1094,13 +1092,13 @@ function MainApp() {
                   position: 'absolute',
                   top: 0,
                   bottom: isUltimo ? '50%' : 0,
-                  left: `${currentIndent}px`,
+                  left: currentIndent + 'px',
                   width: '1px',
                   backgroundColor: theme.treeLine,
                   pointerEvents: 'none'
                 }} />
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden', paddingLeft: `${currentIndent - 4}px`, paddingRight: '10px', position: 'relative' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden', paddingLeft: (currentIndent - 4) + 'px', paddingRight: '10px', position: 'relative' }}>
                   <span style={{ fontFamily: 'monospace', color: theme.textMuted, fontSize: '13px', userSelect: 'none', fontWeight: 'bold' }}>
                     {isUltimo ? '└─' : '├─'}
                   </span>
@@ -1165,7 +1163,7 @@ function MainApp() {
                   {paginaAtual !== 'lixeira' ? (
                     <button 
                       onClick={() => alternarStatusRecursivo(tarefaRaizObj, caminhoAtual)} 
-                      style={{ background: isConcluida ? '#27ae60' : theme.cardInner, border: `1px solid ${isConcluida ? '#27ae60' : theme.border}`, color: isConcluida ? '#fff' : theme.textMain, padding: '5px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}
+                      style={{ background: isConcluida ? '#27ae60' : theme.cardInner, border: '1px solid ' + (isConcluida ? '#27ae60' : theme.border), color: isConcluida ? '#fff' : theme.textMain, padding: '5px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}
                     >
                       {isConcluida ? '✔ Concluído' : 'Concluir'}
                     </button>
@@ -1198,7 +1196,7 @@ function MainApp() {
                         display: 'grid', 
                         gridTemplateColumns: '2.5fr 1.5fr 1.5fr 1fr 1fr', 
                         padding: '12px 0', 
-                        borderBottom: `1px solid ${theme.border}`, 
+                        borderBottom: '1px solid ' + theme.border, 
                         alignItems: 'center', 
                         fontSize: '14px', 
                         color: theme.textMain, 
@@ -1215,12 +1213,12 @@ function MainApp() {
                         position: 'absolute',
                         top: 0,
                         bottom: 0,
-                        left: `${currentIndent + stepIndent}px`,
+                        left: (currentIndent + stepIndent) + 'px',
                         width: '1px',
                         backgroundColor: theme.treeLine,
                         pointerEvents: 'none'
                       }} />
-                      <div style={{ paddingLeft: `${currentIndent + stepIndent - 4}px`, display: 'flex', alignItems: 'center', gap: '6px', position: 'relative' }}>
+                      <div style={{ paddingLeft: (currentIndent + stepIndent - 4) + 'px', display: 'flex', alignItems: 'center', gap: '6px', position: 'relative' }}>
                         <span style={{ fontFamily: 'monospace', color: theme.textMuted, fontSize: '13px', fontWeight: 'bold' }}>└─</span>
                         <span>+</span> <span>Adicionar nova</span>
                       </div>
@@ -1289,9 +1287,9 @@ function MainApp() {
     <div className="workspace-layout" style={{ display: 'flex', minHeight: '100vh', backgroundColor: theme.bg, color: theme.textMain, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif', boxSizing: 'border-box' }}>
       
       {/* SIDEBAR ESQUERDA NOTION */}
-      <div className="sidebar-notion" style={{ width: '250px', background: theme.sidebarBg, borderRight: `1px solid ${theme.border}`, display: 'flex', flexDirection: 'column', padding: '16px 10px', boxSizing: 'border-box', flexShrink: '0' }}>
+      <div className="sidebar-notion" style={{ width: '250px', background: theme.sidebarBg, borderRight: '1px solid ' + theme.border, display: 'flex', flexDirection: 'column', padding: '16px 10px', boxSizing: 'border-box', flexShrink: '0' }}>
         
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', borderRadius: '6px', marginBottom: '18px', background: theme.cardBg, border: `1px solid ${theme.border}` }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', borderRadius: '6px', marginBottom: '18px', background: theme.cardBg, border: '1px solid ' + theme.border }}>
           <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: '#2eaadc', color: '#fff', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
             {nomeFormatadoGlobal.charAt(0) || 'J'}
           </div>
@@ -1335,7 +1333,7 @@ function MainApp() {
           ))}
         </div>
 
-        <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '6px', borderTop: `1px solid ${theme.border}`, paddingTop: '12px' }}>
+        <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '6px', borderTop: '1px solid ' + theme.border, paddingTop: '12px' }}>
           <button onClick={() => signOut(auth)} style={{ background: 'transparent', border: '1px solid #eb5757', color: '#eb5757', padding: '8px 10px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', textAlign: 'left' }}>
             Sair
           </button>
@@ -1358,12 +1356,12 @@ function MainApp() {
               {filtroRecenteId && (
                 <button 
                   onClick={() => setFiltroRecenteId(null)}
-                  style={{ background: theme.cardInner, border: `1px solid ${theme.border}`, color: theme.textMain, padding: '8px 14px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}
+                  style={{ background: theme.cardInner, border: '1px solid ' + theme.border, color: theme.textMain, padding: '8px 14px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}
                 >
                   ✕ Ver Todas
                 </button>
               )}
-              <button onClick={alternarTema} style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, color: theme.textMain, padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+              <button onClick={alternarTema} style={{ background: theme.cardBg, border: '1px solid ' + theme.border, color: theme.textMain, padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
                 {darkMode ? '☀️ Claro' : '🌙 Escuro'}
               </button>
               {paginaAtual !== 'lixeira' && (
@@ -1378,7 +1376,7 @@ function MainApp() {
           </div>
 
           {/* ABAS SUPERIORES COM CAMPO DE BUSCA */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `2px solid ${theme.border}`, paddingBottom: '12px', marginBottom: '24px', fontSize: '14px', flexWrap: 'wrap', gap: '16px', fontWeight: '600' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid ' + theme.border, paddingBottom: '12px', marginBottom: '24px', fontSize: '14px', flexWrap: 'wrap', gap: '16px', fontWeight: '600' }}>
             <div style={{ display: 'flex', gap: '24px', alignItems: 'center', flexWrap: 'wrap', color: theme.textMuted }}>
               <span onClick={() => mudarPagina('andamento')} style={{ fontWeight: paginaAtual === 'andamento' ? '700' : '500', color: paginaAtual === 'andamento' ? theme.textMain : theme.textMuted, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>🕒 Recentes</span>
               <span onClick={() => mudarPagina('resolvidas')} style={{ fontWeight: paginaAtual === 'resolvidas' ? '700' : '500', color: paginaAtual === 'resolvidas' ? theme.textMain : theme.textMuted, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>✅ Resolvidas</span>
@@ -1394,9 +1392,9 @@ function MainApp() {
                 value={filtroPalavraChave} 
                 onChange={(e) => setFiltroPalavraChave(e.target.value)}
                 placeholder="Filtrar por palavra-chave..." 
-                style={{ padding: '7px 12px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '6px', fontSize: '13px', outline: 'none', width: '200px', fontWeight: '500' }}
+                style={{ padding: '7px 12px', background: theme.inputBg, border: '1px solid ' + theme.border, color: theme.inputText, borderRadius: '6px', fontSize: '13px', outline: 'none', width: '200px', fontWeight: '500' }}
               />
-              <select value={filtroResponsavel} onChange={(e) => setFiltroResponsavel(e.target.value)} style={{ padding: '7px 12px', background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '6px', fontSize: '13px', fontWeight: '500' }}>
+              <select value={filtroResponsavel} onChange={(e) => setFiltroResponsavel(e.target.value)} style={{ padding: '7px 12px', background: theme.inputBg, border: '1px solid ' + theme.border, color: theme.inputText, borderRadius: '6px', fontSize: '13px', fontWeight: '500' }}>
                 <option value="todos">Responsável: Todos</option>
                 {TODOS_INTEGRANTES.map(n => <option key={n} value={n}>{n}</option>)}
               </select>
@@ -1406,7 +1404,7 @@ function MainApp() {
           {/* TABELA DE DADOS COM WRAPPER RESPONSIVO PARA EVITAR CORTE EM DISPOSITIVOS MÓVEIS */}
           <div className="table-responsive-wrapper" style={{ width: '100%', boxSizing: 'border-box' }}>
             
-            <div style={{ display: 'grid', gridTemplateColumns: '2.5fr 1.5fr 1.5fr 1fr 1fr', padding: '10px 0', borderBottom: `2px solid ${theme.border}`, fontSize: '13px', fontWeight: '700', color: theme.textMuted, minWidth: '700px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '2.5fr 1.5fr 1.5fr 1fr 1fr', padding: '10px 0', borderBottom: '2px solid ' + theme.border, fontSize: '13px', fontWeight: '700', color: theme.textMuted, minWidth: '700px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>📄 Nome da página</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>👤 Criado por</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>📑 Fonte</div>
@@ -1428,7 +1426,7 @@ function MainApp() {
 
                   const creatorPai = t.criadoPor || 'Usuário';
                   const editorPai = t.editadoPor;
-                  const displayAutorPai = editorPai && editorPai.toUpperCase() !== creatorPai.toUpperCase() ? `${creatorPai} (Editado por: ${editorPai})` : creatorPai;
+                  const displayAutorPai = editorPai && editorPai.toUpperCase() !== creatorPai.toUpperCase() ? creatorPai + ' (Editado por: ' + editorPai + ')' : creatorPai;
 
                   return (
                     <React.Fragment key={t.id}>
@@ -1439,7 +1437,7 @@ function MainApp() {
                           display: 'grid', 
                           gridTemplateColumns: '2.5fr 1.5fr 1.5fr 1fr 1fr', 
                           padding: '12px 0', 
-                          borderBottom: `1px solid ${theme.border}`, 
+                          borderBottom: '1px solid ' + theme.border, 
                           alignItems: 'center', 
                           fontSize: '14px', 
                           transition: 'background 0.1s',
@@ -1462,7 +1460,7 @@ function MainApp() {
                               onChange={(e) => setTextoEditando(e.target.value)}
                               onBlur={() => salvarEdicaoInlineTarefa(t.id, t._colecao, textoEditando, t)}
                               onKeyDown={(e) => { if (e.key === 'Enter') salvarEdicaoInlineTarefa(t.id, t._colecao, textoEditando, t); }}
-                              style={{ background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, padding: '4px 8px', fontSize: '17px', borderRadius: '4px', width: '80%', fontWeight: '800' }}
+                              style={{ background: theme.inputBg, border: '1px solid ' + theme.border, color: theme.inputText, padding: '4px 8px', fontSize: '17px', borderRadius: '4px', width: '80%', fontWeight: '800' }}
                             />
                           ) : (
                             <div style={{ display: 'flex', alignItems: 'center', overflow: 'hidden' }}>
@@ -1522,7 +1520,7 @@ function MainApp() {
                           {paginaAtual !== 'lixeira' ? (
                             <button 
                               onClick={() => alternarStatusTarefaPai(t)} 
-                              style={{ background: isConcluida ? '#27ae60' : theme.cardInner, border: `1px solid ${isConcluida ? '#27ae60' : theme.border}`, color: isConcluida ? '#fff' : theme.textMain, padding: '5px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}
+                              style={{ background: isConcluida ? '#27ae60' : theme.cardInner, border: '1px solid ' + (isConcluida ? '#27ae60' : theme.border), color: isConcluida ? '#fff' : theme.textMain, padding: '5px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}
                             >
                               {isConcluida ? '✔ Concluído' : 'Concluir'}
                             </button>
@@ -1565,7 +1563,7 @@ function MainApp() {
                                 display: 'grid', 
                                 gridTemplateColumns: '2.5fr 1.5fr 1.5fr 1fr 1fr', 
                                 padding: '12px 0', 
-                                borderBottom: `1px solid ${theme.border}`, 
+                                borderBottom: '1px solid ' + theme.border, 
                                 alignContent: 'center', 
                                 alignItems: 'center', 
                                 fontSize: '14px', 
@@ -1611,7 +1609,7 @@ function MainApp() {
         {/* MODAL DE CRIAÇÃO DE NOVA PÁGINA PRINCIPAL */}
         {modalNovaPagina && (
           <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, padding: '15px', boxSizing: 'border-box' }}>
-            <div style={{ background: theme.cardBg, padding: '28px', borderRadius: '8px', width: '100%', maxWidth: '420px', border: `1px solid ${theme.border}`, boxShadow: '0 10px 30px rgba(0,0,0,0.3)', textAlign: 'left', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div style={{ background: theme.cardBg, padding: '28px', borderRadius: '8px', width: '100%', maxWidth: '420px', border: '1px solid ' + theme.border, boxShadow: '0 10px 30px rgba(0,0,0,0.3)', textAlign: 'left', maxHeight: '90vh', overflowY: 'auto' }}>
               <h3 style={{ margin: '0 0 16px 0', color: theme.textMain, fontSize: '18px', fontWeight: '700' }}>Criar Nova Página</h3>
               
               <div style={{ marginBottom: '16px' }}>
@@ -1622,7 +1620,7 @@ function MainApp() {
                   onChange={(e) => setNovoTituloModal(e.target.value)}
                   placeholder="Digite o título..."
                   autoFocus
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: `1px solid ${theme.border}`, background: theme.inputBg, color: theme.inputText, boxSizing: 'border-box', fontSize: '14px', fontWeight: '500', outline: 'none' }}
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid ' + theme.border, background: theme.inputBg, color: theme.inputText, boxSizing: 'border-box', fontSize: '14px', fontWeight: '500', outline: 'none' }}
                 />
               </div>
 
@@ -1631,7 +1629,7 @@ function MainApp() {
                 <select 
                   value={novaPrioridadeModal} 
                   onChange={(e) => setNovaPrioridadeModal(e.target.value)} 
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: `1px solid ${theme.border}`, background: theme.inputBg, color: theme.inputText, boxSizing: 'border-box', fontSize: '14px', fontWeight: '600', outline: 'none' }}
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid ' + theme.border, background: theme.inputBg, color: theme.inputText, boxSizing: 'border-box', fontSize: '14px', fontWeight: '600', outline: 'none' }}
                 >
                   <option value="Baixa" style={{ color: '#27ae60' }}>🟢 Baixa</option>
                   <option value="Média" style={{ color: '#d97706' }}>🟠 Média</option>
@@ -1641,7 +1639,7 @@ function MainApp() {
 
               <div style={{ marginBottom: '24px' }}>
                 <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '8px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Visibilidade / Grupos (Escolha um ou mais)</label>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: theme.cardInner, padding: '12px', borderRadius: '6px', border: `1px solid ${theme.border}` }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: theme.cardInner, padding: '12px', borderRadius: '6px', border: '1px solid ' + theme.border }}>
                   {Object.keys(novosGruposModal).map((grupo) => (
                     <label key={grupo} style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '14px', fontWeight: '500', cursor: 'pointer', color: theme.textMain }}>
                       <input 
@@ -1661,7 +1659,7 @@ function MainApp() {
               </div>
 
               <div style={{ display: 'flex', gap: '12px' }}>
-                <button onClick={() => setModalNovaPagina(false)} style={{ flex: 1, padding: '10px', background: theme.cardInner, color: theme.textMain, border: `1px solid ${theme.border}`, borderRadius: '6px', fontWeight: '600', cursor: 'pointer', fontSize: '14px' }}>Cancelar</button>
+                <button onClick={() => setModalNovaPagina(false)} style={{ flex: 1, padding: '10px', background: theme.cardInner, color: theme.textMain, border: '1px solid ' + theme.border, borderRadius: '6px', fontWeight: '600', cursor: 'pointer', fontSize: '14px' }}>Cancelar</button>
                 <button onClick={confirmarCriacaoNovaPagina} style={{ flex: 1, padding: '10px', background: '#2383e2', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: '600', cursor: 'pointer', fontSize: '14px' }}>Criar</button>
               </div>
             </div>
@@ -1671,7 +1669,7 @@ function MainApp() {
         {/* MODAL DE CRIAÇÃO DE SUBTAREFA */}
         {modalNovaSub.isOpen && (
           <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, padding: '15px', boxSizing: 'border-box' }}>
-            <div style={{ background: theme.cardBg, padding: '28px', borderRadius: '8px', width: '100%', maxWidth: '420px', border: `1px solid ${theme.border}`, boxShadow: '0 10px 30px rgba(0,0,0,0.3)', textAlign: 'left', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div style={{ background: theme.cardBg, padding: '28px', borderRadius: '8px', width: '100%', maxWidth: '420px', border: '1px solid ' + theme.border, boxShadow: '0 10px 30px rgba(0,0,0,0.3)', textAlign: 'left', maxHeight: '90vh', overflowY: 'auto' }}>
               <h3 style={{ margin: '0 0 16px 0', color: theme.textMain, fontSize: '18px', fontWeight: '700' }}>Adicionar Subtarefa</h3>
               
               <div style={{ marginBottom: '16px' }}>
@@ -1682,7 +1680,7 @@ function MainApp() {
                   onChange={(e) => setSubTituloModal(e.target.value)}
                   placeholder="Digite o título..."
                   autoFocus
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: `1px solid ${theme.border}`, background: theme.inputBg, color: theme.inputText, boxSizing: 'border-box', fontSize: '14px', fontWeight: '500', outline: 'none' }}
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid ' + theme.border, background: theme.inputBg, color: theme.inputText, boxSizing: 'border-box', fontSize: '14px', fontWeight: '500', outline: 'none' }}
                 />
               </div>
 
@@ -1691,7 +1689,7 @@ function MainApp() {
                 <select 
                   value={subPrioridadeModal} 
                   onChange={(e) => setSubPrioridadeModal(e.target.value)} 
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: `1px solid ${theme.border}`, background: theme.inputBg, color: theme.inputText, boxSizing: 'border-box', fontSize: '14px', fontWeight: '600', outline: 'none' }}
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid ' + theme.border, background: theme.inputBg, color: theme.inputText, boxSizing: 'border-box', fontSize: '14px', fontWeight: '600', outline: 'none' }}
                 >
                   <option value="Baixa" style={{ color: '#27ae60' }}>🟢 Baixa</option>
                   <option value="Média" style={{ color: '#d97706' }}>🟠 Média</option>
@@ -1701,7 +1699,7 @@ function MainApp() {
 
               <div style={{ marginBottom: '24px' }}>
                 <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '8px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Visibilidade / Grupos (Escolha um ou mais)</label>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: theme.cardInner, padding: '12px', borderRadius: '6px', border: `1px solid ${theme.border}` }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: theme.cardInner, padding: '12px', borderRadius: '6px', border: '1px solid ' + theme.border }}>
                   {Object.keys(subGruposModal).map((grupo) => (
                     <label key={grupo} style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '14px', fontWeight: '500', cursor: 'pointer', color: theme.textMain }}>
                       <input 
@@ -1721,7 +1719,7 @@ function MainApp() {
               </div>
 
               <div style={{ display: 'flex', gap: '12px' }}>
-                <button onClick={() => setModalNovaSub({ isOpen: false, tarefaRaizId: null, caminhoIds: null })} style={{ flex: 1, padding: '10px', background: theme.cardInner, color: theme.textMain, border: `1px solid ${theme.border}`, borderRadius: '6px', fontWeight: '600', cursor: 'pointer', fontSize: '14px' }}>Cancelar</button>
+                <button onClick={() => setModalNovaSub({ isOpen: false, tarefaRaizId: null, caminhoIds: null })} style={{ flex: 1, padding: '10px', background: theme.cardInner, color: theme.textMain, border: '1px solid ' + theme.border, borderRadius: '6px', fontWeight: '600', cursor: 'pointer', fontSize: '14px' }}>Cancelar</button>
                 <button onClick={confirmarCriacaoSubtarefa} style={{ flex: 1, padding: '10px', background: '#2383e2', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: '600', cursor: 'pointer', fontSize: '14px' }}>Adicionar</button>
               </div>
             </div>
@@ -1751,12 +1749,12 @@ function MainApp() {
         {/* POP-UP DE CONFIRMAÇÃO DE EXCLUSÃO */}
         {modalExclusao.isOpen && (
           <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, padding: '15px', boxSizing: 'border-box' }}>
-            <div style={{ background: theme.cardBg, padding: '28px', borderRadius: '8px', width: '100%', maxWidth: '420px', border: `1px solid ${theme.border}`, boxShadow: '0 10px 30px rgba(0,0,0,0.3)', textAlign: 'center' }}>
+            <div style={{ background: theme.cardBg, padding: '28px', borderRadius: '8px', width: '100%', maxWidth: '420px', border: '1px solid ' + theme.border, boxShadow: '0 10px 30px rgba(0,0,0,0.3)', textAlign: 'center' }}>
               <div style={{ fontSize: '32px', marginBottom: '10px' }}>⚠️</div>
               <h3 style={{ margin: '0 0 10px 0', color: theme.textMain, fontSize: '18px', fontWeight: '700' }}>Confirmação de Exclusão</h3>
               <p style={{ fontSize: '14px', color: theme.textMuted, marginBottom: '24px', fontWeight: '500' }}>Tem certeza de que deseja excluir este item?</p>
               <div style={{ display: 'flex', gap: '12px' }}>
-                <button onClick={() => setModalExclusao({ isOpen: false, tipo: null, tarefa: null, caminhoIds: null })} style={{ flex: 1, padding: '10px', background: theme.cardInner, color: theme.textMain, border: `1px solid ${theme.border}`, borderRadius: '6px', fontWeight: '600', cursor: 'pointer', fontSize: '14px' }}>Cancelar</button>
+                <button onClick={() => setModalExclusao({ isOpen: false, tipo: null, tarefa: null, caminhoIds: null })} style={{ flex: 1, padding: '10px', background: theme.cardInner, color: theme.textMain, border: '1px solid ' + theme.border, borderRadius: '6px', fontWeight: '600', cursor: 'pointer', fontSize: '14px' }}>Cancelar</button>
                 <button onClick={executarExclusaoConfirmada} style={{ flex: 1, padding: '10px', background: '#eb5757', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: '600', cursor: 'pointer', fontSize: '14px' }}>Sim, excluir</button>
               </div>
             </div>
@@ -1765,7 +1763,7 @@ function MainApp() {
 
         {/* PAINEL LATERAL DIREITO (SPLIT-VIEW) - BLOCO DE NOTAS LIMPO E INDEPENDENTE */}
         {paginaLateral && (
-          <div className="lateral-panel" style={{ width: '450px', background: theme.cardBg, borderLeft: `1px solid ${theme.border}`, display: 'flex', flexDirection: 'column', padding: '36px', boxSizing: 'border-box', height: '100vh', overflowY: 'auto', flexShrink: '0', boxShadow: '-5px 0 25px rgba(0,0,0,0.1)' }}>
+          <div className="lateral-panel" style={{ width: '450px', background: theme.cardBg, borderLeft: '1px solid ' + theme.border, display: 'flex', flexDirection: 'column', padding: '36px', boxSizing: 'border-box', height: '100vh', overflowY: 'auto', flexShrink: '0', boxShadow: '-5px 0 25px rgba(0,0,0,0.1)' }}>
             
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
               <div style={{ fontSize: '13px', color: theme.textMuted, fontWeight: '600' }}>
@@ -1773,7 +1771,7 @@ function MainApp() {
               </div>
               <div style={{ display: 'flex', gap: '10px' }}>
                 <button onClick={salvarAlteracoesPaginaLateral} title="Salvar Alterações" style={{ background: '#27ae60', border: 'none', color: '#fff', padding: '7px 16px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}>✓ Concluir</button>
-                <button onClick={fecharPainelLateral} style={{ background: 'transparent', border: `1px solid ${theme.border}`, color: theme.textMain, padding: '7px 14px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}>✕ Fechar</button>
+                <button onClick={fecharPainelLateral} style={{ background: 'transparent', border: '1px solid ' + theme.border, color: theme.textMain, padding: '7px 14px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}>✕ Fechar</button>
               </div>
             </div>
 
@@ -1791,7 +1789,7 @@ function MainApp() {
                 value={editDescricaoLateral}
                 onChange={(e) => setEditDescricaoLateral(e.target.value)}
                 placeholder="Escreva suas anotações aqui..."
-                style={{ width: '100%', padding: '14px', background: theme.cardInner, border: `1px solid ${theme.border}`, color: theme.inputText, borderRadius: '6px', fontSize: '14px', resize: 'vertical', lineHeight: '1.6', fontWeight: '500' }}
+                style={{ width: '100%', padding: '14px', background: theme.cardInner, border: '1px solid ' + theme.border, color: theme.inputText, borderRadius: '6px', fontSize: '14px', resize: 'vertical', lineHeight: '1.6', fontWeight: '500' }}
               />
             </div>
 
@@ -1812,12 +1810,12 @@ function ModalEditarGruposFonte({ modalState, onClose, onSave, theme }) {
 
   return (
     <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, padding: '15px', boxSizing: 'border-box' }}>
-      <div style={{ background: theme.cardBg, padding: '28px', borderRadius: '8px', width: '100%', maxWidth: '420px', border: `1px solid ${theme.border}`, boxShadow: '0 10px 30px rgba(0,0,0,0.3)`, textAlign: 'left', maxHeight: '90vh', overflowY: 'auto' }}>
+      <div style={{ background: theme.cardBg, padding: '28px', borderRadius: '8px', width: '100%', maxWidth: '420px', border: '1px solid ' + theme.border, boxShadow: '0 10px 30px rgba(0,0,0,0.3)', textAlign: 'left', maxHeight: '90vh', overflowY: 'auto' }}>
         <h3 style={{ margin: '0 0 16px 0', color: theme.textMain, fontSize: '18px', fontWeight: '700' }}>Alterar Atribuição de Grupos</h3>
         
         <div style={{ marginBottom: '24px' }}>
           <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '8px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Selecione os Grupos</label>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: theme.cardInner, padding: '12px', borderRadius: '6px', border: `1px solid ${theme.border}` }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: theme.cardInner, padding: '12px', borderRadius: '6px', border: '1px solid ' + theme.border }}>
             {Object.keys(gruposSelecionados).map((grupo) => (
               <label key={grupo} style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '14px', fontWeight: '500', cursor: 'pointer', color: theme.textMain }}>
                 <input 
@@ -1837,7 +1835,7 @@ function ModalEditarGruposFonte({ modalState, onClose, onSave, theme }) {
         </div>
 
         <div style={{ display: 'flex', gap: '12px' }}>
-          <button onClick={onClose} style={{ flex: 1, padding: '10px', background: theme.cardInner, color: theme.textMain, border: `1px solid ${theme.border}`, borderRadius: '6px', fontWeight: '600', cursor: 'pointer', fontSize: '14px' }}>Cancelar</button>
+          <button onClick={onClose} style={{ flex: 1, padding: '10px', background: theme.cardInner, color: theme.textMain, border: '1px solid ' + theme.border, borderRadius: '6px', fontWeight: '600', cursor: 'pointer', fontSize: '14px' }}>Cancelar</button>
           <button onClick={() => onSave(gruposSelecionados)} style={{ flex: 1, padding: '10px', background: '#2383e2', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: '600', cursor: 'pointer', fontSize: '14px' }}>Salvar</button>
         </div>
       </div>
@@ -1851,12 +1849,12 @@ function ModalEditarPrioridade({ modalState, onClose, onSave, theme }) {
 
   return (
     <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, padding: '15px', boxSizing: 'border-box' }}>
-      <div style={{ background: theme.cardBg, padding: '28px', borderRadius: '8px', width: '100%', maxWidth: '380px', border: `1px solid ${theme.border}`, boxShadow: '0 10px 30px rgba(0,0,0,0.3)`, textAlign: 'left' }}>
+      <div style={{ background: theme.cardBg, padding: '28px', borderRadius: '8px', width: '100%', maxWidth: '380px', border: '1px solid ' + theme.border, boxShadow: '0 10px 30px rgba(0,0,0,0.3)', textAlign: 'left' }}>
         <h3 style={{ margin: '0 0 16px 0', color: theme.textMain, fontSize: '18px', fontWeight: '700' }}>Alterar Prioridade</h3>
         
         <div style={{ marginBottom: '24px' }}>
           <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '8px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Selecione o Nível</label>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: theme.cardInner, padding: '12px', borderRadius: '6px', border: `1px solid ${theme.border}` }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: theme.cardInner, padding: '12px', borderRadius: '6px', border: '1px solid ' + theme.border }}>
             {['Baixa', 'Média', 'Alta'].map((item) => (
               <label key={item} style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', color: theme.textMain }}>
                 <input 
@@ -1875,7 +1873,7 @@ function ModalEditarPrioridade({ modalState, onClose, onSave, theme }) {
         </div>
 
         <div style={{ display: 'flex', gap: '12px' }}>
-          <button onClick={onClose} style={{ flex: 1, padding: '10px', background: theme.cardInner, color: theme.textMain, border: `1px solid ${theme.border}`, borderRadius: '6px', fontWeight: '600', cursor: 'pointer', fontSize: '14px' }}>Cancelar</button>
+          <button onClick={onClose} style={{ flex: 1, padding: '10px', background: theme.cardInner, color: theme.textMain, border: '1px solid ' + theme.border, borderRadius: '6px', fontWeight: '600', cursor: 'pointer', fontSize: '14px' }}>Cancelar</button>
           <button onClick={() => onSave(prioridadeSelecionada)} style={{ flex: 1, padding: '10px', background: '#2383e2', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: '600', cursor: 'pointer', fontSize: '14px' }}>Salvar</button>
         </div>
       </div>
@@ -1900,7 +1898,7 @@ function TelaLogin({ onLoginSucesso, darkMode, setDarkMode, theme }) {
       const result = await signInWithEmailAndPassword(auth, email, senha);
       onLoginSucesso(result.user.email);
     } catch (e) {
-      setErro(`Erro ao entrar: Verifique seu e-mail e senha.`);
+      setErro('Erro ao entrar: Verifique seu e-mail e senha.');
     }
   };
 
@@ -1917,17 +1915,17 @@ function TelaLogin({ onLoginSucesso, darkMode, setDarkMode, theme }) {
       setNovaSenha('');
       setSenha('');
     } catch (e) {
-      setErro(`Erro ao alterar senha: Verifique se o e-mail e a senha atual estão corretos.`);
+      setErro('Erro ao alterar senha: Verifique se o e-mail e a senha atual estão corretos.');
     }
   };
 
   return (
     <div style={{ backgroundColor: theme.bg, color: theme.textMain, minHeight: '100vh', width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif', boxSizing: 'border-box', padding: '20px', position: 'relative' }}>
-      <button type="button" onClick={setDarkMode} style={{ position: 'absolute', top: '20px', right: '20px', background: theme.cardBg, border: `1px solid ${theme.border}`, color: theme.textMain, padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}>
+      <button type="button" onClick={setDarkMode} style={{ position: 'absolute', top: '20px', right: '20px', background: theme.cardBg, border: '1px solid ' + theme.border, color: theme.textMain, padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}>
         {darkMode ? '☀️ Claro' : '🌙 Escuro'}
       </button>
 
-      <form onSubmit={isTrocarSenha ? handleTrocarSenha : handleLogin} style={{ background: theme.cardBg, padding: '36px 28px', borderRadius: '8px', width: '100%', maxWidth: '380px', border: `1px solid ${theme.border}`, boxSizing: 'border-box', boxShadow: '0 10px 30px rgba(0,0,0,0.2)' }}>
+      <form onSubmit={isTrocarSenha ? handleTrocarSenha : handleLogin} style={{ background: theme.cardBg, padding: '36px 28px', borderRadius: '8px', width: '100%', maxWidth: '380px', border: '1px solid ' + theme.border, boxSizing: 'border-box', boxShadow: '0 10px 30px rgba(0,0,0,0.2)' }}>
         <div style={{ textAlign: 'center', marginBottom: '28px' }}>
           <img src="/logo.png" alt="Logo" style={{ width: '160px', height: 'auto', objectFit: 'contain', margin: '0 auto 16px auto', display: 'block' }} onError={(e) => { e.target.style.display = 'none'; }} />
           <span style={{ fontSize: '18px', color: theme.textMain, fontWeight: '800', display: 'block' }}>Sistema Integrado</span>
@@ -1939,14 +1937,14 @@ function TelaLogin({ onLoginSucesso, darkMode, setDarkMode, theme }) {
           
         <div style={{ marginBottom: '16px' }}>
           <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>E-mail</label>
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="seu.email@fibralink.net.br" style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: `1px solid ${theme.border}`, background: theme.inputBg, color: theme.inputText, boxSizing: 'border-box', fontSize: '14px', fontWeight: '500' }} />
+          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="seu.email@fibralink.net.br" style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid ' + theme.border, background: theme.inputBg, color: theme.inputText, boxSizing: 'border-box', fontSize: '14px', fontWeight: '500' }} />
         </div>
 
         {!isTrocarSenha ? (
           <>
             <div style={{ marginBottom: '20px' }}>
               <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Senha</label>
-              <input type="password" value={senha} onChange={(e) => setSenha(e.target.value)} required style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: `1px solid ${theme.border}`, background: theme.inputBg, color: theme.inputText, boxSizing: 'border-box', fontSize: '14px', fontWeight: '500' }} />
+              <input type="password" value={senha} onChange={(e) => setSenha(e.target.value)} required style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid ' + theme.border, background: theme.inputBg, color: theme.inputText, boxSizing: 'border-box', fontSize: '14px', fontWeight: '500' }} />
             </div>
 
             <button type="submit" style={{ width: '100%', padding: '12px', background: '#2383e2', border: 'none', color: '#fff', fontWeight: '700', borderRadius: '6px', cursor: 'pointer', marginBottom: '10px', fontSize: '14px', boxShadow: '0 2px 5px rgba(0,0,0,0.15)' }}>
@@ -1960,12 +1958,12 @@ function TelaLogin({ onLoginSucesso, darkMode, setDarkMode, theme }) {
           <>
             <div style={{ marginBottom: '16px' }}>
               <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Senha Atual</label>
-              <input type="password" value={senhaAtual} onChange={(e) => setSenhaAtual(e.target.value)} required style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: `1px solid ${theme.border}`, background: theme.inputBg, color: theme.inputText, boxSizing: 'border-box', fontSize: '14px', fontWeight: '500' }} />
+              <input type="password" value={senhaAtual} onChange={(e) => setSenhaAtual(e.target.value)} required style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid ' + theme.border, background: theme.inputBg, color: theme.inputText, boxSizing: 'border-box', fontSize: '14px', fontWeight: '500' }} />
             </div>
 
             <div style={{ marginBottom: '20px' }}>
               <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Nova Senha</label>
-              <input type="password" value={novaSenha} onChange={(e) => setNovaSenha(e.target.value)} required style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: `1px solid ${theme.border}`, background: theme.inputBg, color: theme.inputText, boxSizing: 'border-box', fontSize: '14px', fontWeight: '500' }} />
+              <input type="password" value={novaSenha} onChange={(e) => setNovaSenha(e.target.value)} required style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid ' + theme.border, background: theme.inputBg, color: theme.inputText, boxSizing: 'border-box', fontSize: '14px', fontWeight: '500' }} />
             </div>
 
             <button type="submit" style={{ width: '100%', padding: '12px', background: '#27ae60', border: 'none', color: '#fff', fontWeight: '700', borderRadius: '6px', cursor: 'pointer', marginBottom: '10px', fontSize: '14px', boxShadow: '0 2px 5px rgba(0,0,0,0.15)' }}>
