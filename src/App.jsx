@@ -845,7 +845,6 @@ function MainApp() {
     } catch (e) {}
   };
 
-  // Permitir que o gestor OU o criador da tarefa (quem tem permissão) possa excluir/mandar para lixeira
   const tratarCliqueExcluirOuRestaurarPai = (tarefa) => {
     if (!isGestor && !usuarioTemPermissaoTarefa(tarefa)) {
       alert("Você não tem permissão para excluir esta tarefa.");
@@ -1167,7 +1166,7 @@ function MainApp() {
                   ) : <div></div>}
 
                   <div style={{ display: 'flex', gap: '8px' }}>
-                    {(isGestor || verificarPermissaoNode(sub)) && (
+                    {(isGestor || usuarioTemPermissaoTarefa(sub)) && (
                       <button onClick={() => tratarCliqueExcluirOuRestaurarSub(tarefaRaizObj, caminhoAtual, isExcluido)} style={{ background: 'transparent', border: 'none', color: '#eb5757', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}>
                         {isExcluido ? 'Restaurar' : 'Excluir'}
                       </button>
@@ -1247,7 +1246,10 @@ function MainApp() {
   const tarefasArquivadas = tarefas.filter(t => t.arquivada && !t.excluido);
   const tarefasLixeira = tarefas.filter(t => t.excluido);
 
+  // FILTRO DE SEGURANÇA: Remove qualquer tarefa bugada chamada "pendencias" para que ela suma totalmente do sistema
   const tarefasFiltradas = tarefas.filter(t => {
+    if (t.titulo && t.titulo.toLowerCase().trim() === 'pendencias') return false;
+
     const isArquivada = Boolean(t.arquivada);
     const isExcluido = Boolean(t.excluido);
     const isConcluida = t.status === 'Resolvida';
@@ -1316,7 +1318,7 @@ function MainApp() {
           Páginas Recentes
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '14px', overflowY: 'auto', maxHeight: '40vh', marginBottom: '20px' }}>
-          {tarefas.filter(t => !t.arquivada && !t.excluido).map(t => (
+          {tarefas.filter(t => !t.arquivada && !t.excluido && t.titulo?.toLowerCase().trim() !== 'pendencias').map(t => (
             <div 
               key={t.id} 
               onClick={() => {
