@@ -370,6 +370,39 @@ function MainApp() {
     nomeForcadoParaUsuario = 'João';
   }
 
+  // Função recursiva para remover qualquer subtarefa chamada "pendencias"
+  const removerPendenciasRecursivo = (lista) => {
+    if (!lista) return [];
+    return lista
+      .filter(item => {
+        const txt = (item.titulo || item.texto || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+        return !txt.includes('pendencia');
+      })
+      .map(item => ({
+        ...item,
+        subTarefas: removerPendenciasRecursivo(item.subTarefas)
+      }));
+  };
+
+  // Auto-limpeza profunda no banco de dados para eliminar tarefas e subtarefas "pendencias"
+  useEffect(() => {
+    if (tarefas && tarefas.length > 0 && db) {
+      tarefas.forEach(t => {
+        const tituloPai = (t.titulo || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+        if (tituloPai.includes('pendencia')) {
+          deleteDoc(doc(db, t._colecao || 'tarefas_gerais', t.id)).catch(() => {});
+        } else if (t.subTarefas && t.subTarefas.length > 0) {
+          const novasSubs = removerPendenciasRecursivo(t.subTarefas);
+          if (novosSubs.length !== t.subTarefas.length) {
+            updateDoc(doc(db, t._colecao || 'tarefas_gerais', t.id), {
+              subTarefas: novasSubs
+            }).catch(() => {});
+          }
+        }
+      });
+    }
+  }, [tarefas]);
+
   // Validação centralizada: Se o usuário logado é o criador do item, ele SEMPRE tem permissão total.
   const verificarPermissaoNode = (nodeObj) => {
     if (isGestor) return true;
@@ -1041,12 +1074,18 @@ function MainApp() {
   const renderizarSubTarefasRecursivas = (subLista, tarefaRaizObj, caminhoPai, nivel = 1) => {
     if (!subLista || subLista.length === 0) return null;
 
+    // Filtra e remove itens que contenham "pendencias" antes de renderizar
+    const subListaFiltrada = subLista.filter(sub => {
+      const txt = (sub.titulo || sub.texto || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+      return !txt.includes('pendencia');
+    });
+
     return (
       <div style={{ display: 'flex', flexDirection: 'column', width: '100%', position: 'relative' }}>
-        {subLista.map((sub, index) => {
+        {subListaFiltrada.map((sub, index) => {
           const caminhoAtual = [...caminhoPai, sub.id];
           const isExpandidoSub = verificarExpandido(sub.id);
-          const isUltimo = index === subLista.length - 1;
+          const isUltimo = index === subListaFiltrada.length - 1;
 
           const baseIndent = 24;
           const stepIndent = 28;
@@ -1506,7 +1545,7 @@ function MainApp() {
                             });
                           }}
                           title="Clique para alterar os grupos"
-                          style={{ color: isConcluida ? '#27ae60' : theme.textMuted, fontSize: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', cursor: 'pointer', textDecoration: 'underline dotted' }}
+                          style={{ color: isConcluida ? '#27ae60' : theme.textMain, fontSize: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: '600', cursor: 'pointer', textDecoration: 'underline dotted' }}
                         >
                           🔒 {t.fonteGrupos || 'Particular'}
                         </div>
