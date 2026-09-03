@@ -457,10 +457,10 @@ function MainApp() {
         if (tituloPai.includes('pendencia')) {
           deleteDoc(doc(db, t._colecao || 'tarefas_gerais', t.id)).catch(() => {});
         } else if (t.subTarefas && t.subTarefas.length > 0) {
-          const novasSubs = removerPendenciasRecursivo(t.subTarefas);
-          if (novosSubs.length !== t.subTarefas.length) {
+          const subTarefasLimpas = removerPendenciasRecursivo(t.subTarefas);
+          if (subTarefasLimpas.length !== t.subTarefas.length) {
             updateDoc(doc(db, t._colecao || 'tarefas_gerais', t.id), {
-              subTarefas: novasSubs
+              subTarefas: subTarefasLimpas
             }).catch(() => {});
           }
         }
@@ -543,11 +543,11 @@ function MainApp() {
       subTarefas: []
     };
 
-    const novaSubTarefas = insertNodeInTree(tarefaRaiz.subTarefas || [], caminhoIds, novaSub);
+    const subTarefasComNova = insertNodeInTree(tarefaRaiz.subTarefas || [], caminhoIds, novaSub);
     const colecaoAlvo = tarefaRaiz._colecao || 'tarefas_gerais';
 
     updateDoc(doc(db, colecaoAlvo, tarefaRaizId), {
-      subTarefas: novaSubTarefas
+      subTarefas: subTarefasComNova
     }).then(() => {
       setExpandidoIds(prev => {
         const targetId = caminhoIds.length > 0 ? caminhoIds[caminhoIds.length - 1] : tarefaRaizId;
@@ -588,8 +588,8 @@ function MainApp() {
           });
         };
 
-        const novasSubs = atualizarGruposSubNaArvore(tarefaObj.subTarefas || [], caminhoIds);
-        await updateDoc(doc(db, colecaoAlvo, tarefaId), { subTarefas: novasSubs });
+        const subTarefasAtualizadas = atualizarGruposSubNaArvore(tarefaObj.subTarefas || [], caminhoIds);
+        await updateDoc(doc(db, colecaoAlvo, tarefaId), { subTarefas: subTarefasAtualizadas });
       } else {
         if (!verificarPermissaoNode(tarefaObj) && !isGestor) {
           throw new Error("Acesso negado: Você não tem permissão para editar esta tarefa!");
@@ -632,8 +632,8 @@ function MainApp() {
           });
         };
 
-        const novasSubs = atualizarPrioridadeSubNaArvore(tarefaObj.subTarefas || [], caminhoIds);
-        await updateDoc(doc(db, colecaoAlvo, tarefaId), { subTarefas: novasSubs });
+        const subTarefasAtualizadas = atualizarPrioridadeSubNaArvore(tarefaObj.subTarefas || [], caminhoIds);
+        await updateDoc(doc(db, colecaoAlvo, tarefaId), { subTarefas: subTarefasAtualizadas });
       } else {
         if (!verificarPermissaoNode(tarefaObj) && !isGestor) {
           throw new Error("Acesso negado: Você não tem permissão para alterar a prioridade desta tarefa!");
@@ -840,11 +840,11 @@ function MainApp() {
 
   const alternarStatusRecursivo = async (tarefaRaiz, caminhoIds) => {
     try {
-      const novasSubs = toggleNodeInTree(tarefaRaiz.subTarefas || [], caminhoIds);
+      const subTarefasAtualizadas = toggleNodeInTree(tarefaRaiz.subTarefas || [], caminhoIds);
       const colecaoAlvo = tarefaRaiz._colecao || 'tarefas_gerais';
 
       await updateDoc(doc(db, colecaoAlvo, tarefaRaiz.id), {
-        subTarefas: novasSubs
+        subTarefas: subTarefasAtualizadas
       });
     } catch (e) {
       alert(e.message || "Acesso negado: Você não tem permissão para alterar esta subtarefa!");
@@ -867,11 +867,11 @@ function MainApp() {
 
     if (!window.confirm("Deseja realmente alterar o status de arquivamento desta página?")) return;
     try {
-      const novasSubs = setArchiveRecursiveProp(tarefa.subTarefas, novaArquivada);
+      const subTarefasAtualizadas = setArchiveRecursiveProp(tarefa.subTarefas, novaArquivada);
       const colecaoAlvo = tarefa._colecao || 'tarefas_gerais';
       await updateDoc(doc(db, colecaoAlvo, tarefa.id), {
         arquivada: novaArquivada,
-        subTarefas: novasSubs
+        subTarefas: subTarefasAtualizadas
       });
       if (paginaLateral && paginaLateral.id === tarefa.id) fecharPainelLateral();
     } catch (e) {}
@@ -903,11 +903,11 @@ function MainApp() {
 
   const executarRestaurarDiretoPai = async (tarefa) => {
     try {
-      const novasSubs = setTrashRecursiveProp(tarefa.subTarefas, false);
+      const subTarefasAtualizadas = setTrashRecursiveProp(tarefa.subTarefas, false);
       const colecaoAlvo = tarefa._colecao || 'tarefas_gerais';
       await updateDoc(doc(db, colecaoAlvo, tarefa.id), {
         excluido: false,
-        subTarefas: novasSubs
+        subTarefas: subTarefasAtualizadas
       });
     } catch (e) {
       alert("Erro ao restaurar: " + e.message);
@@ -916,10 +916,10 @@ function MainApp() {
 
   const executarRestaurarDiretoSub = async (tarefaRaiz, caminhoIds) => {
     try {
-      const novaSubTarefas = trashNodeInTree(tarefaRaiz.subTarefas || [], caminhoIds);
+      const subTarefasAtualizadas = trashNodeInTree(tarefaRaiz.subTarefas || [], caminhoIds);
       const colecaoAlvo = tarefaRaiz._colecao || 'tarefas_gerais';
       await updateDoc(doc(db, colecaoAlvo, tarefaRaiz.id), {
-        subTarefas: novaSubTarefas
+        subTarefas: subTarefasAtualizadas
       });
     } catch (e) {
       alert("Erro ao restaurar subtarefa: " + e.message);
@@ -931,20 +931,20 @@ function MainApp() {
       if (modalExclusao.tipo === 'pai') {
         const tarefa = modalExclusao.tarefa;
         const novoExcluido = !Boolean(tarefa.excluido);
-        const novasSubs = setTrashRecursiveProp(tarefa.subTarefas, novoExcluido);
+        const subTarefasAtualizadas = setTrashRecursiveProp(tarefa.subTarefas, novoExcluido);
         const colecaoAlvo = tarefa._colecao || 'tarefas_gerais';
         await updateDoc(doc(db, colecaoAlvo, tarefa.id), {
           excluido: novoExcluido,
-          subTarefas: novasSubs
+          subTarefas: subTarefasAtualizadas
         });
         if (paginaLateral && paginaLateral.id === tarefa.id) fecharPainelLateral();
       } else if (modalExclusao.tipo === 'sub') {
         const tarefaRaiz = modalExclusao.tarefa;
         const caminhoIds = modalExclusao.caminhoIds;
-        const novaSubTarefas = trashNodeInTree(tarefaRaiz.subTarefas || [], caminhoIds);
+        const subTarefasAtualizadas = trashNodeInTree(tarefaRaiz.subTarefas || [], caminhoIds);
         const colecaoAlvo = tarefaRaiz._colecao || 'tarefas_gerais';
         await updateDoc(doc(db, colecaoAlvo, tarefaRaiz.id), {
-          subTarefas: novaSubTarefas
+          subTarefas: subTarefasAtualizadas
         });
       }
     } catch (e) {
