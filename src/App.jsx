@@ -667,7 +667,14 @@ function MainApp() {
           if (!verificarPermissaoNode(item) && !isGestor) {
             throw new Error("Acesso negado: Você não pertence ao grupo responsável por esta subtarefa!");
           }
-          return { ...item, concluida: !Boolean(item.concluida) };
+          // Regra recursiva: se for um nó intermediário/subtarefa que tem filhos, impede concluir se houver filhos pendentes!
+          const novaConcluida = !Boolean(item.concluida);
+          if (novaConcluida && item.subTarefas && item.subTarefas.length > 0) {
+            if (!todasSubTarefasConcluidas(item.subTarefas)) {
+              throw new Error("Você não pode concluir este item sem que todas as sub-subtarefas abaixo dele estejam concluídas primeiro!");
+            }
+          }
+          return { ...item, concluida: novaConcluida };
         } else {
           return {
             ...item,
@@ -765,12 +772,15 @@ function MainApp() {
     });
   };
 
+  // Validação recursiva profunda e infalível para verificar todos os descendentes (filhas, netas, etc.)
   const todasSubTarefasConcluidas = (subLista) => {
     if (!subLista || subLista.length === 0) return true;
     for (const sub of subLista) {
-      if (!sub.concluida && !sub.excluido) return false;
-      if (sub.subTarefas && sub.subTarefas.length > 0) {
-        if (!todasSubTarefasConcluidas(sub.subTarefas)) return false;
+      if (!sub.excluido) {
+        if (!sub.concluida) return false;
+        if (sub.subTarefas && sub.subTarefas.length > 0) {
+          if (!todasSubTarefasConcluidas(sub.subTarefas)) return false;
+        }
       }
     }
     return true;
@@ -787,7 +797,7 @@ function MainApp() {
     if (novoStatus === 'Resolvida') {
       const todasProntas = todasSubTarefasConcluidas(tarefa.subTarefas);
       if (!todasProntas) {
-        alert("Você não pode concluir a tarefa pai sem que todas as subtarefas estejam concluídas primeiro!");
+        alert("Aviso: Você não pode concluir a tarefa pai sem que todas as subtarefas e sub-níveis estejam concluídos primeiro!");
         return;
       }
     }
@@ -939,7 +949,7 @@ function MainApp() {
     if (!isGestor) return;
     if (window.confirm("ATENÇÃO: Deseja excluir DEFINTIVAMENTE este item da lixeira?")) {
       try {
-        await deleteDoc(doc(doc(db, colecaoAlvo || 'tarefas_gerais', id))); // wait, fix typo doc(db, ...)
+        await deleteDoc(doc(db, colecaoAlvo || 'tarefas_gerais', id));
         if (paginaLateral && paginaLateral.id === id) fecharPainelLateral();
       } catch (err) {}
     }
@@ -1954,7 +1964,7 @@ function TelaLogin({ onLoginSucesso, darkMode, setDarkMode, theme }) {
             </div>
 
             <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Nova Senha</label>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px'>>()}>Nova Senha</label>
               <input type="password" value={novaSenha} onChange={(e) => setNovaSenha(e.target.value)} required style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: `1px solid ${theme.border}`, background: theme.inputBg, color: theme.inputText, boxSizing: 'border-box', fontSize: '14px', fontWeight: '500' }} />
             </div>
 
