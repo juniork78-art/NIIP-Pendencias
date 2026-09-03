@@ -128,19 +128,6 @@ const tempoDecorrido = (timestamp) => {
   return `Há ${diffAnos} ano${diffAnos > 1 ? 's' : ''}`;
 };
 
-const removerPendenciasRecursivo = (lista) => {
-  if (!lista) return [];
-  return lista
-    .filter(item => {
-      const txt = (item.titulo || item.texto || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
-      return !txt.includes('pendencia');
-    })
-    .map(item => ({
-      ...item,
-      subTarefas: removerPendenciasRecursivo(item.subTarefas)
-    }));
-};
-
 const GRUPOS_MEMBROS = {
   noc: ["ESTEVAN", "STEVAN", "GILVAN", "GUSTAVO", "JOÃO", "LUCAS", "KESSY", "TOLENTINO"],
   niip: ["FRANCISCO", "GABRIEL", "WALGNEY"],
@@ -448,25 +435,6 @@ function MainApp() {
       } catch (e) {}
     }
   }, [usuarioLogado]);
-
-  // Auto-limpeza profunda no banco de dados para eliminar tarefas e subtarefas "pendencias"
-  useEffect(() => {
-    if (tarefas && tarefas.length > 0 && db) {
-      tarefas.forEach(t => {
-        const tituloPai = (t.titulo || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
-        if (tituloPai.includes('pendencia')) {
-          deleteDoc(doc(db, t._colecao || 'tarefas_gerais', t.id)).catch(() => {});
-        } else if (t.subTarefas && t.subTarefas.length > 0) {
-          const subTarefasLimpas = removerPendenciasRecursivo(t.subTarefas);
-          if (subTarefasLimpas.length !== t.subTarefas.length) {
-            updateDoc(doc(db, t._colecao || 'tarefas_gerais', t.id), {
-              subTarefas: subTarefasLimpas
-            }).catch(() => {});
-          }
-        }
-      });
-    }
-  }, [tarefas]);
 
   const responsavelFinal = isGestor ? responsavelSelecionadoGestor : nomeForcadoParaUsuario || (TODOS_INTEGRANTES.find(n => nomeFormatadoGlobal.includes(n.toUpperCase())) || TODOS_INTEGRANTES[0]);
 
@@ -877,7 +845,6 @@ function MainApp() {
     } catch (e) {}
   };
 
-  // Exclusão estritamente restrita ao gestor (Duandys)
   const tratarCliqueExcluirOuRestaurarPai = (tarefa) => {
     if (!isGestor) {
       alert("Apenas o gestor pode excluir tarefas.");
@@ -1074,17 +1041,12 @@ function MainApp() {
   const renderizarSubTarefasRecursivas = (subLista, tarefaRaizObj, caminhoPai, nivel = 1) => {
     if (!subLista || subLista.length === 0) return null;
 
-    const subListaFiltrada = subLista.filter(sub => {
-      const txt = (sub.titulo || sub.texto || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
-      return !txt.includes('pendencia');
-    });
-
     return (
       <div style={{ display: 'flex', flexDirection: 'column', width: '100%', position: 'relative' }}>
-        {subListaFiltrada.map((sub, index) => {
+        {subLista.map((sub, index) => {
           const caminhoAtual = [...caminhoPai, sub.id];
           const isExpandidoSub = verificarExpandido(sub.id);
-          const isUltimo = index === subListaFiltrada.length - 1;
+          const isUltimo = index === subLista.length - 1;
 
           const baseIndent = 24;
           const stepIndent = 28;
@@ -1280,13 +1242,11 @@ function MainApp() {
     return <TelaLogin onLoginSucesso={(email) => setUsuarioLogado(email)} darkMode={darkMode} setDarkMode={alternarTema} theme={theme} />;
   }
 
-  const tarefasResolvidas = tarefas.filter(t => t.titulo?.toLowerCase().trim() !== 'pendencias' && t.status === 'Resolvida' && !t.arquivada && !t.excluido);
-  const tarefasArquivadas = tarefas.filter(t => t.titulo?.toLowerCase().trim() !== 'pendencias' && t.arquivada && !t.excluido);
-  const tarefasLixeira = tarefas.filter(t => t.titulo?.toLowerCase().trim() !== 'pendencias' && t.excluido);
+  const tarefasResolvidas = tarefas.filter(t => t.status === 'Resolvida' && !t.arquivada && !t.excluido);
+  const tarefasArquivadas = tarefas.filter(t => t.arquivada && !t.excluido);
+  const tarefasLixeira = tarefas.filter(t => t.excluido);
 
   const tarefasFiltradas = tarefas.filter(t => {
-    if (t.titulo && t.titulo.toLowerCase().trim() === 'pendencias') return false;
-
     const isArquivada = Boolean(t.arquivada);
     const isExcluido = Boolean(t.excluido);
     const isConcluida = t.status === 'Resolvida';
@@ -1355,7 +1315,7 @@ function MainApp() {
           Páginas Recentes
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '14px', overflowY: 'auto', maxHeight: '40vh', marginBottom: '20px' }}>
-          {tarefas.filter(t => !t.arquivada && !t.excluido && t.titulo?.toLowerCase().trim() !== 'pendencias').map(t => (
+          {tarefas.filter(t => !t.arquivada && !t.excluido).map(t => (
             <div 
               key={t.id} 
               onClick={() => {
@@ -1544,7 +1504,7 @@ function MainApp() {
                             });
                           }}
                           title="Clique para alterar os grupos"
-                          style={{ color: isConcluida ? '#27ae60' : theme.textMuted, fontSize: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: '600', cursor: 'pointer', textDecoration: 'underline dotted' }}
+                          style={{ color: isConcluida ? '#27ae60' : theme.textMuted, fontSize: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', cursor: 'pointer', textDecoration: 'underline dotted' }}
                         >
                           🔒 {t.fonteGrupos || 'Particular'}
                         </div>
