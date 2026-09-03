@@ -258,11 +258,9 @@ function MainApp() {
     }
   });
 
+  // Fechadas por padrão (false se não definido)
   const verificarExpandido = (id) => {
-    if (expandidoIds[id] !== undefined) {
-      return expandidoIds[id];
-    }
-    return true; // Abertas por padrão
+    return Boolean(expandidoIds[id]);
   };
 
   const alternarExpandido = (id) => {
