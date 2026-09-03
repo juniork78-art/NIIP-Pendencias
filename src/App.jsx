@@ -491,7 +491,6 @@ function MainApp() {
     const tarefaRaiz = tarefas.find(t => t.id === tarefaRaizId);
     if (!tarefaRaiz) return;
 
-    // Regra: se o usuário tem permissão na tarefa pai, ele pode criar subtarefas nela
     if (!verificarPermissaoNode(tarefaRaiz)) {
       alert("Acesso negado: Você não tem permissão para adicionar subtarefas nesta página!");
       return;
@@ -544,7 +543,6 @@ function MainApp() {
           return (lista || []).map(item => {
             if (item.id === ids[0]) {
               if (ids.length === 1) {
-                // Validação estrita para a subtarefa específica
                 if (!verificarPermissaoNode(item) && !isGestor) {
                   throw new Error("Acesso negado: Você não tem permissão para editar esta subtarefa!");
                 }
@@ -590,7 +588,6 @@ function MainApp() {
           return (lista || []).map(item => {
             if (item.id === ids[0]) {
               if (ids.length === 1) {
-                // Validação estrita para a subtarefa específica
                 if (!verificarPermissaoNode(item) && !isGestor) {
                   throw new Error("Acesso negado: Você não tem permissão para alterar a prioridade desta subtarefa!");
                 }
@@ -663,7 +660,6 @@ function MainApp() {
     return (lista || []).map(item => {
       if (item.id === ids[0]) {
         if (ids.length === 1) {
-          // Validação restrita de permissão exata para a subtarefa (nega acesso se não estiver no grupo)
           if (!verificarPermissaoNode(item) && !isGestor) {
             throw new Error("Acesso negado: Você não pertence ao grupo responsável por esta subtarefa!");
           }
