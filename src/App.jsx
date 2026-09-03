@@ -128,19 +128,6 @@ const tempoDecorrido = (timestamp) => {
   return `Há ${diffAnos} ano${diffAnos > 1 ? 's' : ''}`;
 };
 
-const removerPendenciasRecursivo = (lista) => {
-  if (!lista) return [];
-  return lista
-    .filter(item => {
-      const txt = (item.titulo || item.texto || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
-      return !txt.includes('pendencia');
-    })
-    .map(item => ({
-      ...item,
-      subTarefas: removerPendenciasRecursivo(item.subTarefas)
-    }));
-};
-
 const GRUPOS_MEMBROS = {
   noc: ["ESTEVAN", "STEVAN", "GILVAN", "GUSTAVO", "JOÃO", "LUCAS", "KESSY", "TOLENTINO"],
   niip: ["FRANCISCO", "GABRIEL", "WALGNEY"],
@@ -453,25 +440,6 @@ function MainApp() {
       } catch (e) {}
     }
   }, [usuarioLogado]);
-
-  // Auto-limpeza profunda no banco de dados para eliminar tarefas e subtarefas "pendencias"
-  useEffect(() => {
-    if (tarefas && tarefas.length > 0 && db) {
-      tarefas.forEach(t => {
-        const tituloPai = (t.titulo || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
-        if (tituloPai.includes('pendencia')) {
-          deleteDoc(doc(db, t._colecao || 'tarefas_gerais', t.id)).catch(() => {});
-        } else if (t.subTarefas && t.subTarefas.length > 0) {
-          const subTarefasLimpas = removerPendenciasRecursivo(t.subTarefas);
-          if (subTarefasLimpas.length !== t.subTarefas.length) {
-            updateDoc(doc(db, t._colecao || 'tarefas_gerais', t.id), {
-              subTarefas: subTarefasLimpas
-            }).catch(() => {});
-          }
-        }
-      });
-    }
-  }, [tarefas]);
 
   const responsavelFinal = isGestor ? responsavelSelecionadoGestor : nomeForcadoParaUsuario || (TODOS_INTEGRANTES.find(n => nomeFormatadoGlobal.includes(n.toUpperCase())) || TODOS_INTEGRANTES[0]);
 
