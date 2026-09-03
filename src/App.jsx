@@ -372,18 +372,17 @@ function MainApp() {
     nomeForcadoParaUsuario = 'João';
   }
 
-  // Validação de Permissão por Grupo
-  const usuarioTemPermissaoTarefa = (tarefaObj) => {
+  // Validação centralizada e estrita de Permissão por Grupo para qualquer nó
+  const verificarPermissaoNode = (nodeObj) => {
     if (isGestor) return true;
-    const grupos = tarefaObj.gruposSelecionados;
+    const grupos = nodeObj.gruposSelecionados;
     
     if (!grupos) {
-      if (tarefaObj.criadoPor && tarefaObj.criadoPor.toUpperCase() === nomeFormatadoGlobal.toUpperCase()) return true;
-      return false;
+      return nodeObj.criadoPor && nodeObj.criadoPor.toUpperCase() === nomeFormatadoGlobal.toUpperCase();
     }
 
     if (grupos.Particular) {
-      return tarefaObj.criadoPor && tarefaObj.criadoPor.toUpperCase() === nomeFormatadoGlobal.toUpperCase();
+      return nodeObj.criadoPor && nodeObj.criadoPor.toUpperCase() === nomeFormatadoGlobal.toUpperCase();
     }
 
     let permitido = false;
@@ -392,7 +391,7 @@ function MainApp() {
     if (grupos.NMR && GRUPOS_MEMBROS.nmr.includes(nomeFormatadoGlobal)) permitido = true;
 
     if (!grupos.NOC && !grupos.NIIP && !grupos.NMR && !grupos.Particular) {
-      return tarefaObj.criadoPor && tarefaObj.criadoPor.toUpperCase() === nomeFormatadoGlobal.toUpperCase();
+      return nodeObj.criadoPor && nodeObj.criadoPor.toUpperCase() === nomeFormatadoGlobal.toUpperCase();
     }
 
     return permitido;
@@ -492,7 +491,8 @@ function MainApp() {
     const tarefaRaiz = tarefas.find(t => t.id === tarefaRaizId);
     if (!tarefaRaiz) return;
 
-    if (!usuarioTemPermissaoTarefa(tarefaRaiz)) {
+    // Regra: se o usuário tem permissão na tarefa pai, ele pode criar subtarefas nela
+    if (!verificarPermissaoNode(tarefaRaiz)) {
       alert("Acesso negado: Você não tem permissão para adicionar subtarefas nesta página!");
       return;
     }
@@ -536,12 +536,6 @@ function MainApp() {
     const tarefaObj = tarefas.find(t => t.id === tarefaId);
     if (!tarefaObj) return;
 
-    if (!usuarioTemPermissaoTarefa(tarefaObj) && !isGestor) {
-      alert("Acesso negado: Você não tem permissão para alterar os grupos!");
-      return;
-    }
-
-    const novaFonteStr = formatarFonteGrupos(novosGrupos);
     const colecaoAlvo = tarefaObj._colecao || 'tarefas_gerais';
 
     try {
@@ -550,9 +544,11 @@ function MainApp() {
           return (lista || []).map(item => {
             if (item.id === ids[0]) {
               if (ids.length === 1) {
-                if (!usuarioTemPermissaoTarefa(item) && !isGestor) {
-                  throw new Error("Acesso negado: Você não pertence ao grupo desta subtarefa!");
+                // Validação estrita para a subtarefa específica
+                if (!verificarPermissaoNode(item) && !isGestor) {
+                  throw new Error("Acesso negado: Você não tem permissão para editar esta subtarefa!");
                 }
+                const novaFonteStr = formatarFonteGrupos(novosGrupos);
                 return { ...item, gruposSelecionados: novosGrupos, fonteGrupos: novaFonteStr };
               } else {
                 return { ...item, subTarefas: atualizarGruposSubNaArvore(item.subTarefas || [], ids.slice(1)) };
@@ -565,6 +561,10 @@ function MainApp() {
         const novasSubs = atualizarGruposSubNaArvore(tarefaObj.subTarefas || [], caminhoIds);
         await updateDoc(doc(db, colecaoAlvo, tarefaId), { subTarefas: novasSubs });
       } else {
+        if (!verificarPermissaoNode(tarefaObj) && !isGestor) {
+          throw new Error("Acesso negado: Você não tem permissão para editar esta tarefa!");
+        }
+        const novaFonteStr = formatarFonteGrupos(novosGrupos);
         await updateDoc(doc(db, colecaoAlvo, tarefaId), {
           gruposSelecionados: novosGrupos,
           fonteGrupos: novaFonteStr
@@ -582,11 +582,6 @@ function MainApp() {
     const tarefaObj = tarefas.find(t => t.id === tarefaId);
     if (!tarefaObj) return;
 
-    if (!usuarioTemPermissaoTarefa(tarefaObj) && !isGestor) {
-      alert("Acesso negado: Você não tem permissão para alterar a prioridade!");
-      return;
-    }
-
     const colecaoAlvo = tarefaObj._colecao || 'tarefas_gerais';
 
     try {
@@ -595,8 +590,9 @@ function MainApp() {
           return (lista || []).map(item => {
             if (item.id === ids[0]) {
               if (ids.length === 1) {
-                if (!usuarioTemPermissaoTarefa(item) && !isGestor) {
-                  throw new Error("Acesso negado: Você não pertence ao grupo desta subtarefa!");
+                // Validação estrita para a subtarefa específica
+                if (!verificarPermissaoNode(item) && !isGestor) {
+                  throw new Error("Acesso negado: Você não tem permissão para alterar a prioridade desta subtarefa!");
                 }
                 return { ...item, prioridade: novaPrio };
               } else {
@@ -610,6 +606,9 @@ function MainApp() {
         const novasSubs = atualizarPrioridadeSubNaArvore(tarefaObj.subTarefas || [], caminhoIds);
         await updateDoc(doc(db, colecaoAlvo, tarefaId), { subTarefas: novasSubs });
       } else {
+        if (!verificarPermissaoNode(tarefaObj) && !isGestor) {
+          throw new Error("Acesso negado: Você não tem permissão para alterar a prioridade desta tarefa!");
+        }
         await updateDoc(doc(db, colecaoAlvo, tarefaId), {
           prioridade: novaPrio
         });
@@ -664,8 +663,8 @@ function MainApp() {
     return (lista || []).map(item => {
       if (item.id === ids[0]) {
         if (ids.length === 1) {
-          // Validação restrita de permissão exata para a subtarefa
-          if (!usuarioTemPermissaoTarefa(item) && !isGestor) {
+          // Validação restrita de permissão exata para a subtarefa (nega acesso se não estiver no grupo)
+          if (!verificarPermissaoNode(item) && !isGestor) {
             throw new Error("Acesso negado: Você não pertence ao grupo responsável por esta subtarefa!");
           }
           return { ...item, concluida: !Boolean(item.concluida) };
@@ -719,7 +718,7 @@ function MainApp() {
     return (lista || []).map(item => {
       if (item.id === ids[0]) {
         if (ids.length === 1) {
-          if (!usuarioTemPermissaoTarefa(item) && !isGestor) {
+          if (!verificarPermissaoNode(item) && !isGestor) {
             throw new Error("Acesso negado: Você não pertence ao grupo desta subtarefa!");
           }
           const creator = item.criadoPor || '';
@@ -745,7 +744,7 @@ function MainApp() {
     return (lista || []).map(item => {
       if (item.id === ids[0]) {
         if (ids.length === 1) {
-          if (!usuarioTemPermissaoTarefa(item) && !isGestor) {
+          if (!verificarPermissaoNode(item) && !isGestor) {
             throw new Error("Acesso negado: Você não pertence ao grupo desta subtarefa!");
           }
           const creator = item.criadoPor || '';
@@ -820,7 +819,6 @@ function MainApp() {
     }
     const novaArquivada = !Boolean(tarefa.arquivada);
     
-    // Validação: só permite arquivar se todas as subtarefas estiverem concluídas
     if (novaArquivada) {
       if (!todasSubTarefasConcluidas(tarefa.subTarefas)) {
         alert("Atenção: Só é permitido arquivar a tarefa se todas as subtarefas estiverem concluídas!");
@@ -919,7 +917,7 @@ function MainApp() {
 
   const salvarEdicaoInlineTarefa = async (tarefaId, colecaoAlvo, novoTitulo, tarefaObj) => {
     if (!usuarioTemPermissaoTarefa(tarefaObj)) {
-      alert("Você não tem permissão para editar esta tarefa!");
+      alert("Acesso negado: Você não tem permissão para editar esta tarefa!");
       return;
     }
     if (!novoTitulo.trim()) return;
@@ -947,7 +945,7 @@ function MainApp() {
   const salvarAlteracoesPaginaLateral = async () => {
     if (!paginaLateral) return;
     if (!usuarioTemPermissaoTarefa(paginaLateral) && !isGestor) {
-      alert("Você não tem permissão para editar o conteúdo desta tarefa!");
+      alert("Acesso negado: Você não tem permissão para editar o conteúdo desta tarefa!");
       return;
     }
     try {
@@ -1107,7 +1105,7 @@ function MainApp() {
                       {sub.texto}
                     </span>
                     {renderizarPrioridadeBadge(sub.prioridade || 'Baixa', () => {
-                      if (!usuarioTemPermissaoTarefa(sub) && !isGestor) {
+                      if (!verificarPermissaoNode(sub) && !isGestor) {
                         alert("Acesso negado: Você não tem permissão para alterar a prioridade desta subtarefa!");
                         return;
                       }
@@ -1128,7 +1126,7 @@ function MainApp() {
 
                 <div 
                   onClick={() => {
-                    if (!usuarioTemPermissaoTarefa(sub) && !isGestor) {
+                    if (!verificarPermissaoNode(sub) && !isGestor) {
                       alert("Acesso negado: Você não tem permissão para alterar os grupos desta subtarefa!");
                       return;
                     }
@@ -1177,7 +1175,7 @@ function MainApp() {
                   {paginaAtual === 'andamento' && !isExcluido && (
                     <div 
                       onClick={() => {
-                        if (!usuarioTemPermissaoTarefa(sub) && !isGestor) {
+                        if (!verificarPermissaoNode(sub) && !isGestor) {
                           alert("Acesso negado: Você não tem permissão para adicionar subtarefas aqui!");
                           return;
                         }
