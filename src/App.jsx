@@ -767,7 +767,6 @@ function MainApp() {
     });
   };
 
-  // Validação recursiva profunda e infalível para verificar todos os descendentes
   const todasSubTarefasConcluidas = (subLista) => {
     if (!subLista || subLista.length === 0) return true;
     for (const sub of subLista) {
@@ -846,9 +845,10 @@ function MainApp() {
     } catch (e) {}
   };
 
+  // Permitir que o gestor OU o criador da tarefa (quem tem permissão) possa excluir/mandar para lixeira
   const tratarCliqueExcluirOuRestaurarPai = (tarefa) => {
-    if (!isGestor) {
-      alert("Apenas o gestor pode excluir tarefas.");
+    if (!isGestor && !usuarioTemPermissaoTarefa(tarefa)) {
+      alert("Você não tem permissão para excluir esta tarefa.");
       return;
     }
     if (tarefa.excluido) {
@@ -859,8 +859,8 @@ function MainApp() {
   };
 
   const tratarCliqueExcluirOuRestaurarSub = (tarefaRaiz, caminhoIds, isSubExcluido) => {
-    if (!isGestor) {
-      alert("Apenas o gestor pode excluir subtarefas.");
+    if (!isGestor && !usuarioTemPermissaoTarefa(tarefaRaiz)) {
+      alert("Você não tem permissão para excluir subtarefas nesta tarefa.");
       return;
     }
     if (isSubExcluido) {
@@ -1167,7 +1167,7 @@ function MainApp() {
                   ) : <div></div>}
 
                   <div style={{ display: 'flex', gap: '8px' }}>
-                    {isGestor && (
+                    {(isGestor || verificarPermissaoNode(sub)) && (
                       <button onClick={() => tratarCliqueExcluirOuRestaurarSub(tarefaRaizObj, caminhoAtual, isExcluido)} style={{ background: 'transparent', border: 'none', color: '#eb5757', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}>
                         {isExcluido ? 'Restaurar' : 'Excluir'}
                       </button>
@@ -1505,7 +1505,7 @@ function MainApp() {
                             });
                           }}
                           title="Clique para alterar os grupos"
-                          style={{ color: isConcluida ? '#27ae60' : theme.textMuted, fontSize: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: '600', cursor: 'pointer', textDecoration: 'underline dotted' }}
+                          style={{ color: isConcluida ? '#27ae60' : theme.textMuted, fontSize: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', cursor: 'pointer', textDecoration: 'underline dotted' }}
                         >
                           🔒 {t.fonteGrupos || 'Particular'}
                         </div>
@@ -1530,7 +1530,7 @@ function MainApp() {
                                 {isArquivada ? 'Desarquivar' : 'Arquivar'}
                               </button>
                             )}
-                            {isGestor && (
+                            {(isGestor || usuarioTemPermissaoTarefa(t)) && (
                               <button onClick={() => tratarCliqueExcluirOuRestaurarPai(t)} title="Lixeira" style={{ background: 'transparent', border: 'none', color: '#eb5757', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}>
                                 {isExcluido ? 'Restaurar' : 'Excluir'}
                               </button>
