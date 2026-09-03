@@ -128,19 +128,6 @@ const tempoDecorrido = (timestamp) => {
   return `Há ${diffAnos} ano${diffAnos > 1 ? 's' : ''}`;
 };
 
-const removerPendenciasRecursivo = (lista) => {
-  if (!lista) return [];
-  return lista
-    .filter(item => {
-      const txt = (item.titulo || item.texto || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
-      return !txt.includes('pendencia');
-    })
-    .map(item => ({
-      ...item,
-      subTarefas: removerPendenciasRecursivo(item.subTarefas)
-    }));
-};
-
 const GRUPOS_MEMBROS = {
   noc: ["ESTEVAN", "STEVAN", "GILVAN", "GUSTAVO", "JOÃO", "LUCAS", "KESSY", "TOLENTINO"],
   niip: ["FRANCISCO", "GABRIEL", "WALGNEY"],
@@ -271,7 +258,7 @@ function MainApp() {
     }
   });
 
-  // Regra padrão: Abre expandido (true) caso não haja preferência salva
+  // Regra padrão: Abre expandido (true) por padrão
   const verificarExpandido = (id) => {
     if (expandidoIds[id] !== undefined) {
       return Boolean(expandidoIds[id]);
@@ -387,7 +374,7 @@ function MainApp() {
     nomeForcadoParaUsuario = 'João';
   }
 
-  // Validação centralizada de permissão geral de edição/criação
+  // Validação corrigida: permite acesso se for gestor, criador, ou se algum grupo permitido for atendido
   const verificarPermissaoNode = (nodeObj) => {
     if (isGestor) return true;
 
@@ -396,18 +383,21 @@ function MainApp() {
     }
 
     const grupos = nodeObj.gruposSelecionados;
-    if (!grupos) return false;
+    if (!grupos) return true;
 
-    if (grupos.Particular) {
-      return nodeObj.criadoPor && nodeObj.criadoPor.toUpperCase() === nomeFormatadoGlobal.toUpperCase();
-    }
-
-    let permitido = false;
-    if (grupos.NOC && GRUPOS_MEMBROS.noc.includes(nomeFormatadoGlobal)) permitido = true;
+    let permitidoPorGrupo = false;
+    if (grupos.NOC && GRUPOS_MEMBROS.noc.includes(nomeFormatadoGlobal)) permitidoPorGrupo = true;
     if (grupos.NIIP && GRUPOS_MEMBROS.niip.includes(nomeFormatadoGlobal)) permitido = true;
     if (grupos.NMR && GRUPOS_MEMBROS.nmr.includes(nomeFormatadoGlobal)) permitido = true;
 
-    return permitido;
+    if (permitidoPorGrupo) return true;
+
+    const temGruposEquipe = grupos.NOC || grupos.NIIP || grupos.NMR;
+    if (grupos.Particular && !temGruposEquipe) {
+      return nodeObj.criadoPor && nodeObj.criadoPor.toUpperCase() === nomeFormatadoGlobal.toUpperCase();
+    }
+
+    return false;
   };
 
   const usuarioTemPermissaoTarefa = (tarefaObj) => {
@@ -1521,7 +1511,7 @@ function MainApp() {
                             });
                           }}
                           title="Clique para alterar os grupos"
-                          style={{ color: isConcluida ? '#27ae60' : theme.textMain, fontSize: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: '600', cursor: 'pointer', textDecoration: 'underline dotted' }}
+                          style={{ color: isConcluida ? '#27ae60' : theme.textMuted, fontSize: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: '600', cursor: 'pointer', textDecoration: 'underline dotted' }}
                         >
                           🔒 {t.fonteGrupos || 'Particular'}
                         </div>
