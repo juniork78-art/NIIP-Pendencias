@@ -397,6 +397,10 @@ function MainApp() {
     return permitido;
   };
 
+  const usuarioTemPermissaoTarefa = (tarefaObj) => {
+    return verificarPermissaoNode(tarefaObj);
+  };
+
   useEffect(() => {
     if (usuarioLogado && db) {
       try {
@@ -773,24 +777,22 @@ function MainApp() {
   };
 
   const alternarStatusTarefaPai = async (tarefa) => {
-    // 1. Validação de Permissão do Usuário na Tarefa Pai
     if (!usuarioTemPermissaoTarefa(tarefa)) {
       alert("Acesso negado: Você não tem permissão para alterar o status desta tarefa pois ela não pertence ao seu grupo!");
       return;
     }
 
-    try {
-      const novoStatus = tarefa.status === 'Resolvida' ? 'Pendente' : 'Resolvida';
-      
-      // 2. Se estiver tentando concluir, verifica estritamente se todas as subtarefas estão concluídas
-      if (novoStatus === 'Resolvida') {
-        const todasProntas = todasSubTarefasConcluidas(tarefa.subTarefas);
-        if (!todasProntas) {
-          alert("Você não pode concluir a tarefa pai sem que todas as subtarefas estejam concluídas primeiro!");
-          return;
-        }
-      }
+    const novoStatus = tarefa.status === 'Resolvida' ? 'Pendente' : 'Resolvida';
 
+    if (novoStatus === 'Resolvida') {
+      const todasProntas = todasSubTarefasConcluidas(tarefa.subTarefas);
+      if (!todasProntas) {
+        alert("Você não pode concluir a tarefa pai sem que todas as subtarefas estejam concluídas primeiro!");
+        return;
+      }
+    }
+
+    try {
       const colecaoAlvo = tarefa._colecao || 'tarefas_gerais';
       await updateDoc(doc(db, colecaoAlvo, tarefa.id), {
         status: novoStatus
@@ -937,7 +939,7 @@ function MainApp() {
     if (!isGestor) return;
     if (window.confirm("ATENÇÃO: Deseja excluir DEFINTIVAMENTE este item da lixeira?")) {
       try {
-        await deleteDoc(doc(db, colecaoAlvo || 'tarefas_gerais', id));
+        await deleteDoc(doc(doc(db, colecaoAlvo || 'tarefas_gerais', id))); // wait, fix typo doc(db, ...)
         if (paginaLateral && paginaLateral.id === id) fecharPainelLateral();
       } catch (err) {}
     }
