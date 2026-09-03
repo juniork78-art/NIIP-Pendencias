@@ -1784,7 +1784,7 @@ function MainApp() {
         {/* POP-UP DE CONFIRMAÇÃO DE EXCLUSÃO */}
         {modalExclusao.isOpen && (
           <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, padding: '15px', boxSizing: 'border-box' }}>
-            <div style={{ background: theme.cardBg, padding: '28px', borderRadius: '8px', width: '100%', maxWidth: '420px', border: `1px solid ${theme.border}`, boxShadow: '0 10px 30px rgba(0,0,0,0.3)', textAlign: 'center' }}>
+            <div style={{ background: theme.cardBg, padding: '28px', borderRadius: '8px', width: '100%', maxWidth: '420px', border: `1px solid ${theme.border}`, boxShadow: '0 10px 30px rgba(0,0,0,0.3)`, textAlign: 'center' }}>
               <div style={{ fontSize: '32px', marginBottom: '10px' }}>⚠️</div>
               <h3 style={{ margin: '0 0 10px 0', color: theme.textMain, fontSize: '18px', fontWeight: '700' }}>Confirmação de Exclusão</h3>
               <p style={{ fontSize: '14px', color: theme.textMuted, marginBottom: '24px', fontWeight: '500' }}>Tem certeza de que deseja excluir este item?</p>
