@@ -374,7 +374,6 @@ function MainApp() {
   const verificarPermissaoNode = (nodeObj) => {
     if (isGestor) return true;
 
-    // Se o usuário atual criou esta tarefa/subtarefa específica, permissão concedida!
     if (nodeObj.criadoPor && nodeObj.criadoPor.toUpperCase() === nomeFormatadoGlobal.toUpperCase()) {
       return true;
     }
@@ -1506,7 +1505,7 @@ function MainApp() {
                             });
                           }}
                           title="Clique para alterar os grupos"
-                          style={{ color: isConcluida ? '#27ae60' : theme.textMuted, fontSize: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', cursor: 'pointer', textDecoration: 'underline dotted' }}
+                          style={{ color: isConcluida ? '#27ae60' : theme.textMuted, fontSize: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: '600', cursor: 'pointer', textDecoration: 'underline dotted' }}
                         >
                           🔒 {t.fonteGrupos || 'Particular'}
                         </div>
@@ -1808,7 +1807,7 @@ function ModalEditarGruposFonte({ modalState, onClose, onSave, theme }) {
 
   return (
     <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, padding: '15px', boxSizing: 'border-box' }}>
-      <div style={{ background: theme.cardBg, padding: '28px', borderRadius: '8px', width: '100%', maxWidth: '420px', border: `1px solid ${theme.border}`, boxShadow: '0 10px 30px rgba(0,0,0,0.3)`, textAlign: 'left', maxHeight: '90vh', overflowY: 'auto' }}>
+      <div style={{ background: theme.cardBg, padding: '28px', borderRadius: '8px', width: '100%', maxWidth: '420px', border: `1px solid ${theme.border}`, boxShadow: '0 10px 30px rgba(0,0,0,0.3)', textAlign: 'left', maxHeight: '90vh', overflowY: 'auto' }}>
         <h3 style={{ margin: '0 0 16px 0', color: theme.textMain, fontSize: '18px', fontWeight: '700' }}>Alterar Atribuição de Grupos</h3>
         
         <div style={{ marginBottom: '24px' }}>
