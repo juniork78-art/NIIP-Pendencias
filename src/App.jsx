@@ -773,24 +773,24 @@ function MainApp() {
   };
 
   const alternarStatusTarefaPai = async (tarefa) => {
-    // Validação de permissão
+    // 1. Validação de Permissão do Usuário na Tarefa Pai
     if (!usuarioTemPermissaoTarefa(tarefa)) {
       alert("Acesso negado: Você não tem permissão para alterar o status desta tarefa pois ela não pertence ao seu grupo!");
       return;
     }
 
-    const novoStatus = tarefa.status === 'Resolvida' ? 'Pendente' : 'Resolvida';
-    
-    // Se estiver tentando concluir, verifica se todas as subtarefas estão prontas
-    if (novoStatus === 'Resolvida') {
-      const pronto = todasSubTarefasConcluidas(tarefa.subTarefas);
-      if (!pronto) {
-        alert("Aviso: Você não pode concluir a tarefa pai sem que todas as subtarefas estejam concluídas primeiro!");
-        return;
-      }
-    }
-
     try {
+      const novoStatus = tarefa.status === 'Resolvida' ? 'Pendente' : 'Resolvida';
+      
+      // 2. Se estiver tentando concluir, verifica estritamente se todas as subtarefas estão concluídas
+      if (novoStatus === 'Resolvida') {
+        const todasProntas = todasSubTarefasConcluidas(tarefa.subTarefas);
+        if (!todasProntas) {
+          alert("Você não pode concluir a tarefa pai sem que todas as subtarefas estejam concluídas primeiro!");
+          return;
+        }
+      }
+
       const colecaoAlvo = tarefa._colecao || 'tarefas_gerais';
       await updateDoc(doc(db, colecaoAlvo, tarefa.id), {
         status: novoStatus
