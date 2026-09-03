@@ -128,19 +128,6 @@ const tempoDecorrido = (timestamp) => {
   return `Há ${diffAnos} ano${diffAnos > 1 ? 's' : ''}`;
 };
 
-const removerPendenciasRecursivo = (lista) => {
-  if (!lista) return [];
-  return lista
-    .filter(item => {
-      const txt = (item.titulo || item.texto || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
-      return !txt.includes('pendencia');
-    })
-    .map(item => ({
-      ...item,
-      subTarefas: removerPendenciasRecursivo(item.subTarefas)
-    }));
-};
-
 const GRUPOS_MEMBROS = {
   noc: ["ESTEVAN", "STEVAN", "GILVAN", "GUSTAVO", "JOÃO", "LUCAS", "KESSY", "TOLENTINO"],
   niip: ["FRANCISCO", "GABRIEL", "WALGNEY"],
@@ -448,25 +435,6 @@ function MainApp() {
       } catch (e) {}
     }
   }, [usuarioLogado]);
-
-  // Auto-limpeza profunda no banco de dados para eliminar tarefas e subtarefas "pendencias"
-  useEffect(() => {
-    if (tarefas && tarefas.length > 0 && db) {
-      tarefas.forEach(t => {
-        const tituloPai = (t.titulo || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
-        if (tituloPai.includes('pendencia')) {
-          deleteDoc(doc(db, t._colecao || 'tarefas_gerais', t.id)).catch(() => {});
-        } else if (t.subTarefas && t.subTarefas.length > 0) {
-          const subTarefasLimpas = removerPendenciasRecursivo(t.subTarefas);
-          if (subTarefasLimpas.length !== t.subTarefas.length) {
-            updateDoc(doc(db, t._colecao || 'tarefas_gerais', t.id), {
-              subTarefas: subTarefasLimpas
-            }).catch(() => {});
-          }
-        }
-      });
-    }
-  }, [tarefas]);
 
   const responsavelFinal = isGestor ? responsavelSelecionadoGestor : nomeForcadoParaUsuario || (TODOS_INTEGRANTES.find(n => nomeFormatadoGlobal.includes(n.toUpperCase())) || TODOS_INTEGRANTES[0]);
 
@@ -877,7 +845,6 @@ function MainApp() {
     } catch (e) {}
   };
 
-  // Exclusão estritamente restrita ao gestor (Duandys)
   const tratarCliqueExcluirOuRestaurarPai = (tarefa) => {
     if (!isGestor) {
       alert("Apenas o gestor pode excluir tarefas.");
@@ -1563,6 +1530,7 @@ function MainApp() {
                                 {isArquivada ? 'Desarquivar' : 'Arquivar'}
                               </button>
                             )}
+                            {/* Botão de Excluir visível APENAS para o Gestor (Duandys) */}
                             {isGestor && (
                               <button onClick={() => tratarCliqueExcluirOuRestaurarPai(t)} title="Lixeira" style={{ background: 'transparent', border: 'none', color: '#eb5757', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}>
                                 {isExcluido ? 'Restaurar' : 'Excluir'}
@@ -1993,7 +1961,7 @@ function TelaLogin({ onLoginSucesso, darkMode, setDarkMode, theme }) {
 
             <div style={{ marginBottom: '20px' }}>
               <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Nova Senha</label>
-              <input type="password" value={novaSenha} onChange={(e) => setNovaSenha(e.target.value)} required style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: `1px solid ${theme.border}`, background: theme.inputBg, color: theme.inputText, boxSizing: 'border-box', fontSize: '14px', fontWeight: '500' }} />
+              <input type="password" value= {novaSenha} onChange={(e) => setNovaSenha(e.target.value)} required style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: `1px solid ${theme.border}`, background: theme.inputBg, color: theme.inputText, boxSizing: 'border-box', fontSize: '14px', fontWeight: '500' }} />
             </div>
 
             <button type="submit" style={{ width: '100%', padding: '12px', background: '#27ae60', border: 'none', color: '#fff', fontWeight: '700', borderRadius: '6px', cursor: 'pointer', marginBottom: '10px', fontSize: '14px', boxShadow: '0 2px 5px rgba(0,0,0,0.15)' }}>
