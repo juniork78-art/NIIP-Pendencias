@@ -840,11 +840,11 @@ function MainApp() {
 
   const alternarStatusRecursivo = async (tarefaRaiz, caminhoIds) => {
     try {
-      const novaSubTarefas = toggleNodeInTree(tarefaRaiz.subTarefas || [], caminhoIds);
+      const novasSubs = toggleNodeInTree(tarefaRaiz.subTarefas || [], caminhoIds);
       const colecaoAlvo = tarefaRaiz._colecao || 'tarefas_gerais';
 
       await updateDoc(doc(db, colecaoAlvo, tarefaRaiz.id), {
-        subTarefas: novaSubTarefas
+        subTarefas: novasSubs
       });
     } catch (e) {
       alert(e.message || "Acesso negado: Você não tem permissão para alterar esta subtarefa!");
