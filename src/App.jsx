@@ -128,6 +128,19 @@ const tempoDecorrido = (timestamp) => {
   return `Há ${diffAnos} ano${diffAnos > 1 ? 's' : ''}`;
 };
 
+const removerPendenciasRecursivo = (lista) => {
+  if (!lista) return [];
+  return lista
+    .filter(item => {
+      const txt = (item.titulo || item.texto || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+      return !txt.includes('pendencia');
+    })
+    .map(item => ({
+      ...item,
+      subTarefas: removerPendenciasRecursivo(item.subTarefas)
+    }));
+};
+
 const GRUPOS_MEMBROS = {
   noc: ["ESTEVAN", "STEVAN", "GILVAN", "GUSTAVO", "JOÃO", "LUCAS", "KESSY", "TOLENTINO"],
   niip: ["FRANCISCO", "GABRIEL", "WALGNEY"],
@@ -1108,7 +1121,7 @@ function MainApp() {
                   <div style={{ display: 'flex', alignItems: 'center', overflow: 'hidden' }}>
                     <span 
                       onClick={() => abrirPainelLateralSub(sub, tarefaRaizObj.id, caminhoAtual, tarefaRaizObj)}
-                      style={{ fontWeight: isConcluida ? '600' : '400', color: corTextoSub, textDecoration: isConcluida ? 'line-through' : 'none', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', cursor: 'pointer' }}
+                      style={{ fontWeight: isConcluida ? '600' : '400', fontSize: '13px', color: corTextoSub, textDecoration: isConcluida ? 'line-through' : 'none', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', cursor: 'pointer' }}
                     >
                       {sub.texto}
                     </span>
@@ -1167,6 +1180,7 @@ function MainApp() {
                   ) : <div></div>}
 
                   <div style={{ display: 'flex', gap: '8px' }}>
+                    {/* Botão de Excluir em subtarefas visível apenas para o gestor Duandys e remove instantaneamente da inicial */}
                     {isGestor && (
                       <button onClick={() => tratarCliqueExcluirOuRestaurarSub(tarefaRaizObj, caminhoAtual, isExcluido)} style={{ background: 'transparent', border: 'none', color: '#eb5757', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}>
                         {isExcluido ? 'Restaurar' : 'Excluir'}
@@ -1252,11 +1266,10 @@ function MainApp() {
     const isExcluido = Boolean(t.excluido);
     const isConcluida = t.status === 'Resolvida';
 
+    if (paginaAtual === 'andamento' && isExcluido) return false;
     if (paginaAtual === 'lixeira' && !isExcluido) return false;
     if (paginaAtual === 'arquivados' && (!isArquivada || isExcluido)) return false;
-    
     if (paginaAtual === 'resolvidas' && (!isConcluida || isArquivada || isExcluido)) return false;
-    if (paginaAtual === 'andamento' && (isConcluida || isArquivada || isExcluido)) return false;
 
     if (filtroRecenteId && t.id !== filtroRecenteId) return false;
 
@@ -1380,7 +1393,7 @@ function MainApp() {
               <span onClick={() => mudarPagina('resolvidas')} style={{ fontWeight: paginaAtual === 'resolvidas' ? '700' : '500', color: paginaAtual === 'resolvidas' ? theme.textMain : theme.textMuted, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>✅ Resolvidas</span>
               <span onClick={() => mudarPagina('arquivados')} style={{ fontWeight: paginaAtual === 'arquivados' ? '700' : '500', color: paginaAtual === 'arquivados' ? theme.textMain : theme.textMuted, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>📁 Arquivados</span>
               {isGestor && (
-                <span onClick={() => mudarPagina('lixeira')} style={{ fontWeight: paginaAtual === 'lixeira' ? '700' : '500', color: paginaAtual === 'lixeira' ? theme.textMain : theme.textMuted, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>🗑️ Lixeira</span>
+                <span onClick={() => mudarPagina('lixeira')} style={{ fontWeight: paginaAtual === 'lixeira' ? '700' : '500', color: paginaAtual === 'lixeira' ? theme.textMain : theme.textMuted, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>🗑️ Lixeira ({tarefasLixeira.length})</span>
               )}
             </div>
 
@@ -1428,7 +1441,7 @@ function MainApp() {
 
                   return (
                     <React.Fragment key={t.id}>
-                      {/* LINHA PRINCIPAL DA PÁGINA PAI (EM NEGRITO FORTE - PAI) */}
+                      {/* LINHA PRINCIPAL DA PÁGINA PAI (EM NEGRITO FORTE - TAREFA PAI COM FONTE MAIOR) */}
                       <div 
                         onDoubleClick={() => { setEditandoId(t.id); setTextoEditando(t.titulo); }}
                         style={{ 
@@ -1458,13 +1471,13 @@ function MainApp() {
                               onChange={(e) => setTextoEditando(e.target.value)}
                               onBlur={() => salvarEdicaoInlineTarefa(t.id, t._colecao, textoEditando, t)}
                               onKeyDown={(e) => { if (e.key === 'Enter') salvarEdicaoInlineTarefa(t.id, t._colecao, textoEditando, t); }}
-                              style={{ background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, padding: '4px 8px', fontSize: '14px', borderRadius: '4px', width: '80%', fontWeight: '700' }}
+                              style={{ background: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.inputText, padding: '4px 8px', fontSize: '17px', borderRadius: '4px', width: '80%', fontWeight: '800' }}
                             />
                           ) : (
                             <div style={{ display: 'flex', alignItems: 'center', overflow: 'hidden' }}>
                               <span 
                                 onClick={() => abrirPainelLateral(t)}
-                                style={{ fontWeight: '700', color: isConcluida ? '#27ae60' : theme.textMain, textDecoration: isConcluida ? 'line-through' : 'none', cursor: 'pointer', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                                style={{ fontWeight: '800', fontSize: '17px', color: isConcluida ? '#27ae60' : theme.textMain, textDecoration: isConcluida ? 'line-through' : 'none', cursor: 'pointer', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
                               >
                                 {t.titulo}
                               </span>
@@ -1505,7 +1518,7 @@ function MainApp() {
                             });
                           }}
                           title="Clique para alterar os grupos"
-                          style={{ color: isConcluida ? '#27ae60' : theme.textMuted, fontSize: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', cursor: 'pointer', textDecoration: 'underline dotted' }}
+                          style={{ color: isConcluida ? '#27ae60' : theme.textMain, fontSize: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: '600', cursor: 'pointer', textDecoration: 'underline dotted' }}
                         >
                           🔒 {t.fonteGrupos || 'Particular'}
                         </div>
@@ -1961,7 +1974,7 @@ function TelaLogin({ onLoginSucesso, darkMode, setDarkMode, theme }) {
 
             <div style={{ marginBottom: '20px' }}>
               <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Nova Senha</label>
-              <input type="password" value= {novaSenha} onChange={(e) => setNovaSenha(e.target.value)} required style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: `1px solid ${theme.border}`, background: theme.inputBg, color: theme.inputText, boxSizing: 'border-box', fontSize: '14px', fontWeight: '500' }} />
+              <input type="password" value={novaSenha} onChange={(e) => setNovaSenha(e.target.value)} required style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: `1px solid ${theme.border}`, background: theme.inputBg, color: theme.inputText, boxSizing: 'border-box', fontSize: '14px', fontWeight: '500' }} />
             </div>
 
             <button type="submit" style={{ width: '100%', padding: '12px', background: '#27ae60', border: 'none', color: '#fff', fontWeight: '700', borderRadius: '6px', cursor: 'pointer', marginBottom: '10px', fontSize: '14px', boxShadow: '0 2px 5px rgba(0,0,0,0.15)' }}>
