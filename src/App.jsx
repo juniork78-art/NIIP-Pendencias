@@ -129,7 +129,7 @@ const tempoDecorrido = (timestamp) => {
 };
 
 const GRUPOS_MEMBROS = {
-  noc: ["ESTEVAN", "GILVAN", "GUSTAVO", "JOÃO", "LUCAS", "KESSY", "TOLENTINO"],
+  noc: ["ESTEVAN", "STEVAN", "GILVAN", "GUSTAVO", "JOÃO", "LUCAS", "KESSY", "TOLENTINO"],
   niip: ["FRANCISCO", "GABRIEL", "WALGNEY"],
   nmr: ["DHENNIFER"]
 };
@@ -258,7 +258,6 @@ function MainApp() {
     }
   });
 
-  // Fechadas por padrão (false se não definido)
   const verificarExpandido = (id) => {
     return Boolean(expandidoIds[id]);
   };
@@ -371,14 +370,17 @@ function MainApp() {
     nomeForcadoParaUsuario = 'João';
   }
 
-  // Validação centralizada e estrita de Permissão por Grupo para qualquer nó
+  // Validação centralizada: Se o usuário logado é o criador do item, ele SEMPRE tem permissão total.
   const verificarPermissaoNode = (nodeObj) => {
     if (isGestor) return true;
-    const grupos = nodeObj.gruposSelecionados;
-    
-    if (!grupos) {
-      return nodeObj.criadoPor && nodeObj.criadoPor.toUpperCase() === nomeFormatadoGlobal.toUpperCase();
+
+    // Se o usuário atual criou esta tarefa/subtarefa específica, permissão concedida!
+    if (nodeObj.criadoPor && nodeObj.criadoPor.toUpperCase() === nomeFormatadoGlobal.toUpperCase()) {
+      return true;
     }
+
+    const grupos = nodeObj.gruposSelecionados;
+    if (!grupos) return false;
 
     if (grupos.Particular) {
       return nodeObj.criadoPor && nodeObj.criadoPor.toUpperCase() === nomeFormatadoGlobal.toUpperCase();
@@ -388,10 +390,6 @@ function MainApp() {
     if (grupos.NOC && GRUPOS_MEMBROS.noc.includes(nomeFormatadoGlobal)) permitido = true;
     if (grupos.NIIP && GRUPOS_MEMBROS.niip.includes(nomeFormatadoGlobal)) permitido = true;
     if (grupos.NMR && GRUPOS_MEMBROS.nmr.includes(nomeFormatadoGlobal)) permitido = true;
-
-    if (!grupos.NOC && !grupos.NIIP && !grupos.NMR && !grupos.Particular) {
-      return nodeObj.criadoPor && nodeObj.criadoPor.toUpperCase() === nomeFormatadoGlobal.toUpperCase();
-    }
 
     return permitido;
   };
@@ -1508,7 +1506,7 @@ function MainApp() {
                             });
                           }}
                           title="Clique para alterar os grupos"
-                          style={{ color: isConcluida ? '#27ae60' : theme.textMain, fontSize: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: '600', cursor: 'pointer', textDecoration: 'underline dotted' }}
+                          style={{ color: isConcluida ? '#27ae60' : theme.textMuted, fontSize: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', cursor: 'pointer', textDecoration: 'underline dotted' }}
                         >
                           🔒 {t.fonteGrupos || 'Particular'}
                         </div>
@@ -1810,7 +1808,7 @@ function ModalEditarGruposFonte({ modalState, onClose, onSave, theme }) {
 
   return (
     <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, padding: '15px', boxSizing: 'border-box' }}>
-      <div style={{ background: theme.cardBg, padding: '28px', borderRadius: '8px', width: '100%', maxWidth: '420px', border: `1px solid ${theme.border}`, boxShadow: '0 10px 30px rgba(0,0,0,0.3)', textAlign: 'left', maxHeight: '90vh', overflowY: 'auto' }}>
+      <div style={{ background: theme.cardBg, padding: '28px', borderRadius: '8px', width: '100%', maxWidth: '420px', border: `1px solid ${theme.border}`, boxShadow: '0 10px 30px rgba(0,0,0,0.3)`, textAlign: 'left', maxHeight: '90vh', overflowY: 'auto' }}>
         <h3 style={{ margin: '0 0 16px 0', color: theme.textMain, fontSize: '18px', fontWeight: '700' }}>Alterar Atribuição de Grupos</h3>
         
         <div style={{ marginBottom: '24px' }}>
