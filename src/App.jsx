@@ -258,21 +258,22 @@ function MainApp() {
     }
   });
 
-  const alternarExpandido = (id) => {
-    setExpandidoIds(prev => {
-      const novo = { ...prev, [id]: !prev[id] };
-      try {
-        localStorage.setItem('expandidoIds_fibralink', JSON.stringify(novo));
-      } catch (e) {}
-      return novo;
-    });
-  };
-
   const verificarExpandido = (id) => {
     if (expandidoIds[id] !== undefined) {
       return expandidoIds[id];
     }
     return true; // Abertas por padrão
+  };
+
+  const alternarExpandido = (id) => {
+    setExpandidoIds(prev => {
+      const atual = verificarExpandido(id);
+      const novo = { ...prev, [id]: !atual };
+      try {
+        localStorage.setItem('expandidoIds_fibralink', JSON.stringify(novo));
+      } catch (e) {}
+      return novo;
+    });
   };
 
   useEffect(() => {
