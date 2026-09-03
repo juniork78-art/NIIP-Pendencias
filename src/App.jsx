@@ -128,6 +128,19 @@ const tempoDecorrido = (timestamp) => {
   return `Há ${diffAnos} ano${diffAnos > 1 ? 's' : ''}`;
 };
 
+const removerPendenciasRecursivo = (lista) => {
+  if (!lista) return [];
+  return lista
+    .filter(item => {
+      const txt = (item.titulo || item.texto || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+      return !txt.includes('pendencia');
+    })
+    .map(item => ({
+      ...item,
+      subTarefas: removerPendenciasRecursivo(item.subTarefas)
+    }));
+};
+
 const GRUPOS_MEMBROS = {
   noc: ["ESTEVAN", "STEVAN", "GILVAN", "GUSTAVO", "JOÃO", "LUCAS", "KESSY", "TOLENTINO"],
   niip: ["FRANCISCO", "GABRIEL", "WALGNEY"],
@@ -370,39 +383,6 @@ function MainApp() {
     nomeForcadoParaUsuario = 'João';
   }
 
-  // Função recursiva para remover qualquer subtarefa chamada "pendencias"
-  const removerPendenciasRecursivo = (lista) => {
-    if (!lista) return [];
-    return lista
-      .filter(item => {
-        const txt = (item.titulo || item.texto || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
-        return !txt.includes('pendencia');
-      })
-      .map(item => ({
-        ...item,
-        subTarefas: removerPendenciasRecursivo(item.subTarefas)
-      }));
-  };
-
-  // Auto-limpeza profunda no banco de dados para eliminar tarefas e subtarefas "pendencias"
-  useEffect(() => {
-    if (tarefas && tarefas.length > 0 && db) {
-      tarefas.forEach(t => {
-        const tituloPai = (t.titulo || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
-        if (tituloPai.includes('pendencia')) {
-          deleteDoc(doc(db, t._colecao || 'tarefas_gerais', t.id)).catch(() => {});
-        } else if (t.subTarefas && t.subTarefas.length > 0) {
-          const novasSubs = removerPendenciasRecursivo(t.subTarefas);
-          if (novosSubs.length !== t.subTarefas.length) {
-            updateDoc(doc(db, t._colecao || 'tarefas_gerais', t.id), {
-              subTarefas: novasSubs
-            }).catch(() => {});
-          }
-        }
-      });
-    }
-  }, [tarefas]);
-
   // Validação centralizada: Se o usuário logado é o criador do item, ele SEMPRE tem permissão total.
   const verificarPermissaoNode = (nodeObj) => {
     if (isGestor) return true;
@@ -468,6 +448,25 @@ function MainApp() {
       } catch (e) {}
     }
   }, [usuarioLogado]);
+
+  // Auto-limpeza profunda no banco de dados para eliminar tarefas e subtarefas "pendencias"
+  useEffect(() => {
+    if (tarefas && tarefas.length > 0 && db) {
+      tarefas.forEach(t => {
+        const tituloPai = (t.titulo || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+        if (tituloPai.includes('pendencia')) {
+          deleteDoc(doc(db, t._colecao || 'tarefas_gerais', t.id)).catch(() => {});
+        } else if (t.subTarefas && t.subTarefas.length > 0) {
+          const novasSubs = removerPendenciasRecursivo(t.subTarefas);
+          if (novosSubs.length !== t.subTarefas.length) {
+            updateDoc(doc(db, t._colecao || 'tarefas_gerais', t.id), {
+              subTarefas: novasSubs
+            }).catch(() => {});
+          }
+        }
+      });
+    }
+  }, [tarefas]);
 
   const responsavelFinal = isGestor ? responsavelSelecionadoGestor : nomeForcadoParaUsuario || (TODOS_INTEGRANTES.find(n => nomeFormatadoGlobal.includes(n.toUpperCase())) || TODOS_INTEGRANTES[0]);
 
@@ -1074,7 +1073,6 @@ function MainApp() {
   const renderizarSubTarefasRecursivas = (subLista, tarefaRaizObj, caminhoPai, nivel = 1) => {
     if (!subLista || subLista.length === 0) return null;
 
-    // Filtra e remove itens que contenham "pendencias" antes de renderizar
     const subListaFiltrada = subLista.filter(sub => {
       const txt = (sub.titulo || sub.texto || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
       return !txt.includes('pendencia');
@@ -1545,7 +1543,7 @@ function MainApp() {
                             });
                           }}
                           title="Clique para alterar os grupos"
-                          style={{ color: isConcluida ? '#27ae60' : theme.textMain, fontSize: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: '600', cursor: 'pointer', textDecoration: 'underline dotted' }}
+                          style={{ color: isConcluida ? '#27ae60' : theme.textMuted, fontSize: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: '600', cursor: 'pointer', textDecoration: 'underline dotted' }}
                         >
                           🔒 {t.fonteGrupos || 'Particular'}
                         </div>
