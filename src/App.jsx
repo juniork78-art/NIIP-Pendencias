@@ -482,6 +482,7 @@ function MainApp() {
       setNovoTituloModal('');
       setNovaPrioridadeModal('Baixa');
       setNovosGruposModal({ Particular: true, NOC: false, NIIP: false, NMR: false });
+      setFiltroRecenteId(null); // Reseta o filtro recente para garantir que a nova tarefa apareça na lista!
     }).catch(e => alert("Erro ao criar página: " + e.message));
   };
 
