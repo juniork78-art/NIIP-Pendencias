@@ -491,7 +491,7 @@ function MainApp() {
     const tarefaRaiz = tarefas.find(t => t.id === tarefaRaizId);
     if (!tarefaRaiz) return;
 
-    if (!verificarPermissaoNode(tarefaRaiz)) {
+    if (!usuarioTemPermissaoTarefa(tarefaRaiz)) {
       alert("Acesso negado: Você não tem permissão para adicionar subtarefas nesta página!");
       return;
     }
@@ -773,25 +773,30 @@ function MainApp() {
   };
 
   const alternarStatusTarefaPai = async (tarefa) => {
+    // Validação de permissão
     if (!usuarioTemPermissaoTarefa(tarefa)) {
       alert("Acesso negado: Você não tem permissão para alterar o status desta tarefa pois ela não pertence ao seu grupo!");
       return;
     }
 
-    try {
-      const novoStatus = tarefa.status === 'Resolvida' ? 'Pendente' : 'Resolvida';
-      if (novoStatus === 'Resolvida') {
-        if (!todasSubTarefasConcluidas(tarefa.subTarefas)) {
-          alert("Você não pode concluir a tarefa pai sem que todas as subtarefas estejam concluídas primeiro!");
-          return;
-        }
+    const novoStatus = tarefa.status === 'Resolvida' ? 'Pendente' : 'Resolvida';
+    
+    // Se estiver tentando concluir, verifica se todas as subtarefas estão prontas
+    if (novoStatus === 'Resolvida') {
+      const pronto = todasSubTarefasConcluidas(tarefa.subTarefas);
+      if (!pronto) {
+        alert("Aviso: Você não pode concluir a tarefa pai sem que todas as subtarefas estejam concluídas primeiro!");
+        return;
       }
+    }
+
+    try {
       const colecaoAlvo = tarefa._colecao || 'tarefas_gerais';
       await updateDoc(doc(db, colecaoAlvo, tarefa.id), {
         status: novoStatus
       });
     } catch (e) {
-      alert("Erro: " + e.message);
+      alert("Erro ao alterar status: " + e.message);
     }
   };
 
