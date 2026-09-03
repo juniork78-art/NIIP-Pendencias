@@ -271,8 +271,12 @@ function MainApp() {
     }
   });
 
+  // Regra padrão: Se não foi explicitamente alterado pelo usuário, expande por padrão (true)
   const verificarExpandido = (id) => {
-    return Boolean(expandidoIds[id]);
+    if (expandidoIds[id] !== undefined) {
+      return Boolean(expandidoIds[id]);
+    }
+    return true; 
   };
 
   const alternarExpandido = (id) => {
@@ -448,6 +452,25 @@ function MainApp() {
       } catch (e) {}
     }
   }, [usuarioLogado]);
+
+  // Auto-limpeza profunda no banco de dados para eliminar tarefas e subtarefas "pendencias"
+  useEffect(() => {
+    if (tarefas && tarefas.length > 0 && db) {
+      tarefas.forEach(t => {
+        const tituloPai = (t.titulo || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+        if (tituloPai.includes('pendencia')) {
+          deleteDoc(doc(db, t._colecao || 'tarefas_gerais', t.id)).catch(() => {});
+        } else if (t.subTarefas && t.subTarefas.length > 0) {
+          const subTarefasLimpas = removerPendenciasRecursivo(t.subTarefas);
+          if (subTarefasLimpas.length !== t.subTarefas.length) {
+            updateDoc(doc(db, t._colecao || 'tarefas_gerais', t.id), {
+              subTarefas: subTarefasLimpas
+            }).catch(() => {});
+          }
+        }
+      });
+    }
+  }, [tarefas]);
 
   const responsavelFinal = isGestor ? responsavelSelecionadoGestor : nomeForcadoParaUsuario || (TODOS_INTEGRANTES.find(n => nomeFormatadoGlobal.includes(n.toUpperCase())) || TODOS_INTEGRANTES[0]);
 
@@ -1971,7 +1994,7 @@ function TelaLogin({ onLoginSucesso, darkMode, setDarkMode, theme }) {
               <input type="password" value={senhaAtual} onChange={(e) => setSenhaAtual(e.target.value)} required style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: `1px solid ${theme.border}`, background: theme.inputBg, color: theme.inputText, boxSizing: 'border-box', fontSize: '14px', fontWeight: '500' }} />
             </div>
 
-            <div style={{ marginBottom: '20px' }}>
+            <div style={{ marginBottom: '20px'}}}}
               <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Nova Senha</label>
               <input type="password" value={novaSenha} onChange={(e) => setNovaSenha(e.target.value)} required style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: `1px solid ${theme.border}`, background: theme.inputBg, color: theme.inputText, boxSizing: 'border-box', fontSize: '14px', fontWeight: '500' }} />
             </div>
