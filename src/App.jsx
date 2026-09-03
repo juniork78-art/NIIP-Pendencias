@@ -271,12 +271,8 @@ function MainApp() {
     }
   });
 
-  // Regra padrão: Abre expandido (true) caso não haja preferência salva
   const verificarExpandido = (id) => {
-    if (expandidoIds[id] !== undefined) {
-      return Boolean(expandidoIds[id]);
-    }
-    return true; 
+    return Boolean(expandidoIds[id]);
   };
 
   const alternarExpandido = (id) => {
