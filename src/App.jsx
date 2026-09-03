@@ -370,18 +370,6 @@ function MainApp() {
     nomeForcadoParaUsuario = 'João';
   }
 
-  // Auto-limpeza de tarefas corrompidas chamadas "pendencias"
-  useEffect(() => {
-    if (tarefas && tarefas.length > 0 && db) {
-      tarefas.forEach(t => {
-        const tituloNorm = (t.titulo || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
-        if (tituloNorm.includes('pendencia')) {
-          deleteDoc(doc(db, t._colecao || 'tarefas_gerais', t.id)).catch(() => {});
-        }
-      });
-    }
-  }, [tarefas]);
-
   // Validação centralizada: Se o usuário logado é o criador do item, ele SEMPRE tem permissão total.
   const verificarPermissaoNode = (nodeObj) => {
     if (isGestor) return true;
@@ -1820,7 +1808,7 @@ function ModalEditarGruposFonte({ modalState, onClose, onSave, theme }) {
 
   return (
     <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, padding: '15px', boxSizing: 'border-box' }}>
-      <div style={{ background: theme.cardBg, padding: '28px', borderRadius: '8px', width: '100%', maxWidth: '420px', border: `1px solid ${theme.border}`, boxShadow: '0 10px 30px rgba(0,0,0,0.3)`, textAlign: 'left', maxHeight: '90vh', overflowY: 'auto' }}>
+      <div style={{ background: theme.cardBg, padding: '28px', borderRadius: '8px', width: '100%', maxWidth: '420px', border: `1px solid ${theme.border}`, boxShadow: '0 10px 30px rgba(0,0,0,0.3)', textAlign: 'left', maxHeight: '90vh', overflowY: 'auto' }}>
         <h3 style={{ margin: '0 0 16px 0', color: theme.textMain, fontSize: '18px', fontWeight: '700' }}>Alterar Atribuição de Grupos</h3>
         
         <div style={{ marginBottom: '24px' }}>
