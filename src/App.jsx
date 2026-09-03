@@ -383,7 +383,7 @@ function MainApp() {
     nomeForcadoParaUsuario = 'João';
   }
 
-  // Validação centralizada: Se o usuário logado é o criador do item, ele SEMPRE tem permissão total.
+  // Validação centralizada de permissão geral de edição/criação
   const verificarPermissaoNode = (nodeObj) => {
     if (isGestor) return true;
 
@@ -877,9 +877,10 @@ function MainApp() {
     } catch (e) {}
   };
 
+  // Exclusão estritamente restrita ao gestor (Duandys)
   const tratarCliqueExcluirOuRestaurarPai = (tarefa) => {
-    if (!isGestor && !usuarioTemPermissaoTarefa(tarefa)) {
-      alert("Você não tem permissão para excluir esta tarefa.");
+    if (!isGestor) {
+      alert("Apenas o gestor pode excluir tarefas.");
       return;
     }
     if (tarefa.excluido) {
@@ -890,8 +891,8 @@ function MainApp() {
   };
 
   const tratarCliqueExcluirOuRestaurarSub = (tarefaRaiz, caminhoIds, isSubExcluido) => {
-    if (!isGestor && !usuarioTemPermissaoTarefa(tarefaRaiz)) {
-      alert("Você não tem permissão para excluir subtarefas nesta tarefa.");
+    if (!isGestor) {
+      alert("Apenas o gestor pode excluir subtarefas.");
       return;
     }
     if (isSubExcluido) {
@@ -1203,7 +1204,7 @@ function MainApp() {
                   ) : <div></div>}
 
                   <div style={{ display: 'flex', gap: '8px' }}>
-                    {(isGestor || usuarioTemPermissaoTarefa(sub)) && (
+                    {isGestor && (
                       <button onClick={() => tratarCliqueExcluirOuRestaurarSub(tarefaRaizObj, caminhoAtual, isExcluido)} style={{ background: 'transparent', border: 'none', color: '#eb5757', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}>
                         {isExcluido ? 'Restaurar' : 'Excluir'}
                       </button>
@@ -1543,7 +1544,7 @@ function MainApp() {
                             });
                           }}
                           title="Clique para alterar os grupos"
-                          style={{ color: isConcluida ? '#27ae60' : theme.textMain, fontSize: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: '600', cursor: 'pointer', textDecoration: 'underline dotted' }}
+                          style={{ color: isConcluida ? '#27ae60' : theme.textMuted, fontSize: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: '600', cursor: 'pointer', textDecoration: 'underline dotted' }}
                         >
                           🔒 {t.fonteGrupos || 'Particular'}
                         </div>
@@ -1568,7 +1569,8 @@ function MainApp() {
                                 {isArquivada ? 'Desarquivar' : 'Arquivar'}
                               </button>
                             )}
-                            {(isGestor || usuarioTemPermissaoTarefa(t)) && (
+                            {/* Botão de Excluir visível APENAS para o Gestor (Duandys) */}
+                            {isGestor && (
                               <button onClick={() => tratarCliqueExcluirOuRestaurarPai(t)} title="Lixeira" style={{ background: 'transparent', border: 'none', color: '#eb5757', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}>
                                 {isExcluido ? 'Restaurar' : 'Excluir'}
                               </button>
