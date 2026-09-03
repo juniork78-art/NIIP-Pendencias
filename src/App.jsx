@@ -667,7 +667,6 @@ function MainApp() {
           if (!verificarPermissaoNode(item) && !isGestor) {
             throw new Error("Acesso negado: Você não pertence ao grupo responsável por esta subtarefa!");
           }
-          // Regra recursiva: se for um nó intermediário/subtarefa que tem filhos, impede concluir se houver filhos pendentes!
           const novaConcluida = !Boolean(item.concluida);
           if (novaConcluida && item.subTarefas && item.subTarefas.length > 0) {
             if (!todasSubTarefasConcluidas(item.subTarefas)) {
@@ -772,7 +771,7 @@ function MainApp() {
     });
   };
 
-  // Validação recursiva profunda e infalível para verificar todos os descendentes (filhas, netas, etc.)
+  // Validação recursiva profunda e infalível para verificar todos os descendentes
   const todasSubTarefasConcluidas = (subLista) => {
     if (!subLista || subLista.length === 0) return true;
     for (const sub of subLista) {
@@ -797,7 +796,7 @@ function MainApp() {
     if (novoStatus === 'Resolvida') {
       const todasProntas = todasSubTarefasConcluidas(tarefa.subTarefas);
       if (!todasProntas) {
-        alert("Aviso: Você não pode concluir a tarefa pai sem que todas as subtarefas e sub-níveis estejam concluídos primeiro!");
+        alert("Você não pode concluir a tarefa pai sem que todas as subtarefas estejam concluídas primeiro!");
         return;
       }
     }
@@ -1964,7 +1963,7 @@ function TelaLogin({ onLoginSucesso, darkMode, setDarkMode, theme }) {
             </div>
 
             <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px'>>()}>Nova Senha</label>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Nova Senha</label>
               <input type="password" value={novaSenha} onChange={(e) => setNovaSenha(e.target.value)} required style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: `1px solid ${theme.border}`, background: theme.inputBg, color: theme.inputText, boxSizing: 'border-box', fontSize: '14px', fontWeight: '500' }} />
             </div>
 
