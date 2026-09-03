@@ -1543,7 +1543,7 @@ function MainApp() {
                             });
                           }}
                           title="Clique para alterar os grupos"
-                          style={{ color: isConcluida ? '#27ae60' : theme.textMuted, fontSize: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: '600', cursor: 'pointer', textDecoration: 'underline dotted' }}
+                          style={{ color: isConcluida ? '#27ae60' : theme.textMain, fontSize: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: '600', cursor: 'pointer', textDecoration: 'underline dotted' }}
                         >
                           🔒 {t.fonteGrupos || 'Particular'}
                         </div>
