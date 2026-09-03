@@ -128,6 +128,19 @@ const tempoDecorrido = (timestamp) => {
   return `Há ${diffAnos} ano${diffAnos > 1 ? 's' : ''}`;
 };
 
+const removerPendenciasRecursivo = (lista) => {
+  if (!lista) return [];
+  return lista
+    .filter(item => {
+      const txt = (item.titulo || item.texto || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+      return !txt.includes('pendencia');
+    })
+    .map(item => ({
+      ...item,
+      subTarefas: removerPendenciasRecursivo(item.subTarefas)
+    }));
+};
+
 const GRUPOS_MEMBROS = {
   noc: ["ESTEVAN", "STEVAN", "GILVAN", "GUSTAVO", "JOÃO", "LUCAS", "KESSY", "TOLENTINO"],
   niip: ["FRANCISCO", "GABRIEL", "WALGNEY"],
@@ -374,23 +387,21 @@ function MainApp() {
     nomeForcadoParaUsuario = 'João';
   }
 
-  // Validação corrigida: permite acesso se for gestor, criador, ou se algum grupo permitido for atendido
+  // Validação estrita de grupo: Apenas membros do grupo associado ou o Gestor (Duandys) podem interagir/concluir
   const verificarPermissaoNode = (nodeObj) => {
     if (isGestor) return true;
 
-    if (nodeObj.criadoPor && nodeObj.criadoPor.toUpperCase() === nomeFormatadoGlobal.toUpperCase()) {
-      return true;
+    const grupos = nodeObj.gruposSelecionados;
+    if (!grupos) {
+      return nodeObj.criadoPor && nodeObj.criadoPor.toUpperCase() === nomeFormatadoGlobal.toUpperCase();
     }
 
-    const grupos = nodeObj.gruposSelecionados;
-    if (!grupos) return true;
+    let pertenceAoGrupo = false;
+    if (grupos.NOC && GRUPOS_MEMBROS.noc.includes(nomeFormatadoGlobal)) pertenceAoGrupo = true;
+    if (grupos.NIIP && GRUPOS_MEMBROS.niip.includes(nomeFormatadoGlobal)) pertenceAoGrupo = true;
+    if (grupos.NMR && GRUPOS_MEMBROS.nmr.includes(nomeFormatadoGlobal)) pertenceAoGrupo = true;
 
-    let permitidoPorGrupo = false;
-    if (grupos.NOC && GRUPOS_MEMBROS.noc.includes(nomeFormatadoGlobal)) permitidoPorGrupo = true;
-    if (grupos.NIIP && GRUPOS_MEMBROS.niip.includes(nomeFormatadoGlobal)) permitido = true;
-    if (grupos.NMR && GRUPOS_MEMBROS.nmr.includes(nomeFormatadoGlobal)) permitido = true;
-
-    if (permitidoPorGrupo) return true;
+    if (pertenceAoGrupo) return true;
 
     const temGruposEquipe = grupos.NOC || grupos.NIIP || grupos.NMR;
     if (grupos.Particular && !temGruposEquipe) {
@@ -442,6 +453,25 @@ function MainApp() {
       } catch (e) {}
     }
   }, [usuarioLogado]);
+
+  // Auto-limpeza profunda no banco de dados para eliminar tarefas e subtarefas "pendencias"
+  useEffect(() => {
+    if (tarefas && tarefas.length > 0 && db) {
+      tarefas.forEach(t => {
+        const tituloPai = (t.titulo || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+        if (tituloPai.includes('pendencia')) {
+          deleteDoc(doc(db, t._colecao || 'tarefas_gerais', t.id)).catch(() => {});
+        } else if (t.subTarefas && t.subTarefas.length > 0) {
+          const subTarefasLimpas = removerPendenciasRecursivo(t.subTarefas);
+          if (subTarefasLimpas.length !== t.subTarefas.length) {
+            updateDoc(doc(db, t._colecao || 'tarefas_gerais', t.id), {
+              subTarefas: subTarefasLimpas
+            }).catch(() => {});
+          }
+        }
+      });
+    }
+  }, [tarefas]);
 
   const responsavelFinal = isGestor ? responsavelSelecionadoGestor : nomeForcadoParaUsuario || (TODOS_INTEGRANTES.find(n => nomeFormatadoGlobal.includes(n.toUpperCase())) || TODOS_INTEGRANTES[0]);
 
