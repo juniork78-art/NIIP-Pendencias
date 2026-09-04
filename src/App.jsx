@@ -1820,7 +1820,6 @@ const renderizarCaminhoBreadcrumb = (pagina) => {
               <div style={{ fontSize: '13px', color: theme.textMuted, fontWeight: '600' }}>
                 {renderizarCaminhoBreadcrumb(paginaLateral)}
               </div>
-              </div>
               <div style={{ display: 'flex', gap: '10px' }}>
                 <button onClick={salvarAlteracoesPaginaLateral} title="Salvar Alterações" style={{ background: '#27ae60', border: 'none', color: '#fff', padding: '7px 16px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}>✓ Concluir</button>
                 <button onClick={fecharPainelLateral} style={{ background: 'transparent', border: '1px solid ' + theme.border, color: theme.textMain, padding: '7px 14px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}>✕ Fechar</button>
