@@ -965,12 +965,15 @@ function MainApp() {
 
   const salvarAlteracoesPaginaLateral = async () => {
     if (!paginaLateral) return;
+    
     if (!usuarioTemPermissaoTarefa(paginaLateral) && !isGestor) {
-      alert("Acesso negado: Você não tem permissão para editar o conteúdo desta tarefa!");
+      setModalAlerta({ isOpen: true, titulo: 'Acesso Negado', mensagem: 'Você não tem permissão para editar o conteúdo desta tarefa!' });
       return;
     }
+    
     try {
       const colecaoAlvo = paginaLateral._colecao || 'tarefas_gerais';
+      
       if (paginaLateral.isSub) {
         const tarefaRaiz = tarefas.find(t => t.id === paginaLateral.raizId);
         if (!tarefaRaiz) return;
@@ -981,7 +984,6 @@ function MainApp() {
         await updateDoc(doc(db, colecaoAlvo, paginaLateral.raizId), {
           subTarefas: subAtualizada
         });
-        setPaginaLateral(prev => ({ ...prev, titulo: editTituloLateral.trim(), blocoNotas: editDescricaoLateral.trim() }));
       } else {
         if (!editTituloLateral.trim()) return;
         const creator = paginaLateral.criadoPor || '';
@@ -993,11 +995,13 @@ function MainApp() {
         if (needsEditor) updates.editadoPor = nomeFormatadoGlobal;
 
         await updateDoc(doc(db, colecaoAlvo, paginaLateral.id), updates);
-        setPaginaLateral(prev => ({ ...prev, titulo: editTituloLateral.trim(), blocoNotas: editDescricaoLateral.trim() }));
       }
-      alert("Alterações salvas com sucesso!");
+      
+      // Salva silenciosamente e fecha o painel lateral de forma automática
+      fecharPainelLateral();
+      
     } catch (e) {
-      alert("Erro ao salvar: " + e.message);
+      setModalAlerta({ isOpen: true, titulo: 'Erro', mensagem: "Erro ao salvar: " + e.message });
     }
   };
 
