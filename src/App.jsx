@@ -245,6 +245,7 @@ function MainApp() {
 
   // Estado para Exclusão
   const [modalExclusao, setModalExclusao] = useState({ isOpen: false, tipo: null, tarefa: null, caminhoIds: null });
+  const [modalAlerta, setModalAlerta] = useState({ isOpen: false, titulo: '', mensagem: '' });
 
   const [expandidoIds, setExpandidoIds] = useState(() => {
     try {
@@ -783,7 +784,11 @@ function MainApp() {
 
   const alternarStatusTarefaPai = async (tarefa) => {
     if (!usuarioTemPermissaoTarefa(tarefa)) {
-      alert("Acesso negado: Você não tem permissão para alterar o status desta tarefa pois ela não pertence ao seu grupo!");
+      setModalAlerta({ 
+        isOpen: true, 
+        titulo: 'Acesso Negado', 
+        mensagem: 'Você não tem permissão para alterar o status desta tarefa pois ela não pertence ao seu grupo!' 
+      });
       return;
     }
 
@@ -792,7 +797,11 @@ function MainApp() {
     if (novoStatus === 'Resolvida') {
       const todasProntas = todasSubTarefasConcluidas(tarefa.subTarefas);
       if (!todasProntas) {
-        alert("Você não pode concluir a tarefa pai sem que todas as subtarefas estejam concluídas primeiro!");
+        setModalAlerta({ 
+          isOpen: true, 
+          titulo: 'Ação Bloqueada', 
+          mensagem: 'Você não pode concluir a tarefa pai sem que todas as subtarefas estejam concluídas primeiro!' 
+        });
         return;
       }
     }
@@ -803,7 +812,7 @@ function MainApp() {
         status: novoStatus
       });
     } catch (e) {
-      alert("Erro ao alterar status: " + e.message);
+      setModalAlerta({ isOpen: true, titulo: 'Erro', mensagem: "Erro ao alterar status: " + e.message });
     }
   };
 
@@ -1748,6 +1757,27 @@ function MainApp() {
           </div>
         )}
 
+        {/* MODAL DE ALERTA CUSTOMIZADO */}
+        {modalAlerta.isOpen && (
+          <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 10000, padding: '15px', boxSizing: 'border-box' }}>
+            <div style={{ background: theme.cardBg, padding: '28px', borderRadius: '8px', width: '100%', maxWidth: '400px', border: '1px solid ' + theme.border, boxShadow: '0 10px 30px rgba(0,0,0,0.3)', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <div style={{ fontSize: '36px', marginBottom: '12px' }}>⚠️</div>
+              <h3 style={{ margin: '0 0 12px 0', color: theme.textMain, fontSize: '18px', fontWeight: '700' }}>
+                {modalAlerta.titulo}
+              </h3>
+              <p style={{ fontSize: '14px', color: theme.textMuted, marginBottom: '24px', fontWeight: '500', lineHeight: '1.5' }}>
+                {modalAlerta.mensagem}
+              </p>
+              <button 
+                onClick={() => setModalAlerta({ isOpen: false, titulo: '', mensagem: '' })} 
+                style={{ width: '100%', padding: '10px', background: '#2383e2', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: '600', cursor: 'pointer', fontSize: '14px' }}
+              >
+                Entendi
+              </button>
+            </div>
+          </div>
+        )}
+        
         {/* PAINEL LATERAL DIREITO (SPLIT-VIEW) - BLOCO DE NOTAS LIMPO E INDEPENDENTE */}
         {paginaLateral && (
           <div className="lateral-panel" style={{ width: '450px', background: theme.cardBg, borderLeft: '1px solid ' + theme.border, display: 'flex', flexDirection: 'column', padding: '36px', boxSizing: 'border-box', height: '100vh', overflowY: 'auto', flexShrink: '0', boxShadow: '-5px 0 25px rgba(0,0,0,0.1)' }}>
