@@ -1109,7 +1109,12 @@ const renderizarCaminhoBreadcrumb = (pagina) => {
           const editorSub = sub.editadoPor;
           const displayAutorSub = editorSub && editorSub.toUpperCase() !== autorSub.toUpperCase() ? autorSub + ' (Editado por: ' + editorSub + ')' : autorSub;
 
-          const corTextoSub = isConcluida ? '#27ae60' : (nivel === 1 ? '#2383e2' : '#27ae60');
+          let corPendente = '#27ae60'; // Padrão verde
+          if (nivel === 1) corPendente = '#2383e2'; // Azul para Filhas
+          else if (nivel === 2) corPendente = '#9b59b6'; // Roxo para Netas
+          else if (nivel >= 3) corPendente = '#e67e22'; // Laranja para Bisnetas (opcional)
+
+          const corTextoSub = isConcluida ? '#27ae60' : corPendente;
 
           return (
             <React.Fragment key={sub.id}>
