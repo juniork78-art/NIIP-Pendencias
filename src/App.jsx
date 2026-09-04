@@ -1797,13 +1797,16 @@ function MainApp() {
             </div>
 
             <textarea 
+              key={paginaLateral.id}
+              ref={(el) => {
+                if (el) {
+                  el.style.height = 'auto';
+                  el.style.height = el.scrollHeight + 'px';
+                }
+              }}
               value={editTituloLateral} 
               onChange={(e) => {
                 setEditTituloLateral(e.target.value);
-                e.target.style.height = 'auto';
-                e.target.style.height = e.target.scrollHeight + 'px';
-              }}
-              onFocus={(e) => {
                 e.target.style.height = 'auto';
                 e.target.style.height = e.target.scrollHeight + 'px';
               }}
