@@ -1796,11 +1796,32 @@ function MainApp() {
               </div>
             </div>
 
-            <input 
-              type="text" 
+            <textarea 
               value={editTituloLateral} 
-              onChange={(e) => setEditTituloLateral(e.target.value)}
-              style={{ fontSize: '28px', fontWeight: '800', color: theme.textMain, background: 'transparent', border: 'none', outline: 'none', width: '100%', marginBottom: '24px' }}
+              onChange={(e) => {
+                setEditTituloLateral(e.target.value);
+                e.target.style.height = 'auto';
+                e.target.style.height = e.target.scrollHeight + 'px';
+              }}
+              onFocus={(e) => {
+                e.target.style.height = 'auto';
+                e.target.style.height = e.target.scrollHeight + 'px';
+              }}
+              rows="1"
+              style={{ 
+                fontSize: '28px', 
+                fontWeight: '800', 
+                color: theme.textMain, 
+                background: 'transparent', 
+                border: 'none', 
+                outline: 'none', 
+                width: '100%', 
+                marginBottom: '24px',
+                resize: 'none',
+                overflow: 'hidden',
+                fontFamily: 'inherit',
+                lineHeight: '1.2'
+              }}
             />
 
             <div style={{ marginTop: '28px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
