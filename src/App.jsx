@@ -825,7 +825,11 @@ function MainApp() {
         subTarefas: subTarefasAtualizadas
       });
     } catch (e) {
-      alert(e.message || "Acesso negado: Você não tem permissão para alterar esta subtarefa!");
+      setModalAlerta({
+        isOpen: true,
+        titulo: 'Acesso Negado',
+        mensagem: e.message || "Acesso negado: Você não tem permissão para alterar esta subtarefa!"
+      });
     }
   };
 
