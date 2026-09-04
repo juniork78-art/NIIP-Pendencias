@@ -1004,7 +1004,33 @@ function MainApp() {
       setModalAlerta({ isOpen: true, titulo: 'Erro', mensagem: "Erro ao salvar: " + e.message });
     }
   };
-
+const renderizarCaminhoBreadcrumb = (pagina) => {
+    if (!pagina) return 'Biblioteca';
+    if (!pagina.isSub) return `Biblioteca / ${editTituloLateral || pagina.titulo}`;
+    
+    const raiz = tarefas.find(t => t.id === pagina.raizId);
+    if (!raiz) return `Biblioteca / ${editTituloLateral || pagina.titulo}`;
+    
+    let caminho = [raiz.titulo];
+    let atual = raiz.subTarefas || [];
+    const ids = pagina.caminhoIds || [];
+    
+    for (let i = 0; i < ids.length; i++) {
+      const id = ids[i];
+      const node = atual.find(s => s.id === id);
+      if (node) {
+        // Se for a última subtarefa (a que está aberta), usa o texto que está sendo digitado
+        if (i === ids.length - 1) {
+          caminho.push(editTituloLateral || node.texto);
+        } else {
+          caminho.push(node.texto);
+        }
+        atual = node.subTarefas || [];
+      }
+    }
+    return `Biblioteca / ${caminho.join(' / ')}`;
+  };
+  
   const theme = {
     bg: darkMode ? '#141414' : '#f7f6f2',
     sidebarBg: darkMode ? '#1c1c1c' : '#eeedeb',
