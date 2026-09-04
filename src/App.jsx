@@ -835,14 +835,22 @@ function MainApp() {
 
   const arquivarTarefaPai = async (tarefa) => {
     if (!usuarioTemPermissaoTarefa(tarefa)) {
-      alert("Acesso negado: Você não tem permissão para arquivar esta tarefa!");
+      setModalAlerta({ 
+        isOpen: true, 
+        titulo: 'Acesso Negado', 
+        mensagem: 'Você não tem permissão para arquivar esta tarefa!' 
+      });
       return;
     }
     const novaArquivada = !Boolean(tarefa.arquivada);
     
     if (novaArquivada) {
       if (!todasSubTarefasConcluidas(tarefa.subTarefas)) {
-        alert("Atenção: Só é permitido arquivar a tarefa se todas as subtarefas estiverem concluídas!");
+        setModalAlerta({ 
+          isOpen: true, 
+          titulo: 'Ação Bloqueada', 
+          mensagem: 'Atenção: Só é permitido arquivar a tarefa se todas as subtarefas estiverem concluídas!' 
+        });
         return;
       }
     }
@@ -856,7 +864,9 @@ function MainApp() {
         subTarefas: subTarefasAtualizadas
       });
       if (paginaLateral && paginaLateral.id === tarefa.id) fecharPainelLateral();
-    } catch (e) {}
+    } catch (e) {
+      setModalAlerta({ isOpen: true, titulo: 'Erro', mensagem: "Erro ao arquivar: " + e.message });
+    }
   };
 
   const tratarCliqueExcluirOuRestaurarPai = (tarefa) => {
