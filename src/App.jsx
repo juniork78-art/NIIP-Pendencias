@@ -1818,7 +1818,8 @@ const renderizarCaminhoBreadcrumb = (pagina) => {
             
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
               <div style={{ fontSize: '13px', color: theme.textMuted, fontWeight: '600' }}>
-                Biblioteca / {paginaLateral.titulo}
+                {renderizarCaminhoBreadcrumb(paginaLateral)}
+              </div>
               </div>
               <div style={{ display: 'flex', gap: '10px' }}>
                 <button onClick={salvarAlteracoesPaginaLateral} title="Salvar Alterações" style={{ background: '#27ae60', border: 'none', color: '#fff', padding: '7px 16px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}>✓ Concluir</button>
