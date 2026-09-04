@@ -1297,7 +1297,7 @@ function MainApp() {
   });
 
   return (
-    <div className="workspace-layout" style={{ display: 'flex', minHeight: '100vh', backgroundColor: theme.bg, color: theme.textMain, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif', boxSizing: 'border-box' }}>
+    <div className="workspace-layout" style={{ display: 'flex', height: '100vh', overflow: 'hidden', backgroundColor: theme.bg, color: theme.textMain, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif', boxSizing: 'border-box' }}>
       
       {/* SIDEBAR ESQUERDA NOTION */}
       <div className="sidebar-notion" style={{ width: '250px', background: theme.sidebarBg, borderRight: '1px solid ' + theme.border, display: 'flex', flexDirection: 'column', padding: '16px 10px', boxSizing: 'border-box', flexShrink: '0' }}>
