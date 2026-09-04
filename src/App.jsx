@@ -129,7 +129,7 @@ const tempoDecorrido = (timestamp) => {
 };
 
 const GRUPOS_MEMBROS = {
-  noc: ["ESTEVAN", "STEVAN", "GILVAN", "GUSTAVO", "JOÃO", "LUCAS", "KESSY", "TOLENTINO"],
+  noc: ["ESTEVAN", "STEVAN", "GILVAN", "GUSTAVO", "JOAO", "LUCAS", "KESSY", "TOLENTINO"],
   niip: ["FRANCISCO", "GABRIEL", "WALGNEY"],
   nmr: ["DHENNIFER"]
 };
