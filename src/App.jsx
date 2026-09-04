@@ -1119,10 +1119,10 @@ function MainApp() {
                   </span>
 
                   <span>📄</span>
-                  <div style={{ display: 'flex', alignItems: 'center', overflow: 'hidden' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
                     <span 
                       onClick={() => abrirPainelLateralSub(sub, tarefaRaizObj.id, caminhoAtual, tarefaRaizObj)}
-                      style={{ fontWeight: isConcluida ? '600' : '400', fontSize: '13px', color: corTextoSub, textDecoration: isConcluida ? 'line-through' : 'none', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', cursor: 'pointer' }}
+                      style={{ fontWeight: isConcluida ? '600' : '400', fontSize: '13px', color: corTextoSub, textDecoration: isConcluida ? 'line-through' : 'none', whiteSpace: 'normal', wordBreak: 'break-word', cursor: 'pointer' }}
                     >
                       {sub.texto}
                     </span>
