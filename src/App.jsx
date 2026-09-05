@@ -1155,7 +1155,7 @@ const renderizarCaminhoBreadcrumb = (pagina) => {
                   padding: '12px 0', 
                   borderBottom: '1px solid ' + theme.border, 
                   alignItems: 'center', 
-                  fontSize: '14px', 
+                  fontSize: '16px', 
                   transition: 'background 0.1s',
                   position: 'relative',
                   backgroundColor: isConcluida ? (darkMode ? 'rgba(39, 174, 96, 0.25)' : 'rgba(39, 174, 96, 0.18)') : 'transparent'
@@ -1187,7 +1187,7 @@ const renderizarCaminhoBreadcrumb = (pagina) => {
                   <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
                     <span 
                       onClick={() => abrirPainelLateralSub(sub, tarefaRaizObj.id, caminhoAtual, tarefaRaizObj)}
-                      style={{ fontWeight: isConcluida ? '600' : '400', fontSize: '13px', color: corTextoSub, textDecoration: isConcluida ? 'line-through' : 'none', whiteSpace: 'normal', wordBreak: 'break-word', cursor: 'pointer' }}
+                      style={{ fontWeight: isConcluida ? '600' : '400', fontSize: '15px', color: corTextoSub, textDecoration: isConcluida ? 'line-through' : 'none', whiteSpace: 'normal', wordBreak: 'break-word', cursor: 'pointer' }}
                     >
                       {sub.texto}
                     </span>
