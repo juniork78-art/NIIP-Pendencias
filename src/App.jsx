@@ -1269,21 +1269,18 @@ const renderizarCaminhoBreadcrumb = (pagina) => {
                         setModalNovaSub({ isOpen: true, tarefaRaizId: tarefaRaizObj.id, caminhoIds: caminhoAtual });
                       }}
                       style={{ 
-                        display: 'grid', 
-                        gridTemplateColumns: '2.5fr 1.5fr 1.5fr 1fr 1fr', 
-                        padding: '12px 0', 
-                        borderBottom: '1px solid ' + theme.border, 
-                        alignItems: 'center', 
-                        fontSize: '14px', 
-                        color: theme.textMain, 
-                        cursor: 'pointer', 
-                        transition: 'background 0.1s',
-                        background: theme.cardInner,
-                        fontWeight: '600',
-                        position: 'relative'
+                        display: 'flex',
+                        alignItems: 'center',
+                        padding: '8px 12px',
+                        cursor: 'pointer',
+                        fontSize: '13px',
+                        color: theme.textMuted,
+                        background: 'transparent', // Garante que nunca terá fundo cinza
+                        position: 'relative',
+                        transition: 'color 0.2s'
                       }}
-                      onMouseEnter={(e) => e.currentTarget.style.background = theme.cardInner}
-                      onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                      onMouseEnter={(e) => e.currentTarget.style.color = theme.textMain}
+                      onMouseLeave={(e) => e.currentTarget.style.color = theme.textMuted}
                     >
                       <div style={{
                         position: 'absolute',
