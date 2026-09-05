@@ -1539,7 +1539,11 @@ const renderizarCaminhoBreadcrumb = (pagina) => {
                         <div 
                           onClick={() => {
                             if (!verificarPermissaoNode(t) && !isGestor) {
-                              alert("Acesso negado: Você não tem permissão para alterar os grupos desta tarefa!");
+                              setModalAlerta({
+                                isOpen: true,
+                                titulo: 'Acesso Negado',
+                                mensagem: 'Você não tem permissão para alterar os grupos desta tarefa!'
+                              });
                               return;
                             }
                             setModalEditarGruposFonte({
