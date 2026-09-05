@@ -1106,12 +1106,20 @@ const renderizarCaminhoBreadcrumb = (pagina) => {
       <div style={{
         position: 'absolute',
         top: 0,
-        bottom: '24px',
-        left: currentIndent + 'px',
-        width: '1px',
-        backgroundColor: theme.treeLine,
-        pointerEvents: 'none'
-      }} />
+        bottom: 0,
+        left: (currentIndent - 2) + 'px',
+        width: '5px',
+        pointerEvents: 'none',
+        zIndex: 2,
+        display: 'flex',
+        justifyContent: 'center'
+      }}>
+        <div style={{
+          width: '1px',
+          height: '100%',
+          backgroundColor: theme.treeLine
+        }} />
+      </div>
 
       {subLista.map((sub, index) => {
         const caminhoAtual = [...caminhoPai, sub.id];
