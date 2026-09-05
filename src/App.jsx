@@ -1094,16 +1094,29 @@ const renderizarCaminhoBreadcrumb = (pagina) => {
   const renderizarSubTarefasRecursivas = (subLista, tarefaRaizObj, caminhoPai, nivel = 1) => {
     if (!subLista || subLista.length === 0) return null;
 
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', width: '100%', position: 'relative' }}>
-        {subLista.map((sub, index) => {
-          const caminhoAtual = [...caminhoPai, sub.id];
-          const isExpandidoSub = verificarExpandido(sub.id);
-          const isUltimo = index === subLista.length - 1;
+  // 1. Tiramos o cálculo daqui de baixo e colocamos antes do return
+  const baseIndent = 24;
+  const stepIndent = 28;
+  const currentIndent = baseIndent + ((nivel - 1) * stepIndent);
 
-          const baseIndent = 24;
-          const stepIndent = 28;
-          const currentIndent = baseIndent + ((nivel - 1) * stepIndent);
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', width: '100%', position: 'relative' }}>
+      
+      {/* 2. Nossa linha guia contínua entra aqui! */}
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        bottom: '24px',
+        left: currentIndent + 'px',
+        width: '1px',
+        backgroundColor: theme.treeLine,
+        pointerEvents: 'none'
+      }} />
+
+      {subLista.map((sub, index) => {
+        const caminhoAtual = [...caminhoPai, sub.id];
+        const isExpandidoSub = verificarExpandido(sub.id);
+        const isUltimo = index === subLista.length - 1;
 
           const isConcluida = Boolean(sub.concluida);
           const isArquivada = Boolean(sub.arquivada);
