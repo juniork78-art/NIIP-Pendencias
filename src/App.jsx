@@ -1906,7 +1906,7 @@ function ModalEditarGruposFonte({ modalState, onClose, onSave, theme }) {
         <div style={{ marginBottom: '24px' }}>
           <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '8px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Selecione os Grupos</label>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: theme.cardInner, padding: '12px', borderRadius: '6px', border: '1px solid ' + theme.border }}>
-            {Object.keys(gruposSelecionados).map((grupo) => (
+            {['Particular', 'NOC', 'NIIP', 'NMR'].map((grupo) => (
               <label key={grupo} style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '14px', fontWeight: '500', cursor: 'pointer', color: theme.textMain }}>
                 <input 
                   type="checkbox" 
