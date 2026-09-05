@@ -571,7 +571,6 @@ function MainApp() {
         });
       }
       setModalEditarGruposFonte({ isOpen: false, isSub: false, tarefaId: null, caminhoIds: null, gruposAtuais: {} });
-      alert("Atribuição de grupos atualizada com sucesso!");
     } catch (e) {
       alert("Erro: " + e.message);
     }
@@ -1194,7 +1193,7 @@ const renderizarCaminhoBreadcrumb = (pagina) => {
                 <div 
                   onClick={() => {
                     if (!verificarPermissaoNode(sub) && !isGestor) {
-                      alert("Acesso negado: Você não tem permissão para alterar os grupos desta subtarefa!");
+                      setModalAlerta({ isOpen: true, titulo: 'Acesso Negado', mensagem: 'Você não tem permissão para alterar os grupos desta subtarefa!' });
                       return;
                     }
                     setModalEditarGruposFonte({
@@ -1517,7 +1516,7 @@ const renderizarCaminhoBreadcrumb = (pagina) => {
                               </span>
                               {renderizarPrioridadeBadge(t.prioridade || 'Baixa', () => {
                                 if (!verificarPermissaoNode(t) && !isGestor) {
-                                  alert("Acesso negado: Você não tem permissão para alterar a prioridade desta tarefa!");
+                                  setModalAlerta({ isOpen: true, titulo: 'Acesso Negado', mensagem: 'Você não tem permissão para alterar os grupos desta tarefa!' });
                                   return;
                                 }
                                 setModalEditarPrioridade({
