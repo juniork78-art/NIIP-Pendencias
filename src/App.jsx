@@ -1146,7 +1146,7 @@ const renderizarCaminhoBreadcrumb = (pagina) => {
             <div style={{
               position: 'absolute',
               top: 0,
-              bottom: '-12px', // Desce um pouco além da linha para conectar perfeitamente com o botão de adicionar
+              bottom: '-45px', // Desce um pouco além da linha para conectar perfeitamente com o botão de adicionar
               left: currentIndent + 'px',
               width: '1px',
               backgroundColor: theme.treeLine,
