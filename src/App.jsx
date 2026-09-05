@@ -1143,15 +1143,15 @@ const renderizarCaminhoBreadcrumb = (pagina) => {
                 onMouseLeave={(e) => { if (!isConcluida) e.currentTarget.style.background = 'transparent'; }}
               >
                 {/* Linha guia vertical */}
-                <div style={{
-                  position: 'absolute',
-                  top: 0,
-                  bottom: isUltimo ? '50%' : 0,
-                  left: currentIndent + 'px',
-                  width: '1px',
-                  backgroundColor: theme.treeLine,
-                  pointerEvents: 'none'
-                }} />
+            <div style={{
+              position: 'absolute',
+              top: 0,
+              bottom: '-12px', // Desce um pouco além da linha para conectar perfeitamente com o botão de adicionar
+              left: currentIndent + 'px',
+              width: '1px',
+              backgroundColor: theme.treeLine,
+              pointerEvents: 'none'
+            }} />
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden', paddingLeft: (currentIndent - 4) + 'px', paddingRight: '10px', position: 'relative' }}>
                   <span style={{ fontFamily: 'monospace', color: theme.textMuted, fontSize: '13px', userSelect: 'none', fontWeight: 'bold' }}>
