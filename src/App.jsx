@@ -494,9 +494,13 @@ function MainApp() {
     if (!tarefaRaiz) return;
 
     if (!usuarioTemPermissaoTarefa(tarefaRaiz)) {
-      alert("Acesso negado: Você não tem permissão para adicionar subtarefas nesta página!");
-      return;
-    }
+  setModalAlerta({ 
+    isOpen: true, 
+    titulo: 'Acesso Negado', 
+    mensagem: 'Você não tem permissão para adicionar subtarefas nesta página!' 
+  });
+  return;
+}
 
     const novaSub = {
       id: Date.now().toString() + "_" + Math.random().toString(36).substring(2, 5),
@@ -1263,7 +1267,11 @@ const renderizarCaminhoBreadcrumb = (pagina) => {
                     <div 
                       onClick={() => {
                         if (!verificarPermissaoNode(sub) && !isGestor) {
-                          alert("Acesso negado: Você não tem permissão para adicionar subtarefas aqui!");
+                          setModalAlerta({
+                             isOpen: true,
+                             titulo: 'Acesso Negado',
+                             mensagem: 'Você não tem permissão para adicionar subtarefas aqui!'
+                          });
                           return;
                         }
                         setModalNovaSub({ isOpen: true, tarefaRaizId: tarefaRaizObj.id, caminhoIds: caminhoAtual });
