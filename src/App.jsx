@@ -1328,7 +1328,7 @@ const renderizarCaminhoBreadcrumb = (pagina) => {
     const isExcluido = Boolean(t.excluido);
     const isConcluida = t.status === 'Resolvida';
 
-    if (paginaAtual === 'andamento' && isExcluido) return false;
+    if (paginaAtual === 'andamento' && (isConcluida || isExcluido)) return false;
     if (paginaAtual === 'lixeira' && !isExcluido) return false;
     if (paginaAtual === 'arquivados' && (!isArquivada || isExcluido)) return false;
     if (paginaAtual === 'resolvidas' && (!isConcluida || isArquivada || isExcluido)) return false;
