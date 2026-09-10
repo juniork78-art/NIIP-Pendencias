@@ -1197,7 +1197,11 @@ const renderizarCaminhoBreadcrumb = (pagina) => {
                     </span>
                     {renderizarPrioridadeBadge(sub.prioridade || 'Baixa', () => {
                       if (!verificarPermissaoNode(sub) && !isGestor) {
-                        alert("Acesso negado: Você não tem permissão para alterar a prioridade desta subtarefa!");
+                        setModalAlerta({
+                          isOpen: true,
+                          titulo: 'Acesso Negado',
+                          mensagem: 'Você não tem permissão para alterar a prioridade desta subtarefa!'
+                        });
                         return;
                       }
                       setModalEditarPrioridade({
