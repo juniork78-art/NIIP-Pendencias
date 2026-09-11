@@ -68,7 +68,8 @@ style.innerHTML = `
   /* RESPONSIVIDADE PARA CELULARES */
   .table-responsive-wrapper {
     width: 100%;
-    overflow-x: auto;
+    /* Alterado de auto para hidden para remover a quebra/corte horizontal no mobile */
+    overflow-x: hidden; 
     -webkit-overflow-scrolling: touch;
   }
 
@@ -80,6 +81,11 @@ style.innerHTML = `
       width: 100% !important;
       height: auto !important;
       max-height: none !important;
+      padding: 16px !important;
+    }
+    /* Diminui a lista de páginas recentes para não empurrar a tela toda pra baixo */
+    .sidebar-notion > div:nth-of-type(4) {
+      max-height: 120px !important; 
     }
     .main-content-area {
       padding: 16px !important;
@@ -91,6 +97,57 @@ style.innerHTML = `
       left: 0;
       z-index: 1000;
       height: 100vh !important;
+    }
+
+    /* --- MÁGICA DE LAYOUT: TABELA VIRA CARDS NO CELULAR --- */
+    
+    /* 1. Remove a largura forçada de 700px que cortava a tela */
+    .table-responsive-wrapper > div {
+      min-width: 100% !important;
+    }
+    
+    /* 2. Oculta o cabeçalho original da tabela (Nome, Criado por...) pois não serve nos cards */
+    .table-responsive-wrapper > div[style*="uppercase"] {
+      display: none !important;
+    }
+
+    /* 3. Transforma as linhas de tarefas em cartões flexíveis e empilhados */
+    .table-responsive-wrapper div[style*="grid-template-columns"] {
+      display: flex !important;
+      flex-direction: column !important;
+      padding: 14px 12px !important;
+      gap: 10px !important;
+      border: 1px solid rgba(120, 119, 116, 0.4) !important;
+      border-radius: 10px !important;
+      margin-bottom: 12px !important;
+    }
+
+    /* 4. Ajusta todas as "células" internas para largura total */
+    .table-responsive-wrapper div[style*="grid-template-columns"] > div {
+      width: 100% !important;
+      padding: 0 !important;
+    }
+
+    /* 5. Coloca os botões de ações (Concluir, Excluir) em uma base destacada no final do card */
+    .table-responsive-wrapper div[style*="grid-template-columns"] > div:last-child {
+      display: flex !important;
+      justify-content: space-between !important;
+      align-items: center !important;
+      border-top: 1px dashed rgba(120, 119, 116, 0.4) !important;
+      padding-top: 12px !important;
+      margin-top: 6px !important;
+    }
+
+    /* 6. Evita que o botão "+ Adicionar nova" também vire um card gigante */
+    .table-responsive-wrapper div[style*="align-content: center"],
+    .table-responsive-wrapper div[style*="alignContent: center"] {
+      display: flex !important;
+      flex-direction: row !important;
+      align-items: center !important;
+      border: none !important;
+      margin-bottom: 0 !important;
+      padding: 8px 0 !important;
+      background: transparent !important;
     }
   }
 `;
