@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { auth, db } from './firebase';
 import { 
   signInWithEmailAndPassword, 
-  signOut, 
+  signOut,
   onAuthStateChanged,
   updatePassword 
 } from 'firebase/auth';
@@ -363,7 +363,7 @@ function MainApp() {
   }, []);
 
   const nomeFormatadoGlobal = usuarioLogado ? usuarioLogado.split('@')[0].replace('.', ' ').toUpperCase() : '';
-  const isGestor = nomeFormatadoGlobal.includes('DUANDYS');
+  const isGestor = nomeFormatadoGlobal.includes('DUANDYS') || nomeFormatadoGlobal.includes('ADMIN');
 
   const emailLowerGlobal = usuarioLogado ? usuarioLogado.toLowerCase() : '';
   let nomeForcadoParaUsuario = null;
