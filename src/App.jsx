@@ -72,16 +72,26 @@ style.innerHTML = `
   }
 
   @media (max-width: 768px) {
-    /* Trava a tela para impedir que arraste para os lados */
-    html, body, .workspace-layout {
+    /* DESTRAVA O SCROLL: Permite que a página toda role no celular */
+    html, body {
       overflow-x: hidden !important;
-      max-width: 100vw !important;
+      overflow-y: auto !important; 
     }
     
+    /* Cancela o 100vh do código original que prendia a tela */
     .workspace-layout {
       flex-direction: column !important;
+      height: auto !important; 
+      min-height: 100vh !important;
+      overflow: visible !important; 
     }
-    
+
+    /* Destrava a área direita (onde ficam as tarefas) */
+    .workspace-layout > div:not(.sidebar-notion) {
+      overflow: visible !important;
+      height: auto !important;
+    }
+
     .sidebar-notion {
       width: 100% !important;
       height: auto !important;
@@ -89,16 +99,14 @@ style.innerHTML = `
       padding: 16px !important;
     }
     
-    /* Diminui a lista de páginas recentes na sidebar para não empurrar muito a tela */
-    .sidebar-notion > div:nth-of-type(4) {
-      max-height: 120px !important; 
-    }
-    
+    /* Remove o scroll "interno" das tarefas, deixando a página rolar por inteiro */
     .main-content-area {
       padding: 16px !important;
-      overflow-x: hidden !important;
+      overflow: visible !important; 
+      height: auto !important;
     }
     
+    /* O painel de edição lateral continua preenchendo a tela toda quando aberto */
     .lateral-panel {
       width: 100% !important;
       position: fixed !important;
@@ -106,18 +114,16 @@ style.innerHTML = `
       left: 0;
       z-index: 1000;
       height: 100vh !important;
+      overflow-y: auto !important;
     }
 
     /* --- MÁGICA DE LAYOUT CORRIGIDA: TABELA VIRA CARDS --- */
-    
-    /* 1. Mata a largura mínima de 700px que estava quebrando o celular */
     .table-responsive-wrapper > div,
     .table-responsive-wrapper > div > div {
       min-width: 0 !important;
       width: 100% !important;
     }
     
-    /* 2. Transforma TODAS as linhas da tabela em cartões (flex-column) */
     .table-responsive-wrapper div[style*="grid-template-columns"] {
       display: flex !important;
       flex-direction: column !important;
@@ -130,12 +136,11 @@ style.innerHTML = `
       height: auto !important;
     }
 
-    /* 3. Oculta o cabeçalho original com CERTEZA (Remove a barra preta escrita "AÇÕES") */
+    /* Oculta o cabeçalho original com CERTEZA */
     .table-responsive-wrapper > div:first-child {
       display: none !important;
     }
 
-    /* 4. Ajusta o conteúdo interno de cada item do cartão para alinhar certinho */
     .table-responsive-wrapper div[style*="grid-template-columns"] > div {
       width: 100% !important;
       padding: 0 !important;
@@ -144,7 +149,6 @@ style.innerHTML = `
       justify-content: flex-start !important;
     }
 
-    /* 5. Cria uma divisória pontilhada bonitinha no rodapé do cartão para os botões */
     .table-responsive-wrapper div[style*="grid-template-columns"] > div:last-child {
       justify-content: space-between !important;
       border-top: 1px dashed rgba(120, 119, 116, 0.3) !important;
@@ -152,7 +156,6 @@ style.innerHTML = `
       margin-top: 4px !important;
     }
 
-    /* 6. Impede que o botão "+ Adicionar nova" fique gigante como um cartão */
     .table-responsive-wrapper div[style*="alignContent"],
     .table-responsive-wrapper div[style*="align-content"] {
       display: flex !important;
@@ -163,7 +166,6 @@ style.innerHTML = `
       margin-bottom: 0 !important;
     }
 
-    /* 7. Oculta as linhas verticais guia das subtarefas para evitar bugs visuais no celular */
     .table-responsive-wrapper div[style*="position: absolute"][style*="width: 1px"],
     .table-responsive-wrapper div[style*="position: absolute"][style*="width: 5px"] {
       display: none !important; 
