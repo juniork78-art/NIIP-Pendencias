@@ -68,28 +68,37 @@ style.innerHTML = `
   /* RESPONSIVIDADE PARA CELULARES */
   .table-responsive-wrapper {
     width: 100%;
-    /* Alterado de auto para hidden para remover a quebra/corte horizontal no mobile */
-    overflow-x: hidden; 
-    -webkit-overflow-scrolling: touch;
+    overflow-x: hidden;
   }
 
   @media (max-width: 768px) {
+    /* Trava a tela para impedir que arraste para os lados */
+    html, body, .workspace-layout {
+      overflow-x: hidden !important;
+      max-width: 100vw !important;
+    }
+    
     .workspace-layout {
       flex-direction: column !important;
     }
+    
     .sidebar-notion {
       width: 100% !important;
       height: auto !important;
       max-height: none !important;
       padding: 16px !important;
     }
-    /* Diminui a lista de páginas recentes para não empurrar a tela toda pra baixo */
+    
+    /* Diminui a lista de páginas recentes na sidebar para não empurrar muito a tela */
     .sidebar-notion > div:nth-of-type(4) {
       max-height: 120px !important; 
     }
+    
     .main-content-area {
       padding: 16px !important;
+      overflow-x: hidden !important;
     }
+    
     .lateral-panel {
       width: 100% !important;
       position: fixed !important;
@@ -99,55 +108,65 @@ style.innerHTML = `
       height: 100vh !important;
     }
 
-    /* --- MÁGICA DE LAYOUT: TABELA VIRA CARDS NO CELULAR --- */
+    /* --- MÁGICA DE LAYOUT CORRIGIDA: TABELA VIRA CARDS --- */
     
-    /* 1. Remove a largura forçada de 700px que cortava a tela */
-    .table-responsive-wrapper > div {
-      min-width: 100% !important;
+    /* 1. Mata a largura mínima de 700px que estava quebrando o celular */
+    .table-responsive-wrapper > div,
+    .table-responsive-wrapper > div > div {
+      min-width: 0 !important;
+      width: 100% !important;
     }
     
-    /* 2. Oculta o cabeçalho original da tabela (Nome, Criado por...) pois não serve nos cards */
-    .table-responsive-wrapper > div[style*="uppercase"] {
-      display: none !important;
-    }
-
-    /* 3. Transforma as linhas de tarefas em cartões flexíveis e empilhados */
+    /* 2. Transforma TODAS as linhas da tabela em cartões (flex-column) */
     .table-responsive-wrapper div[style*="grid-template-columns"] {
       display: flex !important;
       flex-direction: column !important;
-      padding: 14px 12px !important;
-      gap: 10px !important;
-      border: 1px solid rgba(120, 119, 116, 0.4) !important;
-      border-radius: 10px !important;
-      margin-bottom: 12px !important;
+      padding: 16px 12px !important;
+      margin-bottom: 16px !important;
+      border: 1px solid rgba(120, 119, 116, 0.3) !important;
+      border-radius: 12px !important;
+      gap: 12px !important;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05) !important;
+      height: auto !important;
     }
 
-    /* 4. Ajusta todas as "células" internas para largura total */
+    /* 3. Oculta o cabeçalho original com CERTEZA (Remove a barra preta escrita "AÇÕES") */
+    .table-responsive-wrapper > div:first-child {
+      display: none !important;
+    }
+
+    /* 4. Ajusta o conteúdo interno de cada item do cartão para alinhar certinho */
     .table-responsive-wrapper div[style*="grid-template-columns"] > div {
       width: 100% !important;
       padding: 0 !important;
-    }
-
-    /* 5. Coloca os botões de ações (Concluir, Excluir) em uma base destacada no final do card */
-    .table-responsive-wrapper div[style*="grid-template-columns"] > div:last-child {
       display: flex !important;
-      justify-content: space-between !important;
       align-items: center !important;
-      border-top: 1px dashed rgba(120, 119, 116, 0.4) !important;
-      padding-top: 12px !important;
-      margin-top: 6px !important;
+      justify-content: flex-start !important;
     }
 
-    /* 6. Evita que o botão "+ Adicionar nova" também vire um card gigante */
-    .table-responsive-wrapper div[style*="align-content: center"],
-    .table-responsive-wrapper div[style*="alignContent: center"] {
+    /* 5. Cria uma divisória pontilhada bonitinha no rodapé do cartão para os botões */
+    .table-responsive-wrapper div[style*="grid-template-columns"] > div:last-child {
+      justify-content: space-between !important;
+      border-top: 1px dashed rgba(120, 119, 116, 0.3) !important;
+      padding-top: 14px !important;
+      margin-top: 4px !important;
+    }
+
+    /* 6. Impede que o botão "+ Adicionar nova" fique gigante como um cartão */
+    .table-responsive-wrapper div[style*="alignContent"],
+    .table-responsive-wrapper div[style*="align-content"] {
       display: flex !important;
       flex-direction: row !important;
-      align-items: center !important;
       border: none !important;
-      margin-bottom: 0 !important;
+      box-shadow: none !important;
       padding: 8px 0 !important;
-      background: transparent !important;
+      margin-bottom: 0 !important;
+    }
+
+    /* 7. Oculta as linhas verticais guia das subtarefas para evitar bugs visuais no celular */
+    .table-responsive-wrapper div[style*="position: absolute"][style*="width: 1px"],
+    .table-responsive-wrapper div[style*="position: absolute"][style*="width: 5px"] {
+      display: none !important; 
     }
   }
 `;
