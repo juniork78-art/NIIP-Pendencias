@@ -1176,46 +1176,29 @@ const renderizarCaminhoBreadcrumb = (pagina) => {
   const renderizarSubTarefasRecursivas = (subLista, tarefaRaizObj, caminhoPai, nivel = 1) => {
     if (!subLista || subLista.length === 0) return null;
 
-  // 1. Tiramos o cálculo daqui de baixo e colocamos antes do return
   const baseIndent = 24;
   const stepIndent = 28;
   const currentIndent = baseIndent + ((nivel - 1) * stepIndent);
+  const visivel = (sub) => {
+    if (paginaAtual === 'andamento') return !sub.excluido;
+    if (paginaAtual === 'resolvidas') return Boolean(sub.concluida) && !sub.excluido;
+    if (paginaAtual === 'arquivados') return Boolean(sub.arquivada) && !sub.excluido;
+    if (paginaAtual === 'lixeira') return Boolean(sub.excluido);
+    return true;
+  };
+  const itensVisiveis = subLista.filter(visivel);
+  if (!itensVisiveis.length) return null;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', width: '100%', position: 'relative' }}>
-      
-      {/* 2. Nossa linha guia contínua entra aqui! */}
-      <div style={{
-        position: 'absolute',
-        top: 0,
-        bottom: 0,
-        left: (currentIndent - 2) + 'px',
-        width: '5px',
-        pointerEvents: 'none',
-        zIndex: 2,
-        display: 'flex',
-        justifyContent: 'center'
-      }}>
-        <div style={{
-          width: '1px',
-          height: '100%',
-          backgroundColor: theme.treeLine
-        }} />
-      </div>
-
-      {subLista.map((sub, index) => {
+      {itensVisiveis.map((sub, index) => {
         const caminhoAtual = [...caminhoPai, sub.id];
         const isExpandidoSub = verificarExpandido(sub.id);
-        const isUltimo = index === subLista.length - 1;
+        const isUltimo = index === itensVisiveis.length - 1;
 
           const isConcluida = Boolean(sub.concluida);
           const isArquivada = Boolean(sub.arquivada);
           const isExcluido = Boolean(sub.excluido);
-
-          if (paginaAtual === 'andamento' && isExcluido) return null;
-          if (paginaAtual === 'resolvidas' && (!isConcluida || isExcluido)) return null;
-          if (paginaAtual === 'arquivados' && (isExcluido || !isArquivada)) return null;
-          if (paginaAtual === 'lixeira' && !isExcluido) return null;
 
           const autorSub = sub.criadoPor || tarefaRaizObj.criadoPor || 'Usuário';
           const editorSub = sub.editadoPor;
@@ -1229,7 +1212,9 @@ const renderizarCaminhoBreadcrumb = (pagina) => {
           const corTextoSub = isConcluida ? '#27ae60' : corPendente;
 
           return (
-            <React.Fragment key={sub.id}>
+            <div key={sub.id} style={{ position: 'relative' }}>
+              {/* Tronco deste nível: termina na última linha e continua quando há irmãos. */}
+              <div style={{ position: 'absolute', left: currentIndent, top: 0, bottom: 0, display: isUltimo ? 'none' : 'block', width: '1px', backgroundColor: theme.treeLine, pointerEvents: 'none', zIndex: 2 }} />
               <div 
                 style={{ 
                   display: 'grid', 
@@ -1245,22 +1230,11 @@ const renderizarCaminhoBreadcrumb = (pagina) => {
                 onMouseEnter={(e) => { if (!isConcluida) e.currentTarget.style.background = theme.cardInner; }} 
                 onMouseLeave={(e) => { if (!isConcluida) e.currentTarget.style.background = 'transparent'; }}
               >
-                {/* Linha guia vertical */}
-            <div style={{
-              position: 'absolute',
-              top: 0,
-              bottom: '-45px', // Aumente este valor negativo caso ainda precise descer mais
-              left: currentIndent + 'px',
-              width: '1px',
-              backgroundColor: theme.treeLine,
-              pointerEvents: 'none'
-            }} />
+                {isUltimo && <div style={{ position: 'absolute', left: currentIndent, top: 0, height: '50%', width: '1px', backgroundColor: theme.treeLine, pointerEvents: 'none', zIndex: 2 }} />}
+                {/* Ramificação horizontal alinhada ao tronco. */}
+                <div style={{ position: 'absolute', left: currentIndent, top: '50%', width: '18px', height: '1px', backgroundColor: theme.treeLine, pointerEvents: 'none', zIndex: 2 }} />
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden', paddingLeft: (currentIndent - 4) + 'px', paddingRight: '10px', position: 'relative' }}>
-                  <span style={{ fontFamily: 'monospace', color: theme.textMuted, fontSize: '13px', userSelect: 'none', fontWeight: 'bold' }}>
-                    {isUltimo ? '└─' : '├─'}
-                  </span>
-
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden', paddingLeft: (currentIndent + 20) + 'px', paddingRight: '10px', position: 'relative' }}>
                   <span onClick={() => alternarExpandido(sub.id)} style={{ cursor: 'pointer', fontSize: '11px', color: theme.textMain, userSelect: 'none', padding: '2px', width: '12px', textAlign: 'center', fontWeight: 'bold' }}>
                     {isExpandidoSub ? '▼' : '▶'}
                   </span>
@@ -1343,6 +1317,7 @@ const renderizarCaminhoBreadcrumb = (pagina) => {
 
               {isExpandidoSub && (
                 <div style={{ display: 'flex', flexDirection: 'column', width: '100%', position: 'relative' }}>
+                  <div style={{ position: 'absolute', left: currentIndent, top: 0, bottom: paginaAtual === 'andamento' && !isExcluido ? '17px' : 0, width: '1px', backgroundColor: theme.treeLine, pointerEvents: 'none', zIndex: 2 }} />
                   {renderizarSubTarefasRecursivas(sub.subTarefas, tarefaRaizObj, caminhoAtual, nivel + 1)}
                   
                   {paginaAtual === 'andamento' && !isExcluido && (
@@ -1372,17 +1347,8 @@ const renderizarCaminhoBreadcrumb = (pagina) => {
                       onMouseEnter={(e) => e.currentTarget.style.color = theme.textMain}
                       onMouseLeave={(e) => e.currentTarget.style.color = theme.textMuted}
                     >
-                      <div style={{
-                        position: 'absolute',
-                        top: 0,
-                        bottom: 0,
-                        left: (currentIndent + stepIndent) + 'px',
-                        width: '1px',
-                        backgroundColor: theme.treeLine,
-                        pointerEvents: 'none'
-                      }} />
-                      <div style={{ paddingLeft: (currentIndent + stepIndent - 4) + 'px', display: 'flex', alignItems: 'center', gap: '6px', position: 'relative' }}>
-                        <span style={{ fontFamily: 'monospace', color: theme.textMuted, fontSize: '13px', fontWeight: 'bold' }}>└─</span>
+                      <div style={{ position: 'absolute', left: currentIndent, top: '50%', width: '18px', height: '1px', backgroundColor: theme.treeLine, pointerEvents: 'none', zIndex: 2 }} />
+                      <div style={{ paddingLeft: (currentIndent + 20) + 'px', display: 'flex', alignItems: 'center', gap: '6px', position: 'relative' }}>
                         <span>+</span> <span>Adicionar nova</span>
                       </div>
                       <div></div><div></div><div></div><div></div>
@@ -1390,7 +1356,7 @@ const renderizarCaminhoBreadcrumb = (pagina) => {
                   )}
                 </div>
               )}
-            </React.Fragment>
+            </div>
           );
         })}
       </div>
@@ -1733,17 +1699,9 @@ const renderizarCaminhoBreadcrumb = (pagina) => {
                               onMouseEnter={(e) => e.currentTarget.style.background = theme.cardInner}
                               onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                             >
-                              <div style={{
-                                position: 'absolute',
-                                top: 0,
-                                bottom: 0,
-                                left: '24px',
-                                width: '1px',
-                                backgroundColor: theme.treeLine,
-                                pointerEvents: 'none'
-                              }} />
-                              <div style={{ paddingLeft: '32px', display: 'flex', alignItems: 'center', gap: '6px', position: 'relative' }}>
-                                <span style={{ fontFamily: 'monospace', color: theme.textMuted, fontSize: '13px', fontWeight: 'bold' }}>└─</span>
+                              <div style={{ position: 'absolute', left: '24px', top: 0, height: '50%', width: '1px', backgroundColor: theme.treeLine, pointerEvents: 'none' }} />
+                              <div style={{ position: 'absolute', left: '24px', top: '50%', width: '18px', height: '1px', backgroundColor: theme.treeLine, pointerEvents: 'none' }} />
+                              <div style={{ paddingLeft: '44px', display: 'flex', alignItems: 'center', gap: '6px', position: 'relative' }}>
                                 <span>+</span> <span>Adicionar nova</span>
                               </div>
                               <div></div><div></div><div></div><div></div>
